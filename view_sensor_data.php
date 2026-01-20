@@ -442,7 +442,7 @@ $stmt->close();
                             <th><i class="fas fa-tint"></i> pH</th>
                             <th><i class="fas fa-thermometer-half"></i> Temp (°C)</th>
                             <th><i class="fas fa-tint"></i> Moisture (%)</th>
-                            <th><i class="fas fa-water"></i> Flow Rate</th>
+                            <th><i class="fas fa-water"></i> Liquid Volume</th>
                             <th><i class="fas fa-cogs"></i> Actions</th>
                         </tr>
                     </thead>

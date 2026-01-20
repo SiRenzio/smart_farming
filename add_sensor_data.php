@@ -30,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $soilT = trim($_POST['soilT'] ?? '');
     $soilMois = trim($_POST['soilMois'] ?? '');
     $liquidVolume = trim($_POST['liquidVolume'] ?? '');
+    $liquidVolume = trim($_POST['liquidVolume'] ?? '');
     $dateTime = trim($_POST['dateTime'] ?? '');
     
     // Convert HTML datetime-local format to MySQL format
@@ -55,8 +56,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $soilT = ($soilT === '') ? null : (float)$soilT;
     $soilMois = ($soilMois === '') ? null : (float)$soilMois;
     $liquidVolume = ($liquidVolume === '') ? null : (float)$liquidVolume;
+    $liquidVolume = ($liquidVolume === '') ? null : (float)$liquidVolume;
     
     // Validate numeric fields
+    $numericFields = ['soilN', 'soilP', 'soilK', 'soilEC', 'soilPH', 'soilT', 'soilMois', 'liquidVolume'];
     $numericFields = ['soilN', 'soilP', 'soilK', 'soilEC', 'soilPH', 'soilT', 'soilMois', 'liquidVolume'];
     foreach ($numericFields as $field) {
         if ($$field !== null && !is_numeric($$field)) {
@@ -74,6 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
+        $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         
         // Handle NULL values properly for bind_param
@@ -125,6 +129,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $errors[] = 'Failed to add sensor data: ' . $conn->error . ' (Error Code: ' . $conn->errno . ')';
             $errors[] = 'Statement Error: ' . $stmt->error . ' (Statement Error Code: ' . $stmt->errno . ')';
+            $errors[] = 'SQL Query: INSERT INTO sensordata (SoilSensorID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (' . 
+                       $soilSensorID . ', ' . ($soilN ?? 'NULL') . ', ' . ($soilP ?? 'NULL') . ', ' . ($soilK ?? 'NULL') . ', ' . ($soilEC ?? 'NULL') . ', ' . ($soilPH ?? 'NULL') . ', ' . ($soilT ?? 'NULL') . ', ' . ($soilMois ?? 'NULL') . ', ' . ($liquidVolume ?? 'NULL') . ', "' . $dateTime . '")';
             $errors[] = 'SQL Query: INSERT INTO sensordata (SoilSensorID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (' . 
                        $soilSensorID . ', ' . ($soilN ?? 'NULL') . ', ' . ($soilP ?? 'NULL') . ', ' . ($soilK ?? 'NULL') . ', ' . ($soilEC ?? 'NULL') . ', ' . ($soilPH ?? 'NULL') . ', ' . ($soilT ?? 'NULL') . ', ' . ($soilMois ?? 'NULL') . ', ' . ($liquidVolume ?? 'NULL') . ', "' . $dateTime . '")';
             $errors[] = 'Bound Values: SensorID=' . $soilSensorID . ', N=' . $bindN . ', P=' . $bindP . ', K=' . $bindK . ', EC=' . $bindEC . ', pH=' . $bindPH . ', T=' . $bindT . ', Moisture=' . $bindMois . ', Flow=' . $bindFlow . ', DateTime=' . $dateTime;

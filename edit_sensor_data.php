@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $soilPH = trim($_POST['soilPH'] ?? '');
     $soilT = trim($_POST['soilT'] ?? '');
     $soilMois = trim($_POST['soilMois'] ?? '');
-    $flowRate = trim($_POST['flowRate'] ?? '');
+    $liquidVolume = trim($_POST['liquidVolume'] ?? '');
     $dateTime = trim($_POST['dateTime'] ?? '');
 
     // Validate
@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Validate numeric fields
-    $numericFields = ['soilN', 'soilP', 'soilK', 'soilEC', 'soilPH', 'soilT', 'soilMois', 'flowRate'];
+    $numericFields = ['soilN', 'soilP', 'soilK', 'soilEC', 'soilPH', 'soilT', 'soilMois', 'liquidVolume'];
     foreach ($numericFields as $field) {
         if ($$field !== '' && !is_numeric($$field)) {
             $errors[] = ucfirst($field) . ' must be a valid number. Received: "' . $$field . '"';
@@ -78,8 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        $updateStmt = $conn->prepare('UPDATE sensordata SET SoilSensorID = ?, SoilN = ?, SoilP = ?, SoilK = ?, SoilEC = ?, SoilPH = ?, SoilT = ?, SoilMois = ?, FlowRate = ?, DateTime = ? WHERE SensorDataID = ?');
-        $updateStmt->bind_param('iiiiiddddi', $soilSensorID, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilMois, $flowRate, $dateTime, $dataID);
+        $updateStmt = $conn->prepare('UPDATE sensordata SET SoilSensorID = ?, SoilN = ?, SoilP = ?, SoilK = ?, SoilEC = ?, SoilPH = ?, SoilT = ?, SoilMois = ?, liquidVolume = ?, DateTime = ? WHERE SensorDataID = ?');
+        $updateStmt->bind_param('iiiiiddddsi', $soilSensorID, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilMois, $liquidVolume, $dateTime, $dataID);
         if ($updateStmt->execute()) {
             $success = 'Sensor data updated successfully!';
             // Refresh sensor data
@@ -204,8 +204,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="optional">Optional (0-100%)</div>
                 </div>
                 <div class="field-group">
-                    <label for="flowRate">Flow Rate (L/min)</label>
-                    <input type="number" name="flowRate" id="flowRate" step="0.1" placeholder="0" value="<?php echo htmlspecialchars($sensorData['FlowRate'] ?? ''); ?>">
+                    <label for="liquidVolume">Liquid Volume (L/min)</label>
+                    <input type="number" name="liquidVolume" id="liquidVolume" step="0.1" placeholder="0" value="<?php echo htmlspecialchars($sensorData['liquidVolume'] ?? ''); ?>">
                     <div class="optional">Optional</div>
                 </div>
             </div>
