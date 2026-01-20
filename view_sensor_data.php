@@ -52,6 +52,20 @@ while ($row = $resultData->fetch_assoc()) {
     $data[] = $row;
 }
 $stmt->close();
+
+if(isset($_POST['delete_data']) && isset($_POST['data_id'])) {
+    $sensorID = (int)$_POST['data_id'];
+
+    $deletestmt = $conn->prepare("DELETE FROM sensordata WHERE SensorDataID = ?");
+    $deletestmt->bind_param("i", $sensorID);
+    if($deletestmt->execute()){
+        $success = "Sensor data deleted successfully!";
+    }
+    else {
+         $error = "Failed to delete sensor: " . $conn->error . " (Error Code: " . $conn->errno . ")";
+    }
+    $deletestmt->close();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
