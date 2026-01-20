@@ -23,15 +23,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        $stmt = $conn->prepare('INSERT INTO sensorinfo (sensorLocation) VALUES (?)');
-        $stmt->bind_param('s', $sensorLocation);
-        if ($stmt->execute()) {
+        // Insert sensor name to database
+        $namestmt = $conn->prepare('INSERT INTO sensorinfo (sensorName, dateAdded) VALUES (?, NOW())');
+        $namestmt->bind_param('s', $sensorName);
+        if ($namestmt->execute()) {
             $sensorID = $conn->insert_id; // Get the auto-generated ID
             $success = 'Sensor #' . $sensorID . ' added successfully! <a href="sensors.php">View all sensors</a> or <a href="add_sensor_data.php">add sensor data</a>.';
         } else {
             $errors[] = 'Failed to add sensor: ' . $conn->error . ' (Error Code: ' . $conn->errno . ')';
         }
-        $stmt->close();
+        $namestmt->close();
+
+        // Insert sensor location to database
+        $sensorstmt= $conn->prepare('INSERT INTO farmlocation (farmName, dateAdded) VALUES (?, NOW())');
+        $sensorstmt->bind_param('s', $sensorLocation);
+        if ($sensorstmt->execute()) {
+            $sensorLocID = $conn->insert_id; // Get the auto-generated ID
+            $success = 'Sensor #' . $sensorLocID . ' added successfully! <a href="sensors.php">View all sensors</a> or <a href="add_sensor_data.php">add sensor data</a>.';
+        } else {
+            $errors[] = 'Failed to add sensor: ' . $conn->error . ' (Error Code: ' . $conn->errno . ')';
+        }
+        $sensorstmt->close();
     }
 }
 ?>
