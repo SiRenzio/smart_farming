@@ -13,13 +13,15 @@ $success = '';
 // Fetch available sensors for dropdown
 $sensors = [];
 $stmt = $conn->prepare('
-    SELECT s.*, 
-           COUNT(sd.SensorDataID) as data_count,
-           MAX(fl.farmName) as farmName
-    FROM sensorinfo s 
-    LEFT JOIN sensordata sd ON s.soilSensorID = sd.SoilSensorID 
-    LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID
-    GROUP BY s.soilSensorID 
+    SELECT 
+        s.soilSensorID,
+        s.sensorName,
+        COUNT(sd.SensorDataID) AS data_count,
+        MAX(fl.farmName) AS farmName
+    FROM sensorinfo s
+    LEFT JOIN sensordata sd ON s.soilSensorID = sd.SoilSensorID
+    LEFT JOIN farmlocation fl ON fl.locationID = sd.locationID
+    GROUP BY s.soilSensorID, s.sensorName
     ORDER BY s.soilSensorID
 ');
 $stmt->execute();
