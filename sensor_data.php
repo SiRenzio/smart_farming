@@ -99,7 +99,7 @@ $stmt->close();
                         <th>pH</th>
                         <th>Temp (°C)</th>
                         <th>Moisture (%)</th>
-                        <th>Flow Rate</th>
+                        <th>Liquid Volume</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -120,7 +120,7 @@ $stmt->close();
                             <td class="numeric-value"><?php echo $row['SoilPH'] !== null ? htmlspecialchars($row['SoilPH']) : '-'; ?></td>
                             <td class="numeric-value"><?php echo $row['SoilT'] !== null ? htmlspecialchars($row['SoilT']) : '-'; ?></td>
                             <td class="numeric-value"><?php echo $row['SoilMois'] !== null ? htmlspecialchars($row['SoilMois']) : '-'; ?></td>
-                            <td class="numeric-value"><?php echo $row['FlowRate'] !== null ? htmlspecialchars($row['FlowRate']) : '-'; ?></td>
+                            <td class="numeric-value"><?php echo $row['liquidVolume'] !== null ? htmlspecialchars($row['liquidVolume']) : '-'; ?></td>
                             <td>
                                 <div class="actions">
                                     <a href="edit_sensor_data.php?id=<?php echo $row['SensorDataID']; ?>" class="btn btn-edit">Edit</a>

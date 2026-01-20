@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $soilPH = trim($_POST['soilPH'] ?? '');
     $soilT = trim($_POST['soilT'] ?? '');
     $soilMois = trim($_POST['soilMois'] ?? '');
-    $flowRate = trim($_POST['flowRate'] ?? '');
+    $liquidVolume = trim($_POST['liquidVolume'] ?? '');
     $dateTime = trim($_POST['dateTime'] ?? '');
     
     // Convert HTML datetime-local format to MySQL format
@@ -54,10 +54,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $soilPH = ($soilPH === '') ? null : (float)$soilPH;
     $soilT = ($soilT === '') ? null : (float)$soilT;
     $soilMois = ($soilMois === '') ? null : (float)$soilMois;
-    $flowRate = ($flowRate === '') ? null : (float)$flowRate;
+    $liquidVolume = ($liquidVolume === '') ? null : (float)$liquidVolume;
     
     // Validate numeric fields
-    $numericFields = ['soilN', 'soilP', 'soilK', 'soilEC', 'soilPH', 'soilT', 'soilMois', 'flowRate'];
+    $numericFields = ['soilN', 'soilP', 'soilK', 'soilEC', 'soilPH', 'soilT', 'soilMois', 'liquidVolume'];
     foreach ($numericFields as $field) {
         if ($$field !== null && !is_numeric($$field)) {
             $errors[] = ucfirst($field) . ' must be a valid number. Received: "' . $$field . '"';
@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, FlowRate, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         
         // Handle NULL values properly for bind_param
         $bindN = $soilN ?? 0;
@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bindPH = $soilPH ?? 0.0;
         $bindT = $soilT ?? 0.0;
         $bindMois = $soilMois ?? 0.0;
-        $bindFlow = $flowRate ?? 0.0;
+        $bindVol = $liquidVolume ?? 0.0;
         
         // Verify the exact count and validate all variables
         $typeString = 'iiiiidddds';
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } */
         
         // Validate all variables are defined
-        $allVars = [$soilSensorID, $bindN, $bindP, $bindK, $bindEC, $bindPH, $bindT, $bindMois, $bindFlow, $dateTime];
+        $allVars = [$soilSensorID, $bindN, $bindP, $bindK, $bindEC, $bindPH, $bindT, $bindMois, $bindVol, $dateTime];
         foreach ($allVars as $i => $var) {
             if (!isset($var)) {
                 die('Variable ' . $i . ' is not set');
@@ -115,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $bindPH, 
             $bindT, 
             $bindMois, 
-            $bindFlow, 
+            $bindVol, 
             $dateTime
         );
         // Try to execute and capture any errors
@@ -125,12 +125,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $errors[] = 'Failed to add sensor data: ' . $conn->error . ' (Error Code: ' . $conn->errno . ')';
             $errors[] = 'Statement Error: ' . $stmt->error . ' (Statement Error Code: ' . $stmt->errno . ')';
-            $errors[] = 'SQL Query: INSERT INTO sensordata (SoilSensorID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, FlowRate, DateTime) VALUES (' . 
-                       $soilSensorID . ', ' . ($soilN ?? 'NULL') . ', ' . ($soilP ?? 'NULL') . ', ' . ($soilK ?? 'NULL') . ', ' . ($soilEC ?? 'NULL') . ', ' . ($soilPH ?? 'NULL') . ', ' . ($soilT ?? 'NULL') . ', ' . ($soilMois ?? 'NULL') . ', ' . ($flowRate ?? 'NULL') . ', "' . $dateTime . '")';
+            $errors[] = 'SQL Query: INSERT INTO sensordata (SoilSensorID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (' . 
+                       $soilSensorID . ', ' . ($soilN ?? 'NULL') . ', ' . ($soilP ?? 'NULL') . ', ' . ($soilK ?? 'NULL') . ', ' . ($soilEC ?? 'NULL') . ', ' . ($soilPH ?? 'NULL') . ', ' . ($soilT ?? 'NULL') . ', ' . ($soilMois ?? 'NULL') . ', ' . ($liquidVolume ?? 'NULL') . ', "' . $dateTime . '")';
             $errors[] = 'Bound Values: SensorID=' . $soilSensorID . ', N=' . $bindN . ', P=' . $bindP . ', K=' . $bindK . ', EC=' . $bindEC . ', pH=' . $bindPH . ', T=' . $bindT . ', Moisture=' . $bindMois . ', Flow=' . $bindFlow . ', DateTime=' . $dateTime;
             $errors[] = 'Original DateTime: ' . ($_POST['dateTime'] ?? 'NOT SET');
             $errors[] = 'Converted DateTime: ' . $dateTime;
-            $errors[] = 'Data Types: SensorID=' . gettype($soilSensorID) . ', N=' . gettype($bindN) . ', P=' . gettype($bindP) . ', K=' . gettype($bindK) . ', EC=' . gettype($bindEC) . ', pH=' . gettype($bindPH) . ', T=' . gettype($bindT) . ', Moisture=' . gettype($bindMois) . ', Flow=' . gettype($bindFlow) . ', DateTime=' . gettype($dateTime);
+            $errors[] = 'Data Types: SensorID=' . gettype($soilSensorID) . ', N=' . gettype($bindN) . ', P=' . gettype($bindP) . ', K=' . gettype($bindK) . ', EC=' . gettype($bindEC) . ', pH=' . gettype($bindPH) . ', T=' . gettype($bindT) . ', Moisture=' . gettype($bindMois) . ', Flow=' . gettype($bindVol) . ', DateTime=' . gettype($dateTime);
             
             // Additional debugging for constraint issues
             $errors[] = 'Sensor ID Type: ' . gettype($soilSensorID) . ' (Value: ' . $soilSensorID . ')';
@@ -195,7 +195,7 @@ $defaultDateTime = date('Y-m-d\TH:i');
                 pH: <?php echo htmlspecialchars($_POST['soilPH'] ?? 'NOT SET'); ?><br>
                 Temperature: <?php echo htmlspecialchars($_POST['soilT'] ?? 'NOT SET'); ?><br>
                 Moisture: <?php echo htmlspecialchars($_POST['soilMois'] ?? 'NOT SET'); ?><br>
-                Flow Rate: <?php echo htmlspecialchars($_POST['flowRate'] ?? 'NOT SET'); ?>
+                Liquid Volume: <?php echo htmlspecialchars($_POST['liquidVolume'] ?? 'NOT SET'); ?>
             </div>
         <?php endif; ?>
         
@@ -272,8 +272,8 @@ $defaultDateTime = date('Y-m-d\TH:i');
                         <div class="optional">Optional (0-100%)</div>
                     </div>
                     <div class="field-group">
-                        <label for="flowRate">Flow Rate (L/min)</label>
-                        <input type="number" name="flowRate" id="flowRate" step="0.1" placeholder="0" value="<?php echo htmlspecialchars($_POST['flowRate'] ?? ''); ?>">
+                        <label for="liquidVolume">Liquid Volume</label>
+                        <input type="number" name="liquidVolume" id="flowRate" step="0.1" placeholder="0" value="<?php echo htmlspecialchars($_POST['liquidVolume'] ?? ''); ?>">
                         <div class="optional">Optional</div>
                     </div>
                 </div>
