@@ -52,6 +52,22 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
+$locations = [];
+$locstmt = $conn->prepare('
+    SELECT f.*, 
+           COUNT(sd.SensorDataID) as data_count
+    FROM farmlocation f 
+    LEFT JOIN sensordata sd ON f.locationID = sd.locationID
+    GROUP BY f.locationID
+    ORDER BY f.locationID
+');
+$locstmt->execute();
+$result = $locstmt->get_result();
+while ($row = $result->fetch_assoc()) {
+    $locations[] = $row;
+}
+$locstmt->close();
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -436,40 +452,41 @@ $stmt->close();
         <?php else: ?>
             <div class="sensors-grid">
                 <?php foreach ($sensors as $sensor): ?>
-                    <div class="sensor-card">
-                        <div class="sensor-header">
-                            <div class="sensor-info">
-                                <div class="sensor-icon">
-                                    <i class="fas fa-satellite-dish"></i>
+                    <?php foreach ($locations as $location): ?>
+                        <div class="sensor-card">
+                            <div class="sensor-header">
+                                <div class="sensor-info">
+                                    <div class="sensor-icon">
+                                        <i class="fas fa-satellite-dish"></i>
+                                    </div>
+                                    <div class="sensor-details">
+                                        <h3><?php echo htmlspecialchars($sensor['sensorName']); ?></h3>
+                                    </div>
                                 </div>
-                                <div class="sensor-details">
-                                    <h3><?php echo htmlspecialchars($sensor['sensorName']); ?></h3>
+                                <div class="data-count">
+                                    <i class="fas fa-database"></i> <?php echo $sensor['data_count']; ?> readings
                                 </div>
                             </div>
-                            <div class="data-count">
-                                <i class="fas fa-database"></i> <?php echo $sensor['data_count']; ?> readings
+                            <div class="sensor-location">
+                                <i class="fas fa-map-marker-alt"></i> <strong>Location:</strong> <?php echo htmlspecialchars($location['farmName']); ?>
+                            </div>
+                            
+                            <div class="sensor-actions">
+                                <a href="view_sensor_data.php?sensor_id=<?php echo $sensor['soilSensorID']; ?>" class="action-btn btn-view">
+                                    <i class="fas fa-eye"></i> View Data
+                                </a>
+                                <a href="edit_sensor.php?id=<?php echo $sensor['soilSensorID']; ?>&loc=<?php echo $location['locationID']; ?>" class="action-btn btn-edit">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <form method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this sensor? This action cannot be undone.');">
+                                    <input type="hidden" name="sensor_id" value="<?php echo $sensor['soilSensorID']; ?>">
+                                    <button type="submit" name="delete_sensor" class="action-btn btn-delete">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </form>
                             </div>
                         </div>
-                        
-                        <div class="sensor-location">
-                            <i class="fas fa-map-marker-alt"></i> <strong>Location:</strong> <?php echo htmlspecialchars($sensor['farmName']); ?>
-                        </div>
-                        
-                        <div class="sensor-actions">
-                            <a href="view_sensor_data.php?sensor_id=<?php echo $sensor['soilSensorID']; ?>" class="action-btn btn-view">
-                                <i class="fas fa-eye"></i> View Data
-                            </a>
-                            <a href="edit_sensor.php?id=<?php echo $sensor['soilSensorID']; ?>" class="action-btn btn-edit">
-                                <i class="fas fa-edit"></i> Edit
-                            </a>
-                            <form method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this sensor? This action cannot be undone.');">
-                                <input type="hidden" name="sensor_id" value="<?php echo $sensor['soilSensorID']; ?>">
-                                <button type="submit" name="delete_sensor" class="action-btn btn-delete">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </form>
-                        </div>
-                    </div>
+                    <?php endforeach; ?>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>

@@ -12,6 +12,11 @@ if (!$sensorID) {
     header('Location: sensors.php');
     exit;
 }
+$locID = isset($_GET['loc']) ? (int)$_GET['loc'] : 0;
+if (!$locID) {
+    header('Location: sensors.php');
+    exit;
+}
 
 $errors = [];
 $success = '';
@@ -24,22 +29,38 @@ $result = $stmt->get_result();
 $sensor = $result->fetch_assoc();
 $stmt->close();
 
+// Fetch sensor location
+$locstmt = $conn->prepare('SELECT * FROM farmlocation WHERE locationID = ?');
+$locstmt->bind_param('i', $locID);
+$locstmt->execute();
+$result = $locstmt->get_result();
+$location = $result->fetch_assoc();
+$locstmt->close();
+
 if (!$sensor) {
+    header('Location: sensors.php');
+    exit;
+}
+if (!$location) {
     header('Location: sensors.php');
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sensorLocation = trim($_POST['sensorLocation'] ?? '');
+    $sensorName = trim($_POST['sensorName'] ?? '');
 
     // Validate
     if (!$sensorLocation) {
         $errors[] = 'Sensor location is required.';
     }
+    if (!$sensorName) {
+        $errors[] = 'Sensor name is required';
+    }
 
     if (!$errors) {
-        $updateStmt = $conn->prepare('UPDATE sensorinfo SET sensorLocation = ? WHERE soilSensorID = ?');
-        $updateStmt->bind_param('si', $sensorLocation, $sensorID);
+        $updateStmt = $conn->prepare('UPDATE sensorinfo SET sensorName = ? WHERE soilSensorID = ?');
+        $updateStmt->bind_param('si', $sensorName, $sensorID);
         if ($updateStmt->execute()) {
             $success = 'Sensor updated successfully!';
             // Refresh sensor data
@@ -53,6 +74,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Failed to update sensor: ' . $conn->error . ' (Error Code: ' . $conn->errno . ')';
         }
         $updateStmt->close();
+
+        $updatelocStmt = $conn->prepare('UPDATE farmlocation SET farmName = ? WHERE locationID = ?');
+        $updatelocStmt->bind_param('si', $sensorLocation, $locID);
+        if ($updatelocStmt->execute()) {
+            $success = 'Sensor updated successfully!';
+            // Refresh sensor data
+            $locstmt = $conn->prepare('SELECT * FROM farmlocation WHERE locationID = ?');
+            $locstmt->bind_param('i', $locID);
+            $locstmt->execute();
+            $result = $locstmt->get_result();
+            $location = $result->fetch_assoc();
+            $locstmt->close();
+        } else {
+            $errors[] = 'Failed to update sensor: ' . $conn->error . ' (Error Code: ' . $conn->errno . ')';
+        }
+        $updatelocStmt->close();
     }
 }
 ?>
@@ -314,7 +351,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <!-- Edit Form -->
-        <form method="post" action="edit_sensor.php?id=<?php echo $sensorID; ?>">
+        <form method="post" action="edit_sensor.php?id=<?php echo $sensorID; ?>&loc=<?php echo $locID; ?>">
+            <div class="form-group">
+                <label for="sensorName">
+                    <i class="fas fa-tag"></i> Sensor Name
+                </label>
+                <input 
+                    type="text" 
+                    id="sensorName"
+                    name="sensorName" 
+                    placeholder="Enter sensor Name (e.g., pH Sensor, Moisture Sensor)" 
+                    required 
+                    value="<?php echo htmlspecialchars($sensor['sensorName']); ?>"
+                >
+            </div>
             <div class="form-group">
                 <label for="sensorLocation">
                     <i class="fas fa-map-marker-alt"></i> Sensor Location
@@ -325,7 +375,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     name="sensorLocation" 
                     placeholder="Enter sensor location (e.g., Field A, Greenhouse 1)" 
                     required 
-                    value="<?php echo htmlspecialchars($sensor['sensorName']); ?>"
+                    value="<?php echo htmlspecialchars($location['farmName']); ?>"
                 >
             </div>
             
