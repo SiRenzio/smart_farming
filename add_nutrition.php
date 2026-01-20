@@ -460,7 +460,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 <div class="form-group">
                     <label for="flowRate">
-                        <i class="fas fa-water"></i> Flow Rate (L/min)
+                        <i class="fas fa-water"></i> Liquid Volume (L/min)
                     </label>
                     <input 
                         type="number" 
