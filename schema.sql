@@ -33,12 +33,20 @@ CREATE TABLE users (
 
 CREATE TABLE sensorinfo (
     soilSensorID INT(15) AUTO_INCREMENT PRIMARY KEY,
-    sensorLocation VARCHAR(50)
+    sensorName VARCHAR(50),
+    dateAdded DATETIME
+);
+
+CREATE TABLE farmlocation (
+    locationID INT(15) AUTO_INCREMENT PRIMARY KEY,
+    farmName VARCHAR(30),
+    dateAdded TIMESTAMP
 );
 
 CREATE TABLE sensordata (
     SensorDataID INT(15) AUTO_INCREMENT PRIMARY KEY,
     SoilSensorID INT(10),
+    locationID INT(15),
     SoilN INT(10),
     SoilP INT(10),
     SoilK INT(10),
@@ -48,5 +56,6 @@ CREATE TABLE sensordata (
     SoilMois FLOAT,
     liquidVolume FLOAT,
     DateTime TIMESTAMP,
-    FOREIGN KEY (SoilSensorID) REFERENCES sensorinfo(soilSensorID)
+    FOREIGN KEY (SoilSensorID) REFERENCES sensorinfo(soilSensorID),
+    FOREIGN KEY (locationID) REFERENCES farmlocation(locationID)
 );

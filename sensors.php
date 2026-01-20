@@ -35,7 +35,7 @@ if (isset($_POST['delete_sensor']) && isset($_POST['sensor_id'])) {
 
 // Fetch all sensors
 $sensors = [];
-$stmt = $conn->prepare('SELECT s.*, COUNT(sd.SensorDataID) as data_count FROM sensorinfo s LEFT JOIN sensordata sd ON s.soilSensorID = sd.SoilSensorID GROUP BY s.soilSensorID ORDER BY s.soilSensorID');
+$stmt = $conn->prepare('SELECT s.*, COUNT(sd.SensorDataID) as data_count  FROM sensorinfo s LEFT JOIN sensordata sd ON s.soilSensorID = sd.SoilSensorID GROUP BY s.soilSensorID ORDER BY s.soilSensorID');
 $stmt->execute();
 $result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {
@@ -442,7 +442,7 @@ $stmt->close();
                         </div>
                         
                         <div class="sensor-location">
-                            <i class="fas fa-map-marker-alt"></i> <strong>Location:</strong> <?php echo htmlspecialchars($sensor['sensorLocation']); ?>
+                            <i class="fas fa-tag"></i> <strong>Name:</strong> <?php echo htmlspecialchars($sensor['sensorName']); ?>
                         </div>
                         
                         <div class="sensor-actions">
