@@ -11,11 +11,15 @@ $errors = [];
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $sensorName = trim($_POST['sensorName'] ?? '');
     $sensorLocation = trim($_POST['sensorLocation'] ?? '');
 
     // Validate
     if (!$sensorLocation) {
         $errors[] = 'Sensor location is required.';
+    }
+    if (!$sensorName) {
+        $errors[] = 'Sensor name is required.';
     }
 
     if (!$errors) {
@@ -266,6 +270,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="post" action="add_sensor.php">
+                <div class="form-group">
+                    <label for="sensorName">Sensor Name *</label>
+                    <input type="text" 
+                           id="sensorName"
+                           name="sensorName" 
+                           class="form-input"
+                           placeholder="Enter sensor name (e.g., pH Sensor, Temperature Sensor)" 
+                           required 
+                           value="<?php echo htmlspecialchars($_POST['sensorLocation'] ?? ''); ?>">
+                </div>
                 <div class="form-group">
                     <label for="sensorLocation">Sensor Location *</label>
                     <input type="text" 
