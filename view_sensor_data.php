@@ -34,6 +34,29 @@ if (!$result) {
     exit;
 }
 
+// Fetch farm location
+$stmt = $conn->prepare('SELECT * FROM farmLocation WHERE locationID = ?');
+if (!$stmt) {
+    die('Failed to prepare sensor query: ' . $conn->error);
+}
+$stmt->bind_param('i', $sensorID);
+if (!$stmt->execute()) {
+    die('Failed to execute sensor query: ' . $stmt->error);
+}
+$resultSet = $stmt->get_result();
+if (!$resultSet) {
+    die('Failed to get sensor result: ' . $stmt->error);
+}
+$farm = $resultSet->fetch_assoc();
+$stmt->close();
+
+if (!$result) {
+    header('Location: sensors.php');
+    exit;
+}
+
+
+
 // Fetch sensor data for this specific sensor
 $data = [];
 $stmt = $conn->prepare('SELECT * FROM sensordata WHERE SoilSensorID = ? ORDER BY DateTime DESC');
@@ -53,17 +76,16 @@ while ($row = $resultData->fetch_assoc()) {
 }
 $stmt->close();
 
-//Handle sensor data deletion
 if(isset($_POST['delete_data']) && isset($_POST['data_id'])) {
-    $sensorDataID = (int)$_POST['data_id'];
+    $sensorID = (int)$_POST['data_id'];
 
     $deletestmt = $conn->prepare("DELETE FROM sensordata WHERE SensorDataID = ?");
-    $deletestmt->bind_param('i', $sensorDataID);
-    if($deletestmt->execute()) {
+    $deletestmt->bind_param("i", $sensorID);
+    if($deletestmt->execute()){
         $success = "Sensor data deleted successfully!";
     }
     else {
-        $error = "Failed to delete sensor data: " . $conn->error . " (Error Code: " . $conn->errno . ")";
+         $error = "Failed to delete sensor: " . $conn->error . " (Error Code: " . $conn->errno . ")";
     }
     $deletestmt->close();
 }
@@ -395,8 +417,8 @@ if(isset($_POST['delete_data']) && isset($_POST['data_id'])) {
             <div class="icon">
                 <i class="fas fa-satellite-dish"></i>
             </div>
-            <h1>Sensor #<?php echo htmlspecialchars($result['soilSensorID']); ?></h1>
-            <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($result['sensorLocation']); ?></p>
+            <h1><?php echo htmlspecialchars($result['sensorName']); ?></h1>
+            <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($farm['farmName']); ?></p>
         </div>
 
         <!-- Navigation Links -->

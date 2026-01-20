@@ -325,7 +325,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     name="sensorLocation" 
                     placeholder="Enter sensor location (e.g., Field A, Greenhouse 1)" 
                     required 
-                    value="<?php echo htmlspecialchars($sensor['sensorLocation']); ?>"
+                    value="<?php echo htmlspecialchars($sensor['sensorName']); ?>"
                 >
             </div>
             
