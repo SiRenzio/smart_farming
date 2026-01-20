@@ -24,9 +24,10 @@ if (isset($_POST['delete_data']) && isset($_POST['data_id'])) {
 // Fetch all sensor data with sensor location information
 $data = [];
 $stmt = $conn->prepare('
-    SELECT sd.*, si.sensorLocation 
+    SELECT sd.*, si.sensorName, fl.farmName, fl.locationID 
     FROM sensordata sd 
     LEFT JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID 
+    LEFT JOIN farmLocation fl ON sd.locationID = fl.locationID 
     ORDER BY sd.DateTime DESC
 ');
 $stmt->execute();
@@ -108,8 +109,8 @@ $stmt->close();
                         <tr>
                             <td>
                                 <div class="sensor-info">
-                                    <strong>#<?php echo htmlspecialchars($row['SoilSensorID']); ?></strong><br>
-                                    <small><?php echo htmlspecialchars($row['sensorLocation'] ?? 'Unknown Location'); ?></small>
+                                    <strong><?php echo htmlspecialchars($row['sensorName']); ?></strong><br>
+                                    <small><?php echo htmlspecialchars($row['farmName'] ?? 'Unknown Location'); ?></small>
                                 </div>
                             </td>
                             <td><?php echo date('M j, Y g:i A', strtotime($row['DateTime'])); ?></td>

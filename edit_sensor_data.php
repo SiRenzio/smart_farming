@@ -31,7 +31,16 @@ if (!$sensorData) {
 
 // Fetch available sensors for dropdown
 $sensors = [];
-$stmt = $conn->prepare('SELECT soilSensorID, sensorLocation FROM sensorinfo ORDER BY soilSensorID');
+$stmt = $conn->prepare('
+    SELECT s.*, 
+           COUNT(sd.SensorDataID) as data_count,
+           MAX(fl.farmName) as farmName
+    FROM sensorinfo s 
+    LEFT JOIN sensordata sd ON s.soilSensorID = sd.SoilSensorID 
+    LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID
+    GROUP BY s.soilSensorID 
+    ORDER BY s.soilSensorID
+');
 $stmt->execute();
 $result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {
@@ -147,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="">Select a sensor</option>
                     <?php foreach ($sensors as $sensor): ?>
                         <option value="<?php echo $sensor['soilSensorID']; ?>" <?php echo ($sensorData['SoilSensorID'] == $sensor['soilSensorID']) ? 'selected' : ''; ?>>
-                            Sensor #<?php echo htmlspecialchars($sensor['soilSensorID']); ?> - <?php echo htmlspecialchars($sensor['sensorLocation']); ?>
+                            <?php echo htmlspecialchars($sensor['farmName']); ?> - <?php echo htmlspecialchars($sensor['sensorName']); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
