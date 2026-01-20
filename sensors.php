@@ -37,11 +37,9 @@ if (isset($_POST['delete_sensor']) && isset($_POST['sensor_id'])) {
 $sensors = [];
 $stmt = $conn->prepare('
     SELECT s.*, 
-           COUNT(sd.SensorDataID) as data_count,
-           MAX(fl.farmName) as farmName
+           COUNT(sd.SensorDataID) as data_count
     FROM sensorinfo s 
     LEFT JOIN sensordata sd ON s.soilSensorID = sd.SoilSensorID 
-    LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID
     GROUP BY s.soilSensorID 
     ORDER BY s.soilSensorID
 ');
@@ -55,15 +53,15 @@ $stmt->close();
 $locations = [];
 $locstmt = $conn->prepare('
     SELECT f.*, 
-           COUNT(sd.SensorDataID) as data_count
+           COUNT(sd.locationID) as data_count
     FROM farmlocation f 
     LEFT JOIN sensordata sd ON f.locationID = sd.locationID
     GROUP BY f.locationID
     ORDER BY f.locationID
 ');
 $locstmt->execute();
-$result = $locstmt->get_result();
-while ($row = $result->fetch_assoc()) {
+$locresult = $locstmt->get_result();
+while ($row = $locresult->fetch_assoc()) {
     $locations[] = $row;
 }
 $locstmt->close();
@@ -452,7 +450,6 @@ $locstmt->close();
         <?php else: ?>
             <div class="sensors-grid">
                 <?php foreach ($sensors as $sensor): ?>
-                    <?php foreach ($locations as $location): ?>
                         <div class="sensor-card">
                             <div class="sensor-header">
                                 <div class="sensor-info">
@@ -468,14 +465,14 @@ $locstmt->close();
                                 </div>
                             </div>
                             <div class="sensor-location">
-                                <i class="fas fa-map-marker-alt"></i> <strong>Location:</strong> <?php echo htmlspecialchars($location['farmName']); ?>
+                                <i class="fas fa-map-marker-alt"></i> <strong>Location:</strong> <?php echo htmlspecialchars($sensor['sensorName']); ?>
                             </div>
                             
                             <div class="sensor-actions">
                                 <a href="view_sensor_data.php?sensor_id=<?php echo $sensor['soilSensorID']; ?>" class="action-btn btn-view">
                                     <i class="fas fa-eye"></i> View Data
                                 </a>
-                                <a href="edit_sensor.php?id=<?php echo $sensor['soilSensorID']; ?>&loc=<?php echo $location['locationID']; ?>" class="action-btn btn-edit">
+                                <a href="edit_sensor.php?id=<?php echo $sensor['soilSensorID']; ?>" class="action-btn btn-edit">
                                     <i class="fas fa-edit"></i> Edit
                                 </a>
                                 <form method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this sensor? This action cannot be undone.');">
@@ -486,7 +483,6 @@ $locstmt->close();
                                 </form>
                             </div>
                         </div>
-                    <?php endforeach; ?>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
