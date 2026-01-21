@@ -34,141 +34,130 @@ while ($row = $result->fetch_assoc()) {
 $stmt->close();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    
     $soilSensorID = (int)trim($_POST['soilSensorID'] ?? '');
     $locationID = (int)trim($_POST['locationID'] ?? '');
-    $soilN = trim($_POST['soilN'] ?? '');
-    $soilP = trim($_POST['soilP'] ?? '');
-    $soilK = trim($_POST['soilK'] ?? '');
-    $soilEC = trim($_POST['soilEC'] ?? '');
-    $soilPH = trim($_POST['soilPH'] ?? '');
-    $soilT = trim($_POST['soilT'] ?? '');
-    $soilMois = trim($_POST['soilMois'] ?? '');
-    $liquidVolume = trim($_POST['liquidVolume'] ?? '');
-    $liquidVolume = trim($_POST['liquidVolume'] ?? '');
-    $dateTime = trim($_POST['dateTime'] ?? '');
+    $dateTimeRaw = trim($_POST['dateTime'] ?? '');
     
-    // Convert HTML datetime-local format to MySQL format
-    if ($dateTime) {
-        $dateTime = date('Y-m-d H:i:s', strtotime($dateTime));
-    }
+    $processInput = function($val, $type) {
+        if ($val === '') return null;
+        return ($type === 'float') ? (float)$val : (int)$val;
+    };
 
-    // Validate
-    if (!$soilSensorID) {
-        $errors[] = 'Sensor ID is required.';
-    }
+    $soilN = $processInput($_POST['soilN'] ?? '', 'int');
+    $soilP = $processInput($_POST['soilP'] ?? '', 'int');
+    $soilK = $processInput($_POST['soilK'] ?? '', 'int');
+    $soilEC = $processInput($_POST['soilEC'] ?? '', 'int');
+    $soilPH = $processInput($_POST['soilPH'] ?? '', 'float');
+    $soilT = $processInput($_POST['soilT'] ?? '', 'float');
+    $soilMois = $processInput($_POST['soilMois'] ?? '', 'float');
+    $liquidVolume = $processInput($_POST['liquidVolume'] ?? '', 'float');
 
-    if (!$locationID) {
-    $errors[] = 'Location ID is required.';
-}
-    
-    if (!$dateTime) {
+    if ($dateTimeRaw) {
+        $dateTime = date('Y-m-d H:i:s', strtotime($dateTimeRaw));
+    } else {
         $errors[] = 'Date and time is required.';
     }
 
-    // Convert empty strings to NULL for numeric fields
-    $soilN = ($soilN === '') ? null : (int)$soilN;
-    $soilP = ($soilP === '') ? null : (int)$soilP;
-    $soilK = ($soilK === '') ? null : (int)$soilK;
-    $soilEC = ($soilEC === '') ? null : (int)$soilEC;
-    $soilPH = ($soilPH === '') ? null : (float)$soilPH;
-    $soilT = ($soilT === '') ? null : (float)$soilT;
-    $soilMois = ($soilMois === '') ? null : (float)$soilMois;
-    $liquidVolume = ($liquidVolume === '') ? null : (float)$liquidVolume;
-    
-    // Validate numeric fields
-    $numericFields = ['soilN', 'soilP', 'soilK', 'soilEC', 'soilPH', 'soilT', 'soilMois', 'liquidVolume'];
-    $numericFields = ['soilN', 'soilP', 'soilK', 'soilEC', 'soilPH', 'soilT', 'soilMois', 'liquidVolume'];
-    foreach ($numericFields as $field) {
-        if ($$field !== null && !is_numeric($$field)) {
-            $errors[] = ucfirst($field) . ' must be a valid number. Received: "' . $$field . '"';
-        }
-    }
-    
-    // Validate specific ranges
-    if ($soilPH !== null && ($soilPH < 0 || $soilPH > 14)) {
-        $errors[] = 'Soil pH must be between 0 and 14. Received: ' . $soilPH;
-    }
-    
-    if ($soilMois !== null && ($soilMois < 0 || $soilMois > 100)) {
-        $errors[] = 'Soil moisture must be between 0% and 100%. Received: ' . $soilMois . '%';
-    }
+    if (!$soilSensorID) $errors[] = 'Sensor ID is required.';
+    if (!$locationID) $errors[] = 'Location ID is required.';
+
+    if ($soilPH !== null && ($soilPH < 0 || $soilPH > 14)) $errors[] = 'Soil pH must be 0-14.';
+    if ($soilMois !== null && ($soilMois < 0 || $soilMois > 100)) $errors[] = 'Soil moisture must be 0-100%.';
 
     if (!$errors) {
-        $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, locationID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        
-        // Handle NULL values properly for bind_param
-        $bindN = $soilN ?? 0;
-        $bindP = $soilP ?? 0;
-        $bindK = $soilK ?? 0;
-        $bindEC = $soilEC ?? 0;
-        $bindPH = $soilPH ?? 0.0;
-        $bindT = $soilT ?? 0.0;
-        $bindMois = $soilMois ?? 0.0;
-        $bindVol = $liquidVolume ?? 0.0;
-        
-        // Verify the exact count and validate all variables
-        $typeString = 'iiiiiidddds';
-        // Debug: Show each character and its position
-        /* for ($i = 0; $i < strlen($typeString); $i++) {
-            $char = $typeString[$i];
-            $ord = ord($char);
-            die("Position $i: '$char' (ASCII: $ord)");
-        }
-        if (strlen($typeString) !== 10) {
-            die('Type string length mismatch: ' . strlen($typeString) . ' (expected 10)');
-        } */
-        
-        // Validate all variables are defined
-        $allVars = [$soilSensorID, $locationID, $bindN, $bindP, $bindK, $bindEC, $bindPH, $bindT, $bindMois, $bindVol, $dateTime];
-        foreach ($allVars as $i => $var) {
-            if (!isset($var)) {
-                die('Variable ' . $i . ' is not set');
+        $checkStmt = $conn->prepare("SELECT * FROM sensordata WHERE SoilSensorID = ? ORDER BY DateTime DESC LIMIT 1");
+        $checkStmt->bind_param("i", $soilSensorID);
+        $checkStmt->execute();
+        $lastRow = $checkStmt->get_result()->fetch_assoc();
+        $checkStmt->close();
+
+        $action = 'INSERT';
+        $updateData = []; 
+        $fieldsToCheck = [
+            'SoilN' => $soilN,
+            'SoilP' => $soilP,
+            'SoilK' => $soilK,
+            'SoilEC' => $soilEC,
+            'SoilPH' => $soilPH,
+            'SoilT' => $soilT,
+            'SoilMois' => $soilMois,
+            'liquidVolume' => $liquidVolume
+        ];
+
+        if ($lastRow) {
+            $canUpdate = true;
+            $hasNewData = false;
+
+            foreach ($fieldsToCheck as $colName => $userValue) {
+                if ($userValue !== null) {
+                    $dbValue = $lastRow[$colName];
+
+                    if (is_null($dbValue)) {
+                        $hasNewData = true;
+                        $updateData[$colName] = $userValue;
+                    } else {
+                        $canUpdate = false; 
+                        break; 
+                    }
+                }
+            }
+
+            if ($canUpdate && $hasNewData) {
+                $action = 'UPDATE';
             }
         }
-        
-        $stmt->bind_param($typeString, 
-            $soilSensorID,
-            $locationID, 
-            $bindN, 
-            $bindP, 
-            $bindK, 
-            $bindEC, 
-            $bindPH, 
-            $bindT, 
-            $bindMois, 
-            $bindVol, 
-            $dateTime
-        );
-        // Try to execute and capture any errors
-        $executeResult = $stmt->execute();
-        if ($executeResult) {
-            $success = 'Sensor data added successfully! <a href="view_sensor_data.php?sensor_id=' . $soilSensorID . '">View sensor data</a> or <a href="sensor_data.php">view all data</a>.';
+
+        if ($action === 'UPDATE') {
+            $sqlSet = [];
+            $types = "";
+            $params = [];
+
+            foreach ($updateData as $col => $val) {
+                $sqlSet[] = "$col = ?";
+                $types .= (in_array($col, ['SoilPH', 'SoilT', 'SoilMois', 'liquidVolume'])) ? "d" : "i";
+                $params[] = $val;
+            }
+
+            $types .= "i";
+            $params[] = $lastRow['SensorDataID'];
+
+            $sql = "UPDATE sensordata SET " . implode(", ", $sqlSet) . " WHERE SensorDataID = ?";
+            
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param($types, ...$params);
+            
+            if ($stmt->execute()) {
+                $success = "Sensor data updated successfully (filled empty slots)!";
+            } else {
+                $errors[] = "Update failed: " . $stmt->error;
+            }
+            $stmt->close();
+
         } else {
-            $errors[] = 'Failed to add sensor data: ' . $conn->error . ' (Error Code: ' . $conn->errno . ')';
-            $errors[] = 'Statement Error: ' . $stmt->error . ' (Statement Error Code: ' . $stmt->errno . ')';
-            $errors[] = 'SQL Query: INSERT INTO sensordata (SoilSensorID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (' . 
-                       $soilSensorID . ', ' . ($soilN ?? 'NULL') . ', ' . ($soilP ?? 'NULL') . ', ' . ($soilK ?? 'NULL') . ', ' . ($soilEC ?? 'NULL') . ', ' . ($soilPH ?? 'NULL') . ', ' . ($soilT ?? 'NULL') . ', ' . ($soilMois ?? 'NULL') . ', ' . ($liquidVolume ?? 'NULL') . ', "' . $dateTime . '")';
-            $errors[] = 'SQL Query: INSERT INTO sensordata (SoilSensorID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (' . 
-                       $soilSensorID . ', ' . ($soilN ?? 'NULL') . ', ' . ($soilP ?? 'NULL') . ', ' . ($soilK ?? 'NULL') . ', ' . ($soilEC ?? 'NULL') . ', ' . ($soilPH ?? 'NULL') . ', ' . ($soilT ?? 'NULL') . ', ' . ($soilMois ?? 'NULL') . ', ' . ($liquidVolume ?? 'NULL') . ', "' . $dateTime . '")';
-            $errors[] = 'Bound Values: SensorID=' . $soilSensorID . ', N=' . $bindN . ', P=' . $bindP . ', K=' . $bindK . ', EC=' . $bindEC . ', pH=' . $bindPH . ', T=' . $bindT . ', Moisture=' . $bindMois . ', Flow=' . $bindFlow . ', DateTime=' . $dateTime;
-            $errors[] = 'Original DateTime: ' . ($_POST['dateTime'] ?? 'NOT SET');
-            $errors[] = 'Converted DateTime: ' . $dateTime;
-            $errors[] = 'Data Types: SensorID=' . gettype($soilSensorID) . ', N=' . gettype($bindN) . ', P=' . gettype($bindP) . ', K=' . gettype($bindK) . ', EC=' . gettype($bindEC) . ', pH=' . gettype($bindPH) . ', T=' . gettype($bindT) . ', Moisture=' . gettype($bindMois) . ', Flow=' . gettype($bindVol) . ', DateTime=' . gettype($dateTime);
+            $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, locationID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
             
-            // Additional debugging for constraint issues
-            $errors[] = 'Sensor ID Type: ' . gettype($soilSensorID) . ' (Value: ' . $soilSensorID . ')';
-            $errors[] = 'DateTime Type: ' . gettype($dateTime) . ' (Value: ' . $dateTime . ')';
-            $errors[] = 'Location ID: ' . $locationID;
-            
-            // Check if sensor exists
-            $checkStmt = $conn->prepare('SELECT soilSensorID FROM sensorinfo WHERE soilSensorID = ?');
-            $checkStmt->bind_param('i', $soilSensorID);
-            $checkStmt->execute();
-            $checkResult = $checkStmt->get_result();
-            $errors[] = 'Sensor exists check: ' . ($checkResult->num_rows > 0 ? 'YES' : 'NO') . ' (Rows found: ' . $checkResult->num_rows . ')';
-            $checkStmt->close();
+            $bindN = $soilN ?? null;
+            $bindP = $soilP ?? null;
+            $bindK = $soilK ?? null;
+            $bindEC = $soilEC ?? null;
+            $bindPH = $soilPH ?? null;
+            $bindT = $soilT ?? null;
+            $bindMois = $soilMois ?? null;
+            $bindVol = $liquidVolume ?? null;
+
+            $stmt->bind_param('iiiiiidddds', 
+                $soilSensorID, $locationID, $bindN, $bindP, $bindK, $bindEC, 
+                $bindPH, $bindT, $bindMois, $bindVol, $dateTime
+            );
+
+            if ($stmt->execute()) {
+                $success = 'New sensor data entry added successfully!';
+            } else {
+                $errors[] = 'Insert failed: ' . $stmt->error;
+            }
+            $stmt->close();
         }
-        $stmt->close();
     }
 }
 
