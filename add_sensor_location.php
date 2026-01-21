@@ -21,9 +21,24 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
+// Fetch all locations
+$locations = [];
+$locstmt = $conn->prepare("SELECT * FROM farmlocation");
+$locstmt->execute();
+$locresult = $locstmt->get_result();
+while ($locrow = $locresult->fetch_assoc()) {
+    $locations[] = $locrow;
+}
+$locstmt->close();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $sensorLocation = trim($_POST['sensorLocation'] ?? '');
     $soilSensorID = trim($_POST['soilSensorID'] ?? '');
+
+    if (!empty($_POST['sensorLocation'])) {
+        $sensorLocation = trim($_POST['sensorLocation'] ?? '');
+    } else if (!empty($_POST['sensorLocID'])) {
+        $sensorLocation = trim($_POST['sensorLocID'] ?? '');
+    }
 
     // Validate
     if (!$sensorLocation) {
@@ -209,6 +224,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #999;
         }
 
+        .form-group select {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-group select:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+            background: white;
+        }
+
+        .separator {
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #999;
+        }
+
         .submit-btn {
             width: 100%;
             background: linear-gradient(135deg, #2196F3, #1976D2);
@@ -302,8 +340,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            name="sensorLocation" 
                            class="form-input"
                            placeholder="Enter sensor location (e.g., Field 1, Plot 1)" 
-                           required 
                            value="<?php echo htmlspecialchars($_POST['sensorLocation'] ?? ''); ?>">
+                </div>
+                <div class="separator">OR</div>
+                <div class="form-group">
+                    <select name="sensorLocID" id="sensorLocID">
+                        <option value="">Select an existing location</option>
+                        <?php foreach ($locations as $location): ?>
+                            <option value="<?php echo $location['locationID']; ?>" <?php echo ($_POST['locationID'] ?? '') == $location['locationID'] ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($location['farmName']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="soilSensorID">Sensor *</label>
