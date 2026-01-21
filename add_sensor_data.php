@@ -14,15 +14,17 @@ $success = '';
 $sensors = [];
 $stmt = $conn->prepare('
     SELECT 
+        sd.*,
         s.soilSensorID,
         s.sensorName,
+        fl.locationID,
         COUNT(sd.SensorDataID) AS data_count,
-        MAX(fl.farmName) AS farmName
-    FROM sensorinfo s
-    LEFT JOIN sensordata sd ON s.soilSensorID = sd.SoilSensorID
+        fl.farmName
+    FROM sensordata sd
+    LEFT JOIN sensorinfo s ON s.soilSensorID = sd.SoilSensorID
     LEFT JOIN farmlocation fl ON fl.locationID = sd.locationID
-    GROUP BY s.soilSensorID, s.sensorName
-    ORDER BY s.soilSensorID
+    GROUP BY sd.soilSensorID
+    ORDER BY sd.soilSensorID
 ');
 $stmt->execute();
 $result = $stmt->get_result();
@@ -33,6 +35,7 @@ $stmt->close();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $soilSensorID = (int)trim($_POST['soilSensorID'] ?? '');
+    $locationID = (int)trim($_POST['locationID'] ?? '');
     $soilN = trim($_POST['soilN'] ?? '');
     $soilP = trim($_POST['soilP'] ?? '');
     $soilK = trim($_POST['soilK'] ?? '');
@@ -53,6 +56,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$soilSensorID) {
         $errors[] = 'Sensor ID is required.';
     }
+
+    if (!$locationID) {
+    $errors[] = 'Location ID is required.';
+}
     
     if (!$dateTime) {
         $errors[] = 'Date and time is required.';
@@ -66,7 +73,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $soilPH = ($soilPH === '') ? null : (float)$soilPH;
     $soilT = ($soilT === '') ? null : (float)$soilT;
     $soilMois = ($soilMois === '') ? null : (float)$soilMois;
-    $liquidVolume = ($liquidVolume === '') ? null : (float)$liquidVolume;
     $liquidVolume = ($liquidVolume === '') ? null : (float)$liquidVolume;
     
     // Validate numeric fields
@@ -88,8 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, locationID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         
         // Handle NULL values properly for bind_param
         $bindN = $soilN ?? 0;
@@ -102,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bindVol = $liquidVolume ?? 0.0;
         
         // Verify the exact count and validate all variables
-        $typeString = 'iiiiidddds';
+        $typeString = 'iiiiiidddds';
         // Debug: Show each character and its position
         /* for ($i = 0; $i < strlen($typeString); $i++) {
             $char = $typeString[$i];
@@ -114,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } */
         
         // Validate all variables are defined
-        $allVars = [$soilSensorID, $bindN, $bindP, $bindK, $bindEC, $bindPH, $bindT, $bindMois, $bindVol, $dateTime];
+        $allVars = [$soilSensorID, $locationID, $bindN, $bindP, $bindK, $bindEC, $bindPH, $bindT, $bindMois, $bindVol, $dateTime];
         foreach ($allVars as $i => $var) {
             if (!isset($var)) {
                 die('Variable ' . $i . ' is not set');
@@ -122,7 +127,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         $stmt->bind_param($typeString, 
-            $soilSensorID, 
+            $soilSensorID,
+            $locationID, 
             $bindN, 
             $bindP, 
             $bindK, 
@@ -152,6 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Additional debugging for constraint issues
             $errors[] = 'Sensor ID Type: ' . gettype($soilSensorID) . ' (Value: ' . $soilSensorID . ')';
             $errors[] = 'DateTime Type: ' . gettype($dateTime) . ' (Value: ' . $dateTime . ')';
+            $errors[] = 'Location ID: ' . $locationID;
             
             // Check if sensor exists
             $checkStmt = $conn->prepare('SELECT soilSensorID FROM sensorinfo WHERE soilSensorID = ?');
@@ -193,6 +200,7 @@ $defaultDateTime = date('Y-m-d\TH:i');
         .optional { color: #6c757d; font-size: 0.9em; }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h2>Add Sensor Data</h2>
@@ -231,11 +239,12 @@ $defaultDateTime = date('Y-m-d\TH:i');
                     <select name="soilSensorID" id="soilSensorID" required>
                         <option value="">Select a sensor</option>
                         <?php foreach ($sensors as $sensor): ?>
-                            <option value="<?php echo $sensor['soilSensorID']; ?>" <?php echo ($_POST['soilSensorID'] ?? '') == $sensor['soilSensorID'] ? 'selected' : ''; ?>>
+                            <option value="<?php echo $sensor['soilSensorID']; ?>" data-location="<?php echo $sensor['locationID']; ?>" <?php echo ($_POST['soilSensorID'] ?? '') == $sensor['soilSensorID'] ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($sensor['farmName']); ?> - <?php echo htmlspecialchars($sensor['sensorName']); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    <input type="hidden" name="locationID" id="locationID">
                 </div>
                 
                 <div class="field-group">
@@ -304,5 +313,17 @@ $defaultDateTime = date('Y-m-d\TH:i');
             <a href="sensor_data.php">View All Sensor Data</a>
         </div>
     </div>
+<script>
+    const sensorSelect = document.getElementById('soilSensorID');
+    const locationInput = document.getElementById('locationID');
+
+    function setLocationID() {
+        const selected = sensorSelect.options[sensorSelect.selectedIndex];
+        locationInput.value = selected?.dataset.location || '';
+    }
+
+    sensorSelect.addEventListener('change', setLocationID);
+    setLocationID();
+</script>
 </body>
 </html>
