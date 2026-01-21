@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $namestmt->bind_param('s', $sensorName);
         if ($namestmt->execute()) {
             $sensorID = $conn->insert_id; // Get the auto-generated ID
-            $success = 'Sensor #' . $sensorID . ' added successfully! <a href="add_sensor_location.php">Next, add sensor location</a>';
+            $success = 'Sensor added successfully! <a href="add_sensor_location.php">Next, add sensor location</a>';
             // Refresh sensor data
             $sensors = [];
             $stmt = $conn->prepare("SELECT * FROM sensorinfo");

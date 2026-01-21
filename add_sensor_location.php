@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param('ii', $soilSensorID, $sensorLocationID);
         if ($stmt->execute()) {
             $sensorID = $conn->insert_id; // Get the auto-generated ID
-            $success = 'Sensor #' . $sensorID . ' added successfully! <a href="sensors.php">View all sensors</a> or <a href="add_sensor_data.php">add sensor data</a>.';
+            $success = 'Sensor #' . $soilSensorID . ' added successfully! <a href="sensors.php">View all sensors</a> or <a href="add_sensor_data.php">add sensor data</a>.';
         } else {
             $errors[] = 'Failed to add sensor location: ' . $conn->error . ' (Error Code: ' . $conn->errno . ')';
         }
