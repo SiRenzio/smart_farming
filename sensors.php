@@ -50,22 +50,6 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-$locations = [];
-$locstmt = $conn->prepare('
-    SELECT f.*, 
-           COUNT(sd.locationID) as data_count
-    FROM farmlocation f 
-    LEFT JOIN sensordata sd ON f.locationID = sd.locationID
-    GROUP BY f.locationID
-    ORDER BY f.locationID
-');
-$locstmt->execute();
-$locresult = $locstmt->get_result();
-while ($row = $locresult->fetch_assoc()) {
-    $locations[] = $row;
-}
-$locstmt->close();
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -457,7 +441,7 @@ $locstmt->close();
                                         <i class="fas fa-satellite-dish"></i>
                                     </div>
                                     <div class="sensor-details">
-                                        <h3><?php echo htmlspecialchars($sensor['sensorName']); ?></h3>
+                                        <h3>Sensor #<?php echo htmlspecialchars($sensor['soilSensorID']); ?></h3>
                                     </div>
                                 </div>
                                 <div class="data-count">
@@ -465,7 +449,7 @@ $locstmt->close();
                                 </div>
                             </div>
                             <div class="sensor-location">
-                                <i class="fas fa-map-marker-alt"></i> <strong>Location:</strong> <?php echo htmlspecialchars($sensor['sensorName']); ?>
+                                <i class="fas fa-tag"></i> <strong>Name:</strong> <?php echo htmlspecialchars($sensor['sensorName']); ?>
                             </div>
                             
                             <div class="sensor-actions">
