@@ -417,8 +417,8 @@ if(isset($_POST['delete_data']) && isset($_POST['data_id'])) {
             <div class="icon">
                 <i class="fas fa-satellite-dish"></i>
             </div>
-            <h1><?php echo htmlspecialchars($result['sensorName']); ?></h1>
-            <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($farm['farmName']); ?></p>
+            <h1>Sensor #<?php echo htmlspecialchars($result['soilSensorID']); ?></h1>
+            <p><i class="fas fa-tag"></i> <?php echo htmlspecialchars($result['sensorName']); ?></p>
         </div>
 
         <!-- Navigation Links -->

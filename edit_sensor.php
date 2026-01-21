@@ -12,11 +12,11 @@ if (!$sensorID) {
     header('Location: sensors.php');
     exit;
 }
-$locID = isset($_GET['loc']) ? (int)$_GET['loc'] : 0;
-if (!$locID) {
-    header('Location: sensors.php');
-    exit;
-}
+// $locID = isset($_GET['loc']) ? (int)$_GET['loc'] : 0;
+// if (!$locID) {
+//     header('Location: sensors.php');
+//     exit;
+// }
 
 $errors = [];
 $success = '';
@@ -30,30 +30,30 @@ $sensor = $result->fetch_assoc();
 $stmt->close();
 
 // Fetch sensor location
-$locstmt = $conn->prepare('SELECT * FROM farmlocation WHERE locationID = ?');
-$locstmt->bind_param('i', $locID);
-$locstmt->execute();
-$result = $locstmt->get_result();
-$location = $result->fetch_assoc();
-$locstmt->close();
+// $locstmt = $conn->prepare('SELECT * FROM farmlocation WHERE locationID = ?');
+// $locstmt->bind_param('i', $locID);
+// $locstmt->execute();
+// $result = $locstmt->get_result();
+// $location = $result->fetch_assoc();
+// $locstmt->close();
 
 if (!$sensor) {
     header('Location: sensors.php');
     exit;
 }
-if (!$location) {
-    header('Location: sensors.php');
-    exit;
-}
+// if (!$location) {
+//     header('Location: sensors.php');
+//     exit;
+// }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sensorLocation = trim($_POST['sensorLocation'] ?? '');
     $sensorName = trim($_POST['sensorName'] ?? '');
 
     // Validate
-    if (!$sensorLocation) {
-        $errors[] = 'Sensor location is required.';
-    }
+    // if (!$sensorLocation) {
+    //     $errors[] = 'Sensor location is required.';
+    // }
     if (!$sensorName) {
         $errors[] = 'Sensor name is required';
     }
@@ -75,21 +75,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $updateStmt->close();
 
-        $updatelocStmt = $conn->prepare('UPDATE farmlocation SET farmName = ? WHERE locationID = ?');
-        $updatelocStmt->bind_param('si', $sensorLocation, $locID);
-        if ($updatelocStmt->execute()) {
-            $success = 'Sensor updated successfully!';
-            // Refresh sensor data
-            $locstmt = $conn->prepare('SELECT * FROM farmlocation WHERE locationID = ?');
-            $locstmt->bind_param('i', $locID);
-            $locstmt->execute();
-            $result = $locstmt->get_result();
-            $location = $result->fetch_assoc();
-            $locstmt->close();
-        } else {
-            $errors[] = 'Failed to update sensor: ' . $conn->error . ' (Error Code: ' . $conn->errno . ')';
-        }
-        $updatelocStmt->close();
+        // $updatelocStmt = $conn->prepare('UPDATE farmlocation SET farmName = ? WHERE locationID = ?');
+        // $updatelocStmt->bind_param('si', $sensorLocation, $locID);
+        // if ($updatelocStmt->execute()) {
+        //     $success = 'Sensor updated successfully!';
+        //     // Refresh sensor data
+        //     $locstmt = $conn->prepare('SELECT * FROM farmlocation WHERE locationID = ?');
+        //     $locstmt->bind_param('i', $locID);
+        //     $locstmt->execute();
+        //     $result = $locstmt->get_result();
+        //     $location = $result->fetch_assoc();
+        //     $locstmt->close();
+        // } else {
+        //     $errors[] = 'Failed to update sensor: ' . $conn->error . ' (Error Code: ' . $conn->errno . ')';
+        // }
+        // $updatelocStmt->close();
     }
 }
 ?>
@@ -365,7 +365,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     value="<?php echo htmlspecialchars($sensor['sensorName']); ?>"
                 >
             </div>
-            <div class="form-group">
+            <!-- <div class="form-group">
                 <label for="sensorLocation">
                     <i class="fas fa-map-marker-alt"></i> Sensor Location
                 </label>
@@ -377,7 +377,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     required 
                     value="<?php echo htmlspecialchars($location['farmName']); ?>"
                 >
-            </div>
+            </div> -->
             
             <button type="submit" class="submit-btn">
                 <i class="fas fa-save"></i> Update Sensor
