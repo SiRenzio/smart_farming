@@ -10,6 +10,7 @@ if (!isset($_SESSION['userID'])) {
 $errors = [];
 $success = '';
 $sensorLocationID = 0;
+$sensorLocation = '';
 
 // Fetch all sensors
 $sensors = [];

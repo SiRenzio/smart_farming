@@ -293,7 +293,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            id="sensorName"
                            name="sensorName" 
                            class="form-input"
-                           placeholder="Enter sensor name (e.g., pH Sensor, Temperature Sensor)" 
+                           placeholder="Enter sensor name (e.g., Sensor A, Sensor B)" 
                            required 
                            value="<?php echo htmlspecialchars($_POST['sensorName'] ?? ''); ?>">
                 </div>
