@@ -10,7 +10,7 @@ if (!isset($_SESSION['userID'])) {
 $errors = [];
 $success = '';
 
-// 1. Fetch available SENSORS for the first dropdown
+// Fetch available SENSORS for the first dropdown
 $sensors = [];
 $sensorQuery = $conn->query("SELECT * FROM sensorinfo ORDER BY sensorName ASC");
 if ($sensorQuery) {
@@ -19,7 +19,7 @@ if ($sensorQuery) {
     }
 }
 
-// 2. Fetch available LOCATIONS for the second dropdown
+// Fetch available LOCATIONS for the second dropdown
 $locations = [];
 $locationQuery = $conn->query("SELECT * FROM farmlocation ORDER BY farmName ASC");
 if ($locationQuery) {
@@ -62,7 +62,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($soilMois !== null && ($soilMois < 0 || $soilMois > 100)) $errors[] = 'Soil moisture must be 0-100%.';
 
     if (!$errors) {
-        // Logic to check if we should update the previous record (fill gaps) or insert new
         $checkStmt = $conn->prepare("SELECT * FROM sensordata WHERE SoilSensorID = ? ORDER BY DateTime DESC LIMIT 1");
         $checkStmt->bind_param("i", $soilSensorID);
         $checkStmt->execute();
@@ -86,8 +85,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $canUpdate = true;
             $hasNewData = false;
 
-            // Only update if the location matches the previous record to avoid data confusion
-            // If location changed, we force an INSERT
             if ($lastRow['locationID'] != $locationID) {
                 $canUpdate = false;
             }
@@ -138,7 +135,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->close();
 
         } else {
-            // INSERT LOGIC (Includes both soilSensorID and locationID)
             $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, locationID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
             
             $bindN = $soilN ?? null;

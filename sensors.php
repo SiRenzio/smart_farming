@@ -21,51 +21,79 @@ if (isset($_POST['delete_data']) && isset($_POST['data_id'])) {
     $deleteStmt->close();
 }
 
-// fetch data base on filter button inputs
+// Pagination
 
+$limit = 15;
+$page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) $page = 1;
+$offset = ($page - 1) * $limit;
+
+// filters
 $filterSensor = $_GET['sensor'] ?? '';
 $filterLocation = $_GET['location'] ?? '';
 $filterDateFrom = $_GET['dateFrom'] ?? '';
 $filterDateTo = $_GET['dateTo'] ?? '';
 
-$sql = "SELECT sd.*, si.sensorName, fl.farmName, fl.locationID 
-        FROM sensordata sd 
-        LEFT JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID 
-        LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID 
-        WHERE 1=1"; 
-
+$whereSQL = " WHERE 1=1";
 $params = [];
 $types = "";
 
 if (!empty($filterSensor)) {
-    $sql .= " AND sd.SoilSensorID = ?";
+    $whereSQL .= " AND sd.SoilSensorID = ?";
     $params[] = $filterSensor;
     $types .= "i";
 }
 
 if (!empty($filterLocation)) {
-    $sql .= " AND sd.locationID = ?";
+    $whereSQL .= " AND sd.locationID = ?";
     $params[] = $filterLocation;
     $types .= "i";
 }
 
 if (!empty($filterDateFrom)) {
-    $sql .= " AND sd.DateTime >= ?";
+    $whereSQL .= " AND sd.DateTime >= ?";
     $params[] = $filterDateFrom;
     $types .= "s";
 }
 
 if (!empty($filterDateTo)) {
-    $sql .= " AND sd.DateTime <= ?";
+    $whereSQL .= " AND sd.DateTime <= ?";
     $params[] = $filterDateTo;
     $types .= "s";
 }
 
-$sql .= " ORDER BY sd.DateTime DESC";
+// fetch data for pagination
+$countSql = "SELECT COUNT(*) as total 
+             FROM sensordata sd 
+             LEFT JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID 
+             LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID" 
+             . $whereSQL;
 
+$stmtCount = $conn->prepare($countSql);
+if (!empty($params)) {
+    $stmtCount->bind_param($types, ...$params);
+}
+$stmtCount->execute();
+$countResult = $stmtCount->get_result();
+$totalRows = $countResult->fetch_assoc()['total'];
+$totalPages = ceil($totalRows / $limit);
+$stmtCount->close();
+
+// fetch data for dropdown
+$sql = "SELECT sd.*, si.sensorName, fl.farmName, fl.locationID 
+        FROM sensordata sd 
+        LEFT JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID 
+        LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID"
+        . $whereSQL;
+
+$sql .= " ORDER BY sd.DateTime DESC LIMIT ? OFFSET ?";
+
+// Add limit and offset to params
+$params[] = $limit;
+$params[] = $offset;
+$types .= "ii";
 
 $stmt = $conn->prepare($sql);
-
 if (!empty($params)) {
     $stmt->bind_param($types, ...$params);
 }
@@ -96,6 +124,14 @@ if($locQuery) {
         $locationsList[] = $row;
     }
 }
+
+// Helper to keep filters in URL
+function getFilterParams($excludePage = true) {
+    $params = $_GET;
+    if ($excludePage) unset($params['page']);
+    return http_build_query($params);
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -143,7 +179,13 @@ if($locQuery) {
         .filter label { font-weight: 500; margin-bottom: 0.3rem; color: #333; }
         .filter select, .filter input { padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; transition: all 0.3s ease; min-width: 180px; }
         .filter select:hover, .filter input:hover { border-color: #667eea; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2); }
- 
+        .pagination-container { display: flex; justify-content: center; align-item: center; margin-top: 2rem; gap: 5px}
+        .pagination-link { display: flex; align-item: center; justify-content: center; min-width: 40px; height: 40px; background: rgba(255, 255, 255, 0.9); padding: 0.5rem 0.5rem; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; color: #555; font-weight: 600; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .pagination-link { font-size: 1.1rem;}
+        .pagination-link:hover { background: white; color: #667eea; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-decoration: none; }
+        .pagination-link.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-color: transparent; box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3); }
+        .pagination-link.disabled { background: rgba(255, 255, 255, 0.5); color: #aaa; cursor: not-allowed; pointer-events: none; }
+        .pagination-info { text-align: center; margin-top: 1rem; color: rgba(14, 0, 0, 0.9); font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -282,6 +324,42 @@ if($locQuery) {
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+
+                <?php if ($totalPages > 1): ?>
+                    <div class="pagination-container">
+                        <?php
+                            $queryParams = getFilterParams(); 
+                            $maxButtons = 5;
+                            $startPage = max(1, $page - 2);
+                            $endPage = min($totalPages, $startPage + $maxButtons - 1);
+                            
+                            // Adjust if we are near the end
+                            if ($endPage - $startPage < $maxButtons - 1) {
+                                $startPage = max(1, $endPage - $maxButtons + 1);
+                            }
+                        ?>
+
+                        <a href="?<?php echo $queryParams; ?>&page=<?php echo max(1, $page - 1); ?>" 
+                           class="pagination-link <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                           <i class="fa fa-chevron-circle-left"></i>
+                        </a>
+
+                        <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                            <a href="?<?php echo $queryParams; ?>&page=<?php echo $i; ?>" 
+                               class="pagination-link <?php echo ($i == $page) ? 'active' : ''; ?>">
+                               <?php echo $i; ?>
+                            </a>
+                        <?php endfor; ?>
+
+                        <a href="?<?php echo $queryParams; ?>&page=<?php echo min($totalPages, $page + 1); ?>" 
+                           class="pagination-link <?php echo ($page >= $totalPages) ? 'disabled' : ''; ?>">
+                           <i class="	fa fa-chevron-circle-right"></i>
+                        </a>
+                    </div>
+                    <div class="pagination-info">
+                        Showing page <?php echo $page; ?> of <?php echo $totalPages; ?>
+                    </div>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>
