@@ -1,12 +1,12 @@
 <?php
 session_start();
+require_once 'db.php';
+
 if (!isset($_SESSION['userID'])) {
     header('Location: login.php');
     exit;
 }
 $username = htmlspecialchars($_SESSION['username']);
-
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -505,7 +505,7 @@ $username = htmlspecialchars($_SESSION['username']);
 
                 <div class="tanks-wrapper">
                     <div class="tank-card">
-                        <div class="tank" data-level="65">
+                        <div class="tank" data-level="<?php echo $tank1result['currentliquidlevel']; ?>">
                             <div class="glass-glare"></div>
                             <div class="measurement">
                                 <div></div><div></div><div></div><div></div><div></div>
@@ -526,11 +526,11 @@ $username = htmlspecialchars($_SESSION['username']);
                             </div>
                             <span class="level-text"></span>
                         </div>
-                        <div class="tank-name">Tank 1</div>
+                        <div class="tank-name"><?php echo $tankName1result['liquidtankname']; ?></div>
                     </div>
 
                     <div class="tank-card">
-                        <div class="tank" data-level="50">
+                        <div class="tank" data-level="45">
                             <div class="glass-glare"></div>
                             <div class="measurement">
                                 <div></div><div></div><div></div><div></div><div></div>
@@ -551,11 +551,11 @@ $username = htmlspecialchars($_SESSION['username']);
                             </div>
                             <span class="level-text"></span>
                         </div>
-                        <div class="tank-name">Tank 2</div>
+                        <div class="tank-name"><?php echo $tankName2result['liquidtankname']; ?></div>
                     </div>
 
                     <div class="tank-card">
-                        <div class="tank" data-level="80">
+                        <div class="tank" data-level="<?php echo $tank3result['currentliquidlevel']; ?>">
                             <div class="glass-glare"></div>
                             <div class="measurement">
                                 <div></div><div></div><div></div><div></div><div></div>
@@ -576,7 +576,7 @@ $username = htmlspecialchars($_SESSION['username']);
                             </div>
                             <span class="level-text"></span>
                         </div>
-                        <div class="tank-name">Tank 3</div>
+                        <div class="tank-name"><?php echo $tankName3result['liquidtankname']; ?></div>
                     </div>
                 </div> 
             </div>
