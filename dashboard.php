@@ -683,19 +683,22 @@ function updateTank(sensorID, newLevel) {
     const water = tank.querySelector('.water');
     const text  = tank.querySelector('.level-text');
 
-    const oldLevel = parseInt(tank.dataset.level || 0);
+    const oldLevel = parseInt(tank.dataset.level ?? -1);
     if (oldLevel === newLevel) return;
 
     tank.dataset.level = newLevel;
-    water.style.height = newLevel + '%';
 
-    let current = oldLevel;
-    const step = newLevel > oldLevel ? 1 : -1;
+    const VISUAL_MAX = 80; // 🔧 tweak if needed
+    const visualHeight = (newLevel / 100) * VISUAL_MAX;
+
+    water.style.height = visualHeight + '%';
+
+    let current = oldLevel < 0 ? 0 : oldLevel;
+    const step = current < newLevel ? 1 : -1;
 
     const counter = setInterval(() => {
         current += step;
         text.innerText = current + '%';
-
         if (current === newLevel) clearInterval(counter);
     }, 15);
 }
@@ -712,33 +715,38 @@ function fetchLiquidLevel() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const WAVE_HEIGHT = 40; // must match CSS
-
-    document.querySelectorAll('.tank').forEach(tank => {
-        const level = parseFloat(tank.dataset.level);
-        const water = tank.querySelector('.water');
-        const text = tank.querySelector('.level-text');
-
-        const tankHeight = tank.clientHeight;
-        const usableHeight = tankHeight - WAVE_HEIGHT;
-
-        const pixelHeight = (level / 100) * usableHeight;
-
-        water.style.height = pixelHeight + 'px';
-
-        // Smooth counter
-        let current = 0;
-        const interval = setInterval(() => {
-            if (current >= level) {
-                clearInterval(interval);
-                text.textContent = level + '%';
-            } else {
-                current++;
-                text.textContent = current + '%';
-            }
-        }, 20);
-    });
+    fetchLiquidLevel();
+    setInterval(fetchLiquidLevel, 2000);
 });
+
+// document.addEventListener('DOMContentLoaded', () => {
+//     const WAVE_HEIGHT = 40; // must match CSS
+
+//     document.querySelectorAll('.tank').forEach(tank => {
+//         const level = parseFloat(tank.dataset.level);
+//         const water = tank.querySelector('.water');
+//         const text = tank.querySelector('.level-text');
+
+//         const tankHeight = tank.clientHeight;
+//         const usableHeight = tankHeight - WAVE_HEIGHT;
+
+//         const pixelHeight = (level / 100) * usableHeight;
+
+//         water.style.height = pixelHeight + 'px';
+
+//         // Smooth counter
+//         let current = 0;
+//         const interval = setInterval(() => {
+//             if (current >= level) {
+//                 clearInterval(interval);
+//                 text.textContent = level + '%';
+//             } else {
+//                 current++;
+//                 text.textContent = current + '%';
+//             }
+//         }, 20);
+//     });
+// });
 </script>
 </body>
 </html> 
