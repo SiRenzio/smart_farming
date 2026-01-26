@@ -7,6 +7,20 @@ if (!isset($_SESSION['userID'])) {
     exit;
 }
 
+// Fetch tank data from the database
+$tank1stmt = $conn->prepare('SELECT currentliquidlevel FROM liquidlevelsensor WHERE liquidsensorID = 1 ORDER BY dateandtime DESC LIMIT 1');
+$tank1stmt->execute();
+$tank1 = $tank1stmt->get_result()->fetch_assoc();
+
+$tank2stmt = $conn->prepare('SELECT currentliquidlevel FROM liquidlevelsensor WHERE liquidsensorID = 2 ORDER BY dateandtime DESC LIMIT 1');
+$tank2stmt->execute();
+$tank2 = $tank2stmt->get_result()->fetch_assoc();
+
+$tank3stmt = $conn->prepare('SELECT currentliquidlevel FROM liquidlevelsensor WHERE liquidsensorID = 3 ORDER BY dateandtime DESC LIMIT 1');
+$tank3stmt->execute();
+$tank3 = $tank3stmt->get_result()->fetch_assoc();
+
+
 ?>
 
 <!DOCTYPE html>
@@ -177,7 +191,7 @@ if (!isset($_SESSION['userID'])) {
         <div class="tank-container">
 
             <div class="tank-card">
-                <div class="tank" data-level="65">
+                <div class="tank" data-level="<?php echo htmlspecialchars($tank1['currentliquidlevel']); ?>">
                     <div class="water">
                         <span class="level-text"></span>
                         <div class="wave">
@@ -192,7 +206,7 @@ if (!isset($_SESSION['userID'])) {
             
 
             <div class="tank-card">
-                <div class="tank" data-level="65">
+                <div class="tank" data-level="<?php echo htmlspecialchars($tank2['currentliquidlevel']); ?>">
                     <div class="water">
                         <span class="level-text"></span>
                         <div class="wave">
@@ -206,7 +220,7 @@ if (!isset($_SESSION['userID'])) {
             </div>
 
             <div class="tank-card">
-                <div class="tank" data-level="65">
+                <div class="tank" data-level="<?php echo htmlspecialchars($tank3['currentliquidlevel']); ?>">
                     <div class="water">
                         <span class="level-text"></span>
                         <div class="wave">
