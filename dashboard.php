@@ -452,7 +452,6 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
-            /* Keep tanks horizontal on tablet */
             .tank-card {
                 flex: 1 1 70px;
                 min-width: 70px;
@@ -468,7 +467,6 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
             .stats-grid {
                 grid-template-columns: 1fr;
             }
-            /* Keep tanks horizontal on mobile */
             .tanks-wrapper {
                 gap: 0.5rem;
             }
@@ -688,7 +686,7 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const WAVE_HEIGHT = 40; // must match CSS
+    const WAVE_HEIGHT = 40;
 
     document.querySelectorAll('.tank').forEach(tank => {
         const level = parseFloat(tank.dataset.level);
@@ -702,7 +700,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         water.style.height = pixelHeight + 'px';
 
-        // Smooth counter
         let current = 0;
         const interval = setInterval(() => {
             if (current >= level) {
