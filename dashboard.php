@@ -686,33 +686,35 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const tanks = document.querySelectorAll('.tank');
-            
-            tanks.forEach(tank => {
-                const level = tank.getAttribute('data-level');
-                const water = tank.querySelector('.water');
-                const text = tank.querySelector('.level-text');
-                
-                // Set water height
-                setTimeout(() => {
-                    water.style.height = level + '%';
-                }, 100);
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const WAVE_HEIGHT = 40; // must match CSS
 
-                // Animate text counter
-                let currentLevel = 0;
-                const interval = setInterval(() => {
-                    if (currentLevel >= level) {
-                        clearInterval(interval);
-                        text.innerText = level + '%';
-                    } else {
-                        currentLevel++;
-                        text.innerText = currentLevel + '%';
-                    }
-                }, 20);
-            });
-        });
-    </script>
+    document.querySelectorAll('.tank').forEach(tank => {
+        const level = parseFloat(tank.dataset.level);
+        const water = tank.querySelector('.water');
+        const text = tank.querySelector('.level-text');
+
+        const tankHeight = tank.clientHeight;
+        const usableHeight = tankHeight - WAVE_HEIGHT;
+
+        const pixelHeight = (level / 100) * usableHeight;
+
+        water.style.height = pixelHeight + 'px';
+
+        // Smooth counter
+        let current = 0;
+        const interval = setInterval(() => {
+            if (current >= level) {
+                clearInterval(interval);
+                text.textContent = level + '%';
+            } else {
+                current++;
+                text.textContent = current + '%';
+            }
+        }, 20);
+    });
+});
+</script>
 </body>
 </html> 
