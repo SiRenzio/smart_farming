@@ -5,6 +5,8 @@ if (!isset($_SESSION['userID'])) {
     exit;
 }
 $username = htmlspecialchars($_SESSION['username']);
+
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -270,16 +272,19 @@ $username = htmlspecialchars($_SESSION['username']);
 
         .tanks-wrapper {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            justify-content: space-around;
+            align-items: flex-end;
             gap: 1rem;
             width: 100%;
             margin-top: 1rem;
+            flex-wrap: wrap;
         }
 
         .tank-card {
             text-align: center;
-            flex: 1; 
+            flex: 1 1 80px;
+            min-width: 80px;
+            max-width: 150px;
         }
 
         .tank-name {
@@ -290,9 +295,7 @@ $username = htmlspecialchars($_SESSION['username']);
 
         .tank {
             position: relative;
-            width: 100%;
-            max-width: 80px; 
-            height: 120px;
+            width: 70%;
             margin: auto;
             background: rgba(255, 255, 255, 0.3);
             border: 2px solid rgba(255, 255, 255, 0.8);
@@ -303,6 +306,7 @@ $username = htmlspecialchars($_SESSION['username']);
                 0 10px 20px rgba(0,0,0,0.1);
             overflow: hidden;
             z-index: 1;
+            aspect-ratio: 4 / 5;
         }
 
         .measurement {
@@ -421,10 +425,11 @@ $username = htmlspecialchars($_SESSION['username']);
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
-            /* Stack tanks on mobile */
-            .tanks-wrapper {
-                flex-direction: column;
-                align-items: center;
+            /* Keep tanks horizontal on tablet */
+            .tank-card {
+                flex: 1 1 70px;
+                min-width: 70px;
+                max-width: 120px;
             }
         }
 
@@ -435,6 +440,21 @@ $username = htmlspecialchars($_SESSION['username']);
             }
             .stats-grid {
                 grid-template-columns: 1fr;
+            }
+            /* Keep tanks horizontal on mobile */
+            .tanks-wrapper {
+                gap: 0.5rem;
+            }
+            .tank-card {
+                flex: 1 1 60px;
+                min-width: 60px;
+                max-width: 100px;
+            }
+            .tank-name {
+                font-size: 0.85rem;
+            }
+            .level-text {
+                font-size: 0.8rem;
             }
         }
     </style>
@@ -510,7 +530,7 @@ $username = htmlspecialchars($_SESSION['username']);
                     </div>
 
                     <div class="tank-card">
-                        <div class="tank" data-level="45">
+                        <div class="tank" data-level="50">
                             <div class="glass-glare"></div>
                             <div class="measurement">
                                 <div></div><div></div><div></div><div></div><div></div>
