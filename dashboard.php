@@ -7,6 +7,20 @@ if (!isset($_SESSION['userID'])) {
     exit;
 }
 $username = htmlspecialchars($_SESSION['username']);
+
+// Fetch name of tanks
+$tankName1stmt = $conn->prepare('SELECT liquidtankname FROM liquidsensorinfo WHERE liquidsensorID = 1');
+$tankName1stmt->execute();
+$tankName1result = $tankName1stmt->get_result()->fetch_assoc();
+
+$tankName2stmt = $conn->prepare('SELECT liquidtankname FROM liquidsensorinfo WHERE liquidsensorID = 2');
+$tankName2stmt->execute();
+$tankName2result = $tankName2stmt->get_result()->fetch_assoc();
+
+$tankName3stmt = $conn->prepare('SELECT liquidtankname FROM liquidsensorinfo WHERE liquidsensorID = 3');
+$tankName3stmt->execute();
+$tankName3result = $tankName3stmt->get_result()->fetch_assoc();
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
