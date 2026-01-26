@@ -1,10 +1,38 @@
 <?php
 session_start();
+require_once 'db.php';
+
 if (!isset($_SESSION['userID'])) {
     header('Location: login.php');
     exit;
 }
 $username = htmlspecialchars($_SESSION['username']);
+
+// Fetch current liquid levels from the database for each tank
+$tank1stmt = $conn->prepare('SELECT currentliquidlevel FROM liquidlevelsensor WHERE liquidsensorID = 1 ORDER BY dateandtime DESC LIMIT 1');
+$tank1stmt->execute();
+$tank1result = $tank1stmt->get_result()->fetch_assoc();
+
+$tank2stmt = $conn->prepare('SELECT currentliquidlevel FROM liquidlevelsensor WHERE liquidsensorID = 2 ORDER BY dateandtime DESC LIMIT 1');
+$tank2stmt->execute();
+$tank2result = $tank2stmt->get_result()->fetch_assoc();
+
+$tank3stmt = $conn->prepare('SELECT currentliquidlevel FROM liquidlevelsensor WHERE liquidsensorID = 3 ORDER BY dateandtime DESC LIMIT 1');
+$tank3stmt->execute();
+$tank3result = $tank3stmt->get_result()->fetch_assoc();
+
+// Fetch name of tanks
+$tankName1stmt = $conn->prepare('SELECT liquidtankname FROM liquidsensorinfo WHERE liquidsensorID = 1');
+$tankName1stmt->execute();
+$tankName1result = $tankName1stmt->get_result()->fetch_assoc();
+
+$tankName2stmt = $conn->prepare('SELECT liquidtankname FROM liquidsensorinfo WHERE liquidsensorID = 2');
+$tankName2stmt->execute();
+$tankName2result = $tankName2stmt->get_result()->fetch_assoc();
+
+$tankName3stmt = $conn->prepare('SELECT liquidtankname FROM liquidsensorinfo WHERE liquidsensorID = 3');
+$tankName3stmt->execute();
+$tankName3result = $tankName3stmt->get_result()->fetch_assoc();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -485,7 +513,7 @@ $username = htmlspecialchars($_SESSION['username']);
 
                 <div class="tanks-wrapper">
                     <div class="tank-card">
-                        <div class="tank" data-level="65">
+                        <div class="tank" data-level="<?php echo $tank1result['currentliquidlevel']; ?>">
                             <div class="glass-glare"></div>
                             <div class="measurement">
                                 <div></div><div></div><div></div><div></div><div></div>
@@ -506,11 +534,11 @@ $username = htmlspecialchars($_SESSION['username']);
                             </div>
                             <span class="level-text"></span>
                         </div>
-                        <div class="tank-name">Tank 1</div>
+                        <div class="tank-name"><?php echo $tankName1result['liquidtankname']; ?></div>
                     </div>
 
                     <div class="tank-card">
-                        <div class="tank" data-level="45">
+                        <div class="tank" data-level="<?php echo $tank2result['currentliquidlevel']; ?>">
                             <div class="glass-glare"></div>
                             <div class="measurement">
                                 <div></div><div></div><div></div><div></div><div></div>
@@ -531,11 +559,11 @@ $username = htmlspecialchars($_SESSION['username']);
                             </div>
                             <span class="level-text"></span>
                         </div>
-                        <div class="tank-name">Tank 2</div>
+                        <div class="tank-name"><?php echo $tankName2result['liquidtankname']; ?></div>
                     </div>
 
                     <div class="tank-card">
-                        <div class="tank" data-level="80">
+                        <div class="tank" data-level="<?php echo $tank3result['currentliquidlevel']; ?>">
                             <div class="glass-glare"></div>
                             <div class="measurement">
                                 <div></div><div></div><div></div><div></div><div></div>
@@ -556,7 +584,7 @@ $username = htmlspecialchars($_SESSION['username']);
                             </div>
                             <span class="level-text"></span>
                         </div>
-                        <div class="tank-name">Tank 3</div>
+                        <div class="tank-name"><?php echo $tankName3result['liquidtankname']; ?></div>
                     </div>
                 </div> 
             </div>
