@@ -59,3 +59,26 @@ CREATE TABLE sensordata (
     FOREIGN KEY (SoilSensorID) REFERENCES sensorinfo(soilSensorID),
     FOREIGN KEY (locationID) REFERENCES farmlocation(locationID)
 );
+
+-- Create the 'liquidsensorinfo' table
+CREATE TABLE liquidsensorinfo (
+    liquidsensorID INT(15) AUTO_INCREMENT PRIMARY KEY,
+    liquidtankname VARCHAR(50)
+);
+
+-- Create the 'liquidlevelsensor' table
+CREATE TABLE liquidlevelsensor (
+    liquidsensorreadID INT(15) AUTO_INCREMENT PRIMARY KEY,
+    liquidsensorID INT(15),
+    currentliquidlevel INT(15),
+    dateandtime TIMESTAMP
+);
+
+-- Create the 'tankpumpevent' table
+CREATE TABLE tankpumpevent (
+    tankpumpventID INT(15) AUTO_INCREMENT PRIMARY KEY,
+    liquidsensorID INT(15),
+    wateringstatus TINYINT(1),
+    wateringvolume FLOAT,
+    dateandtime TIMESTAMP
+);
