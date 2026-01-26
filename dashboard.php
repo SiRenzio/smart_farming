@@ -7,6 +7,32 @@ if (!isset($_SESSION['userID'])) {
     exit;
 }
 $username = htmlspecialchars($_SESSION['username']);
+
+// Fetch current liquid levels from the database for each tank
+$tank1stmt = $conn->prepare('SELECT currentliquidlevel FROM liquidlevelsensor WHERE liquidsensorID = 1 ORDER BY dateandtime DESC LIMIT 1');
+$tank1stmt->execute();
+$tank1result = $tank1stmt->get_result()->fetch_assoc();
+
+$tank2stmt = $conn->prepare('SELECT currentliquidlevel FROM liquidlevelsensor WHERE liquidsensorID = 2 ORDER BY dateandtime DESC LIMIT 1');
+$tank2stmt->execute();
+$tank2result = $tank2stmt->get_result()->fetch_assoc();
+
+$tank3stmt = $conn->prepare('SELECT currentliquidlevel FROM liquidlevelsensor WHERE liquidsensorID = 3 ORDER BY dateandtime DESC LIMIT 1');
+$tank3stmt->execute();
+$tank3result = $tank3stmt->get_result()->fetch_assoc();
+
+// Fetch name of tanks
+$tankName1stmt = $conn->prepare('SELECT liquidtankname FROM liquidsensorinfo WHERE liquidsensorID = 1');
+$tankName1stmt->execute();
+$tankName1result = $tankName1stmt->get_result()->fetch_assoc();
+
+$tankName2stmt = $conn->prepare('SELECT liquidtankname FROM liquidsensorinfo WHERE liquidsensorID = 2');
+$tankName2stmt->execute();
+$tankName2result = $tankName2stmt->get_result()->fetch_assoc();
+
+$tankName3stmt = $conn->prepare('SELECT liquidtankname FROM liquidsensorinfo WHERE liquidsensorID = 3');
+$tankName3stmt->execute();
+$tankName3result = $tankName3stmt->get_result()->fetch_assoc();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -288,14 +314,15 @@ $username = htmlspecialchars($_SESSION['username']);
         }
 
         .tank-name {
-            margin-top: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
             font-weight: 600;
             color: #1976D2;
         }
 
         .tank {
             position: relative;
-            width: 70%;
+            width: 65%;
             margin: auto;
             background: rgba(255, 255, 255, 0.3);
             border: 2px solid rgba(255, 255, 255, 0.8);
@@ -472,6 +499,7 @@ $username = htmlspecialchars($_SESSION['username']);
                 </a>
             </div>
         </div>
+        
 
         <div class="dashboard-grid">
 
@@ -530,7 +558,7 @@ $username = htmlspecialchars($_SESSION['username']);
                     </div>
 
                     <div class="tank-card">
-                        <div class="tank" data-level="45">
+                        <div class="tank" data-level="<?php echo $tank2result['currentliquidlevel']; ?>">
                             <div class="glass-glare"></div>
                             <div class="measurement">
                                 <div></div><div></div><div></div><div></div><div></div>
@@ -660,27 +688,29 @@ $username = htmlspecialchars($_SESSION['username']);
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const tanks = document.querySelectorAll('.tank');
-            
-            tanks.forEach(tank => {
-                const level = tank.getAttribute('data-level');
+            const WAVE_HEIGHT = 40;
+
+            document.querySelectorAll('.tank').forEach(tank => {
+                const level = parseFloat(tank.dataset.level);
                 const water = tank.querySelector('.water');
                 const text = tank.querySelector('.level-text');
-                
-                // Set water height
-                setTimeout(() => {
-                    water.style.height = level + '%';
-                }, 100);
 
-                // Animate text counter
-                let currentLevel = 0;
+                const tankHeight = tank.clientHeight;
+                const usableHeight = tankHeight - WAVE_HEIGHT;
+
+                const pixelHeight = (level / 100) * usableHeight;
+
+                water.style.height = pixelHeight + 'px';
+
+                // Smooth counter
+                let current = 0;
                 const interval = setInterval(() => {
-                    if (currentLevel >= level) {
+                    if (current >= level) {
                         clearInterval(interval);
-                        text.innerText = level + '%';
+                        text.textContent = level + '%';
                     } else {
-                        currentLevel++;
-                        text.innerText = currentLevel + '%';
+                        current++;
+                        text.textContent = current + '%';
                     }
                 }, 20);
             });
