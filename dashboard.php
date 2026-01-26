@@ -688,7 +688,7 @@ function updateTank(sensorID, newLevel) {
 
     tank.dataset.level = newLevel;
 
-    const VISUAL_MAX = 80; // 🔧 tweak if needed
+    const VISUAL_MAX = 80;
     const visualHeight = (newLevel / 100) * VISUAL_MAX;
 
     water.style.height = visualHeight + '%';
@@ -718,35 +718,6 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchLiquidLevel();
     setInterval(fetchLiquidLevel, 2000);
 });
-
-// document.addEventListener('DOMContentLoaded', () => {
-//     const WAVE_HEIGHT = 40; // must match CSS
-
-//     document.querySelectorAll('.tank').forEach(tank => {
-//         const level = parseFloat(tank.dataset.level);
-//         const water = tank.querySelector('.water');
-//         const text = tank.querySelector('.level-text');
-
-//         const tankHeight = tank.clientHeight;
-//         const usableHeight = tankHeight - WAVE_HEIGHT;
-
-//         const pixelHeight = (level / 100) * usableHeight;
-
-//         water.style.height = pixelHeight + 'px';
-
-//         // Smooth counter
-//         let current = 0;
-//         const interval = setInterval(() => {
-//             if (current >= level) {
-//                 clearInterval(interval);
-//                 text.textContent = level + '%';
-//             } else {
-//                 current++;
-//                 text.textContent = current + '%';
-//             }
-//         }, 20);
-//     });
-// });
 </script>
 </body>
 </html> 
