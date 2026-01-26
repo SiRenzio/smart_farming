@@ -91,6 +91,23 @@ $username = htmlspecialchars($_SESSION['username']);
             gap: 2rem;
             margin-bottom: 2rem;
         }
+        
+        @media (min-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .span-2 {
+                grid-column: span 2;
+            }
+        }
+        @media (max-width: 1023px) and (min-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .span-2 {
+                grid-column: span 2;
+            }
+        }
 
         .dashboard-card {
             background: rgba(255, 255, 255, 0.95);
@@ -102,6 +119,9 @@ $username = htmlspecialchars($_SESSION['username']);
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .dashboard-card::before {
@@ -126,8 +146,8 @@ $username = htmlspecialchars($_SESSION['username']);
         }
 
         .card-icon {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 70px;
             border-radius: 15px;
             display: flex;
             align-items: center;
@@ -135,6 +155,7 @@ $username = htmlspecialchars($_SESSION['username']);
             margin-right: 1rem;
             font-size: 1.5rem;
             color: white;
+            flex-shrink: 0;
         }
 
         .icon-plant { background: linear-gradient(135deg, #4CAF50, #45a049); }
@@ -214,26 +235,196 @@ $username = htmlspecialchars($_SESSION['username']);
             font-weight: 500;
         }
 
+        /* --- WATER TANK LAYOUT --- */
+        .tank-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .tank-container::before {
+             content: '';
+             position: absolute;
+             top: 0;
+             left: 0;
+             right: 0;
+             height: 4px;
+             background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        
+        .tank-container:hover {
+             transform: translateY(-10px);
+             box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+             transition: all 0.3s ease;
+        }
+
+        .tanks-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .tank-card {
+            text-align: center;
+            flex: 1; 
+        }
+
+        .tank-name {
+            margin-top: 1rem;
+            font-weight: 600;
+            color: #1976D2;
+        }
+
+        .tank {
+            position: relative;
+            width: 100%;
+            max-width: 80px; 
+            height: 120px;
+            margin: auto;
+            background: rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            box-shadow: 
+                inset 15px 0 20px rgba(0,0,0,0.05),
+                inset -15px 0 20px rgba(0,0,0,0.05),
+                0 10px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .measurement {
+            position: absolute;
+            right: 15px;
+            top: 20px;
+            bottom: 20px;
+            width: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 4;
+            opacity: 0.4;
+        }
+        .measurement div {
+            width: 100%;
+            height: 1px;
+            background: #333;
+        }
+        .measurement div:nth-child(5n) {
+            width: 150%;
+            margin-left: -50%;
+            height: 2px;
+            background: #000;
+        }
+
+        .glass-glare {
+            position: absolute;
+            top: 0; left: 20px;
+            width: 30px;
+            height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0.1), rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .water {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0; 
+            background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+            transition: height 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 2;
+        }
+
+        .wave-container {
+            position: absolute;
+            top: -40px; 
+            left: 0;
+            width: 100%;
+            height: 40px;
+            overflow: hidden;
+        }
+
+        .waves-svg {
+            width: 200%;
+            height: 100%;
+        }
+
+        .wave-path {
+            animation: moveWave linear infinite;
+        }
+
+        .wave-back {
+            fill: #00f2fe;
+            opacity: 0.5;
+            animation-duration: 4s;
+            animation-direction: reverse;
+        }
+        
+        .wave-mid {
+            fill: #4facfe;
+            opacity: 0.7;
+            animation-duration: 7s;
+        }
+
+        .wave-front {
+            fill: #4facfe;
+            opacity: 1;
+            animation-duration: 3s;
+        }
+
+        @keyframes moveWave {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .level-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1976D2; 
+            z-index: 10;
+            text-shadow: 0 2px 10px rgba(255,255,255,0.8);
+        }
+
         @media (max-width: 768px) {
             .dashboard-container {
                 padding: 1rem;
             }
-            
             .header {
                 padding: 1.5rem;
             }
-            
             .welcome-section h1 {
                 font-size: 2rem;
             }
-            
             .dashboard-grid {
                 grid-template-columns: 1fr;
                 gap: 1.5rem;
             }
-            
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+            /* Stack tanks on mobile */
+            .tanks-wrapper {
+                flex-direction: column;
+                align-items: center;
             }
         }
 
@@ -242,7 +433,6 @@ $username = htmlspecialchars($_SESSION['username']);
                 flex-direction: column;
                 text-align: center;
             }
-            
             .stats-grid {
                 grid-template-columns: 1fr;
             }
@@ -251,7 +441,6 @@ $username = htmlspecialchars($_SESSION['username']);
 </head>
 <body>
     <div class="dashboard-container">
-        <!-- Header Section -->
         <div class="header">
             <div class="header-content">
                 <div class="welcome-section">
@@ -264,9 +453,8 @@ $username = htmlspecialchars($_SESSION['username']);
             </div>
         </div>
 
-        <!-- Main Dashboard Grid -->
         <div class="dashboard-grid">
-            <!-- Plant Management Card -->
+
             <div class="dashboard-card">
                 <div class="card-header">
                     <div class="card-icon icon-plant">
@@ -284,7 +472,95 @@ $username = htmlspecialchars($_SESSION['username']);
                 </div>
             </div>
 
-            <!-- View Plants Card -->
+            <div class="tank-container span-2">
+                <div class="card-header">
+                    <div class="card-icon icon-view">
+                        <i class="fas fa-water"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Water Tank Level Overview</h3>
+                        <p>Monitor current tanks water level.</p>
+                    </div>
+                </div>
+
+                <div class="tanks-wrapper">
+                    <div class="tank-card">
+                        <div class="tank" data-level="65">
+                            <div class="glass-glare"></div>
+                            <div class="measurement">
+                                <div></div><div></div><div></div><div></div><div></div>
+                                <div></div><div></div><div></div><div></div><div></div>
+                                <div></div><div></div><div></div>
+                            </div>
+                            <div class="water">
+                                <div class="wave-container">
+                                    <svg class="waves-svg" viewBox="0 0 288 50" preserveAspectRatio="none">
+                                        <defs>
+                                            <path id="wave" d="M0,25 C48,50 96,0 144,25 C192,50 240,0 288,25 V50 H0 Z" />
+                                        </defs>
+                                        <use xlink:href="#wave" x="0" y="0" class="wave-path wave-back" />
+                                        <use xlink:href="#wave" x="0" y="3" class="wave-path wave-mid" />
+                                        <use xlink:href="#wave" x="0" y="5" class="wave-path wave-front" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <span class="level-text"></span>
+                        </div>
+                        <div class="tank-name">Tank 1</div>
+                    </div>
+
+                    <div class="tank-card">
+                        <div class="tank" data-level="45">
+                            <div class="glass-glare"></div>
+                            <div class="measurement">
+                                <div></div><div></div><div></div><div></div><div></div>
+                                <div></div><div></div><div></div><div></div><div></div>
+                                <div></div><div></div><div></div>
+                            </div>
+                            <div class="water">
+                                <div class="wave-container">
+                                    <svg class="waves-svg" viewBox="0 0 288 50" preserveAspectRatio="none">
+                                        <defs>
+                                            <path id="wave" d="M0,25 C48,50 96,0 144,25 C192,50 240,0 288,25 V50 H0 Z" />
+                                        </defs>
+                                        <use xlink:href="#wave" x="0" y="0" class="wave-path wave-back" />
+                                        <use xlink:href="#wave" x="0" y="3" class="wave-path wave-mid" />
+                                        <use xlink:href="#wave" x="0" y="5" class="wave-path wave-front" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <span class="level-text"></span>
+                        </div>
+                        <div class="tank-name">Tank 2</div>
+                    </div>
+
+                    <div class="tank-card">
+                        <div class="tank" data-level="80">
+                            <div class="glass-glare"></div>
+                            <div class="measurement">
+                                <div></div><div></div><div></div><div></div><div></div>
+                                <div></div><div></div><div></div><div></div><div></div>
+                                <div></div><div></div><div></div>
+                            </div>
+                            <div class="water">
+                                <div class="wave-container">
+                                    <svg class="waves-svg" viewBox="0 0 288 50" preserveAspectRatio="none">
+                                        <defs>
+                                            <path id="wave" d="M0,25 C48,50 96,0 144,25 C192,50 240,0 288,25 V50 H0 Z" />
+                                        </defs>
+                                        <use xlink:href="#wave" x="0" y="0" class="wave-path wave-back" />
+                                        <use xlink:href="#wave" x="0" y="3" class="wave-path wave-mid" />
+                                        <use xlink:href="#wave" x="0" y="5" class="wave-path wave-front" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <span class="level-text"></span>
+                        </div>
+                        <div class="tank-name">Tank 3</div>
+                    </div>
+                </div> 
+            </div>
+
             <div class="dashboard-card">
                 <div class="card-header">
                     <div class="card-icon icon-view">
@@ -302,7 +578,6 @@ $username = htmlspecialchars($_SESSION['username']);
                 </div>
             </div>
 
-            <!-- Sensor Management Card -->
             <div class="dashboard-card">
                 <div class="card-header">
                     <div class="card-icon icon-sensor">
@@ -320,7 +595,6 @@ $username = htmlspecialchars($_SESSION['username']);
                 </div>
             </div>
 
-            <!-- View Sensors Card -->
             <div class="dashboard-card">
                 <div class="card-header">
                     <div class="card-icon icon-view">
@@ -337,63 +611,8 @@ $username = htmlspecialchars($_SESSION['username']);
                     </a>
                 </div>
             </div>
-
-            <!-- View Water Level Card -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="card-icon icon-view">
-                        <i class="fas fa-water"></i>
-                    </div>
-                    <div class="card-content">
-                        <h3>Water Level Overview</h3>
-                        <p>Monitor tanks water level.</p>
-                    </div>
-                </div>
-                <div class="card-action">
-                    <a href="water_tank.php" class="card-btn">
-                        <i class="fas fa-list"></i> View Tanks Level
-                    </a>
-                </div>
-            </div>
-
-            <!-- Data Collection Card -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="card-icon icon-data">
-                        <i class="fas fa-database"></i>
-                    </div>
-                    <div class="card-content">
-                        <h3>Data Collection</h3>
-                        <p>Record soil readings and environmental data</p>
-                    </div>
-                </div>
-                <div class="card-action">
-                    <a href="add_sensor_data.php" class="card-btn">
-                        <i class="fas fa-plus"></i> Add Sensor Data
-                    </a>
-                </div>
-            </div>
-
-            <!-- Data Analysis Card -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="card-icon icon-data">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div class="card-content">
-                        <h3>Data Analysis</h3>
-                        <p>Analyze trends and insights from your sensor data</p>
-                    </div>
-                </div>
-                <div class="card-action">
-                    <a href="sensor_data.php" class="card-btn">
-                        <i class="fas fa-chart-bar"></i> View Sensor Data
-                    </a>
-                </div>
-            </div>
         </div>
 
-        <!-- Quick Stats Section -->
         <div class="stats-section">
             <h2 style="text-align: center; margin-bottom: 2rem; color: #333; font-weight: 600;">
                 <i class="fas fa-chart-pie"></i> Quick Overview
@@ -418,5 +637,34 @@ $username = htmlspecialchars($_SESSION['username']);
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tanks = document.querySelectorAll('.tank');
+            
+            tanks.forEach(tank => {
+                const level = tank.getAttribute('data-level');
+                const water = tank.querySelector('.water');
+                const text = tank.querySelector('.level-text');
+                
+                // Set water height
+                setTimeout(() => {
+                    water.style.height = level + '%';
+                }, 100);
+
+                // Animate text counter
+                let currentLevel = 0;
+                const interval = setInterval(() => {
+                    if (currentLevel >= level) {
+                        clearInterval(interval);
+                        text.innerText = level + '%';
+                    } else {
+                        currentLevel++;
+                        text.innerText = currentLevel + '%';
+                    }
+                }, 20);
+            });
+        });
+    </script>
 </body>
 </html> 
