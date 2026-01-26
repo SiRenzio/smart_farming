@@ -338,6 +338,24 @@ $username = htmlspecialchars($_SESSION['username']);
                 </div>
             </div>
 
+            <!-- View Water Level Card -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon icon-view">
+                        <i class="fas fa-water"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Water Level Overview</h3>
+                        <p>Monitor tanks water level.</p>
+                    </div>
+                </div>
+                <div class="card-action">
+                    <a href="water_tank.php" class="card-btn">
+                        <i class="fas fa-list"></i> View Tanks Level
+                    </a>
+                </div>
+            </div>
+
             <!-- Data Collection Card -->
             <div class="dashboard-card">
                 <div class="card-header">

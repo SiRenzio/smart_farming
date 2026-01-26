@@ -119,7 +119,7 @@ $stmt->close();
         }
 
         .plant-info {
-            background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(25, 118, 210, 0.1));
+            background: linear-gradient(135deg, rgb(76, 175, 79), rgb(25, 118, 210));
             padding: 1.5rem;
             border-radius: 15px;
             margin-bottom: 2rem;
@@ -128,12 +128,12 @@ $stmt->close();
         }
 
         .plant-info strong {
-            color: #1976D2;
+            color: #ffffff;
             font-weight: 600;
         }
 
         .plant-info span {
-            color: #333;
+            color: #fdf6f6;
             font-weight: 500;
             font-size: 1.1rem;
         }
@@ -309,7 +309,7 @@ $stmt->close();
 
         <!-- Plant Info -->
         <div class="plant-info">
-            <strong>Plant:</strong> <span><?php echo htmlspecialchars($plantName); ?></span>
+            <strong><i class="fas fa-seedling"></i> Plant:</strong> <span><?php echo htmlspecialchars($plantName); ?></span>
         </div>
 
         <!-- Navigation Links -->

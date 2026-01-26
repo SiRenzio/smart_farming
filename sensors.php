@@ -225,7 +225,7 @@ function getFilterParams($excludePage = true) {
             <form method="GET" action="">
                 <div class="filters-container">
                     <div class="filter">
-                        <label for="sensor">Sensor:</label>
+                        <label for="sensor"><i class="fa fa-filter"></i> Sensor:</label>
                         <select id="sensor" name="sensor" onchange="this.form.submit()">
                             <option value="">All Sensors</option>
                             <?php foreach ($sensorsList as $s): ?>
@@ -237,7 +237,7 @@ function getFilterParams($excludePage = true) {
                     </div>
 
                     <div class="filter">
-                        <label for="location">Location:</label>
+                        <label for="location"><i class="fa fa-filter"></i> Location:</label>
                         <select id="location" name="location" onchange="this.form.submit()">
                             <option value="">All Locations</option>
                             <?php foreach ($locationsList as $l): ?>
@@ -249,12 +249,12 @@ function getFilterParams($excludePage = true) {
                     </div>
 
                     <div class="filter">
-                        <label for="dateFrom">Date & Time (From)</label>
+                        <label for="dateFrom"><i class="fa fa-filter"></i> Date & Time (From):</label>
                         <input type="datetime-local" name="dateFrom" id="dateFrom" value="<?php echo htmlspecialchars($filterDateFrom); ?>" onchange="this.form.submit()">
                     </div>
 
                     <div class="filter">
-                        <label for="dateTo">Date & Time (To)</label>
+                        <label for="dateTo"><i class="fa fa-filter"></i> Date & Time (To):</label>
                         <input type="datetime-local" name="dateTo" id="dateTo" value="<?php echo htmlspecialchars($filterDateTo); ?>" onchange="this.form.submit()">
                     </div>
 
@@ -291,7 +291,7 @@ function getFilterParams($excludePage = true) {
                             <th><i class="fas fa-thermometer-half"></i> Temp (°C)</th>
                             <th><i class="fas fa-tint"></i> Moisture (%)</th>
                             <th><i class="fas fa-water"></i> Liquid Volume</th>
-                            <th><i class="fas fa-cogs"></i> Actions</th>
+                            <th><i class="fas fa-cogs"></i> Action</th>
                         </tr>
                     </thead>
                     <tbody>
