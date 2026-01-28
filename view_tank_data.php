@@ -10,52 +10,54 @@ if (!isset($_SESSION['userID'])) {
 $tankID = $_GET['tankID'] ?? '';
 
 // Pagination
-
 $limit = 15;
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) $page = 1;
 $offset = ($page - 1) * $limit;
 
-// filters
+// Filters
 $filterDateFrom = $_GET['dateFrom'] ?? '';
 $filterDateTo = $_GET['dateTo'] ?? '';
 
-$whereSQL = " WHERE 1=1";
-$params = [];
-$types = "";
+
+$whereSQL = " WHERE liquidsensorID = ? AND wateringstatus = 1";
+$params = [$tankID];
+$types = "i";
 
 if (!empty($filterDateFrom)) {
     $whereSQL .= " AND dateandtime >= ?";
-    $params[] = $filterDateFrom;
+    $params[] = str_replace('T', ' ', $filterDateFrom); 
     $types .= "s";
 }
 
 if (!empty($filterDateTo)) {
     $whereSQL .= " AND dateandtime <= ?";
-    $params[] = $filterDateTo;
+    $params[] = str_replace('T', ' ', $filterDateTo);
     $types .= "s";
 }
 
-// fetch data for pagination
-$countSql = "SELECT COUNT(*) as total 
-             FROM tankpumpevent" 
-             . $whereSQL;
 
+// pagination count
+$countSql = "SELECT COUNT(*) AS total FROM tankpumpevent" . $whereSQL;
 $stmtCount = $conn->prepare($countSql);
-if (!empty($params)) {
-    $stmtCount->bind_param($types, ...$params);
-}
+$stmtCount->bind_param($types, ...$params);
 $stmtCount->execute();
 $countResult = $stmtCount->get_result();
 $totalRows = $countResult->fetch_assoc()['total'];
 $totalPages = ceil($totalRows / $limit);
 $stmtCount->close();
 
-// Fetch tank data from database
-$stmt = $conn->prepare("SELECT * FROM tankpumpevent WHERE liquidsensorID = ? AND wateringstatus = 1");
-$stmt->bind_param("i", $tankID);
+$dataSql = "SELECT * FROM tankpumpevent $whereSQL ORDER BY dateandtime DESC LIMIT ? OFFSET ?";
+
+$params[] = $limit;
+$params[] = $offset;
+$types .= "ii";
+
+$stmt = $conn->prepare($dataSql);
+$stmt->bind_param($types, ...$params);
 $stmt->execute();
 $result = $stmt->get_result();
+
 $data = [];
 while ($row = $result->fetch_assoc()) {
     $data[] = $row;
@@ -63,13 +65,11 @@ while ($row = $result->fetch_assoc()) {
 $stmt->close();
 
 
-// Helper to keep filters in URL
 function getFilterParams($excludePage = true) {
     $params = $_GET;
     if ($excludePage) unset($params['page']);
     return http_build_query($params);
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -81,7 +81,6 @@ function getFilterParams($excludePage = true) {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* [Styles kept exactly as before] */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: #333; }
         .page-container { max-width: 1500px; margin: 0 auto; padding: 2rem; }
@@ -90,8 +89,6 @@ function getFilterParams($excludePage = true) {
         .page-header h1 { font-size: 2.2rem; font-weight: 700; background: linear-gradient(135deg, #2196F3, #1976D2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem; }
         .page-header p { color: #666; font-size: 1.1rem; }
         .message-container { margin-bottom: 2rem; }
-        .error-message { background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: white; padding: 1rem; border-radius: 12px; margin-bottom: 1rem; text-align: center; font-weight: 500; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3); }
-        .success-message { background: linear-gradient(135deg, #4CAF50, #45a049); color: white; padding: 1rem; border-radius: 12px; margin-bottom: 1rem; text-align: center; font-weight: 500; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); }
         .nav-links { text-align: center; margin-bottom: 2rem; }
         .nav-links a { display: inline-block; margin: 0 0.5rem; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; border-radius: 25px; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
         .nav-links a:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); text-decoration: none; }
@@ -99,23 +96,19 @@ function getFilterParams($excludePage = true) {
         .data-table th, .data-table td { padding: 0.75em; text-align: center; border-bottom: 1px solid #dee2e6; }
         .data-table th { background: #f8f9fa; font-weight: bold; }
         .data-table tr:hover { background: #f8f9fa; }
-        .btn { padding: 0.5em 1em; border: none; border-radius: 4px; text-decoration: none; font-size: 0.9em; cursor: pointer; }
-        .btn-edit { background: #ffc107; color: #212529; }
-        .btn-delete { background: #dc3545; color: white; }
+        .btn { padding: 0.5em 1em; border: none; border-radius: 4px; text-decoration: none; font-size: 0.9em; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; height: 38px;}
         .btn-clear { background: #dc3545; color: white; }
-        .btn:hover { opacity: 0.8; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
         .error { color: #b30000; background: #ffe5e5; padding: 0.5em; border-radius: 4px; margin-bottom: 1em; }
         .success { color: #155724; background: #d4edda; padding: 0.5em; border-radius: 4px; margin-bottom: 1em; }
         a { color: #007bff; text-decoration: none; }
         a:hover { text-decoration: underline; }
         .empty-state { text-align: center; color: #6c757d; padding: 2em; }
-        .sensor-info { background: #e3f2fd; padding: 0.5em; border-radius: 4px; margin-bottom: 0.5em; }
         .numeric-value { font-family: monospace; }
-        .actions { display: flex; gap: 0.5em; }
-        .filters-container { display: flex; flex-wrap: wrap; gap: 2rem; margin-bottom: 2rem; justify-content: center; align-items: flex-end; }
+        .filters-container { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; justify-content: center; align-items: flex-end; }
         .filter { display: flex; flex-direction: column; align-items: flex-start; }
         .filter label { font-weight: 500; margin-bottom: 0.3rem; color: #333; }
-        .filter select, .filter input { padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; transition: all 0.3s ease; min-width: 180px; }
+        .filter select, .filter input { padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; transition: all 0.3s ease; min-width: 180px; height: 38px; }
         .filter select:hover, .filter input:hover { border-color: #667eea; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2); }
         .pagination-container { display: flex; justify-content: center; align-item: center; margin-top: 2rem; gap: 5px}
         .pagination-link { display: flex; align-item: center; justify-content: center; min-width: 40px; height: 40px; background: rgba(255, 255, 255, 0.9); padding: 0.5rem 0.5rem; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; color: #555; font-weight: 600; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
@@ -130,24 +123,10 @@ function getFilterParams($excludePage = true) {
     <div class="page-container">
         <div class="page-header">
             <div class="icon">
-                <i class="fas fa-microchip"></i>
+                <i class="fas fa-tint"></i>
             </div>
             <h1>Liquid Tanks</h1>
             <p>Monitor and manage your deployed sensors</p>
-        </div>
-
-        <div class="message-container">
-            <?php if (isset($error)): ?>
-                <div class="error-message">
-                    <i class="fas fa-exclamation-triangle"></i> <?php echo htmlspecialchars($error); ?>
-                </div>
-            <?php endif; ?>
-            
-            <?php if (isset($success)): ?>
-                <div class="success-message">
-                    <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($success); ?>
-                </div>
-            <?php endif; ?>
         </div>
 
         <div class="nav-links">
@@ -158,21 +137,27 @@ function getFilterParams($excludePage = true) {
         
         <div class="page-header">
             <form method="GET" action="">
+                <input type="hidden" name="tankID" value="<?php echo htmlspecialchars($tankID); ?>">
+                
                 <div class="filters-container">
 
                     <div class="filter">
                         <label for="dateFrom"><i class="fa fa-filter"></i> Date & Time (From):</label>
-                        <input type="datetime-local" name="dateFrom" id="dateFrom" value="<?php echo htmlspecialchars($filterDateFrom); ?>" onchange="this.form.submit()">
+                        <input type="datetime-local" name="dateFrom" id="dateFrom" 
+                               value="<?php echo htmlspecialchars($filterDateFrom); ?>" 
+                               onchange="this.form.submit()">
                     </div>
 
                     <div class="filter">
                         <label for="dateTo"><i class="fa fa-filter"></i> Date & Time (To):</label>
-                        <input type="datetime-local" name="dateTo" id="dateTo" value="<?php echo htmlspecialchars($filterDateTo); ?>" onchange="this.form.submit()">
+                        <input type="datetime-local" name="dateTo" id="dateTo" 
+                               value="<?php echo htmlspecialchars($filterDateTo); ?>" 
+                               onchange="this.form.submit()">
                     </div>
 
                     <div class="filter">
                         <label>&nbsp;</label>
-                        <a href="sensors.php" class="btn btn-clear">
+                        <a href="?tankID=<?php echo htmlspecialchars($tankID); ?>" class="btn btn-clear">
                             <i class="fa-solid fa-rotate-left"></i> Clear
                         </a>
                     </div>
@@ -183,10 +168,8 @@ function getFilterParams($excludePage = true) {
             <?php if (empty($data)): ?>
             <div class="empty-state">
                 <p>No sensor data found matching your criteria.</p>
-                <?php if(!empty($filterSensor) || !empty($filterLocation) || !empty($filterDateFrom)): ?>
-                    <p><a href="sensors.php">Clear Filters</a></p>
-                <?php else: ?>
-                    <p><a href="add_sensor_data.php">Add your first sensor reading</a> to get started.</p>
+                <?php if(!empty($filterDateFrom) || !empty($filterDateTo)): ?>
+                    <p><a href="?tankID=<?php echo htmlspecialchars($tankID); ?>">Clear Filters</a></p>
                 <?php endif; ?>
             </div>
             <?php else: ?>
@@ -217,7 +200,6 @@ function getFilterParams($excludePage = true) {
                             $startPage = max(1, $page - 2);
                             $endPage = min($totalPages, $startPage + $maxButtons - 1);
                             
-                            // Adjust if we are near the end
                             if ($endPage - $startPage < $maxButtons - 1) {
                                 $startPage = max(1, $endPage - $maxButtons + 1);
                             }
@@ -237,7 +219,7 @@ function getFilterParams($excludePage = true) {
 
                         <a href="?<?php echo $queryParams; ?>&page=<?php echo min($totalPages, $page + 1); ?>" 
                            class="pagination-link <?php echo ($page >= $totalPages) ? 'disabled' : ''; ?>">
-                           <i class="	fa fa-chevron-circle-right"></i>
+                           <i class="fa fa-chevron-circle-right"></i>
                         </a>
                     </div>
                     <div class="pagination-info">
