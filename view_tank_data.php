@@ -47,6 +47,7 @@ $totalRows = $countResult->fetch_assoc()['total'];
 $totalPages = ceil($totalRows / $limit);
 $stmtCount->close();
 
+// fetching data
 $dataSql = "SELECT * FROM tankpumpevent $whereSQL ORDER BY dateandtime DESC LIMIT ? OFFSET ?";
 
 $params[] = $limit;
@@ -64,6 +65,14 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
+//fetch tank name
+$tankNameSql = "SELECT liquidtankname FROM liquidsensorinfo WHERE liquidsensorID = ?";
+$stmtTankName = $conn->prepare($tankNameSql);
+$stmtTankName->bind_param("i", $tankID);
+$stmtTankName->execute();
+$tankNameResult = $stmtTankName->get_result();
+$tankName = $tankNameResult->fetch_assoc()['liquidtankname'] ?? 'Unknown Tank';
+$stmtTankName->close();
 
 function getFilterParams($excludePage = true) {
     $params = $_GET;
@@ -125,8 +134,8 @@ function getFilterParams($excludePage = true) {
             <div class="icon">
                 <i class="fas fa-tint"></i>
             </div>
-            <h1>Liquid Tanks</h1>
-            <p>Monitor and manage your deployed sensors</p>
+            <h1><?php echo htmlspecialchars($tankName); ?></h1>
+            <p>Monitor your liquid tank data.</p>
         </div>
 
         <div class="nav-links">
@@ -177,8 +186,8 @@ function getFilterParams($excludePage = true) {
                     <thead>
                         <tr>
                             <th><i class="fas fa-calendar"></i> Date & Time</th>
-                            <th><i class="fas fa-leaf"></i> Watering Status</th>
-                            <th><i class="fas fa-satellite-dish"></i> Watering Level</th>
+                            <th><i class="fas fa-tint"></i> Watering Status</th>
+                            <th><i class="fas fa-water"></i> Watering Level</th>
                         </tr>
                     </thead>
                     <tbody>
