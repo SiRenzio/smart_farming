@@ -300,6 +300,22 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
             max-width: 150px;
         }
 
+        .tank-card-btn {
+            text-decoration: none;
+            cursor: pointer;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+
+        .tank-card-btn:hover {
+            transform: translateY(-5px);
+        }
+
+        .tank-card-btn:focus-visible {
+            outline: 2px solid #4da3ff;
+            border-radius: 12px;
+        }
+
         .tank-name {
             margin-top: 0.5rem;
             font-size: 0.7rem;
@@ -322,6 +338,16 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
             z-index: 1;
             aspect-ratio: 4 / 5;
         }
+
+        /* .tankmodal {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        } */
 
         .measurement {
             position: absolute;
@@ -517,80 +543,86 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
                 </div>
 
                 <div class="tanks-wrapper">
-                    <div class="tank-card">
-                        <div class="tank" data-liquidsensor-id="1">
-                            <div class="glass-glare"></div>
-                            <div class="measurement">
-                                <div></div><div></div><div></div><div></div><div></div>
-                                <div></div><div></div><div></div><div></div><div></div>
-                                <div></div><div></div><div></div>
-                            </div>
-                            <div class="water">
-                                <div class="wave-container">
-                                    <svg class="waves-svg" viewBox="0 0 288 50" preserveAspectRatio="none">
-                                        <defs>
-                                            <path id="wave" d="M0,25 C48,50 96,0 144,25 C192,50 240,0 288,25 V50 H0 Z" />
-                                        </defs>
-                                        <use xlink:href="#wave" x="0" y="0" class="wave-path wave-back" />
-                                        <use xlink:href="#wave" x="0" y="3" class="wave-path wave-mid" />
-                                        <use xlink:href="#wave" x="0" y="5" class="wave-path wave-front" />
-                                    </svg>
+                    <a href="view_tank_data.php?tankID=1" class="tank-card-btn">
+                        <div class="tank-card">
+                            <div class="tank" data-liquidsensor-id="1">
+                                <div class="glass-glare"></div>
+                                <div class="measurement">
+                                    <div></div><div></div><div></div><div></div><div></div>
+                                    <div></div><div></div><div></div><div></div><div></div>
+                                    <div></div><div></div><div></div>
                                 </div>
-                            </div>
-                            <span class="level-text"></span>
-                        </div>
-                        <div class="tank-name"><?php echo $tankName1result['liquidtankname']; ?></div>
-                    </div>
-
-                    <div class="tank-card">
-                        <div class="tank" data-liquidsensor-id="2">
-                            <div class="glass-glare"></div>
-                            <div class="measurement">
-                                <div></div><div></div><div></div><div></div><div></div>
-                                <div></div><div></div><div></div><div></div><div></div>
-                                <div></div><div></div><div></div>
-                            </div>
-                            <div class="water">
-                                <div class="wave-container">
-                                    <svg class="waves-svg" viewBox="0 0 288 50" preserveAspectRatio="none">
-                                        <defs>
-                                            <path id="wave" d="M0,25 C48,50 96,0 144,25 C192,50 240,0 288,25 V50 H0 Z" />
-                                        </defs>
-                                        <use xlink:href="#wave" x="0" y="0" class="wave-path wave-back" />
-                                        <use xlink:href="#wave" x="0" y="3" class="wave-path wave-mid" />
-                                        <use xlink:href="#wave" x="0" y="5" class="wave-path wave-front" />
-                                    </svg>
+                                <div class="water">
+                                    <div class="wave-container">
+                                        <svg class="waves-svg" viewBox="0 0 288 50" preserveAspectRatio="none">
+                                            <defs>
+                                                <path id="wave" d="M0,25 C48,50 96,0 144,25 C192,50 240,0 288,25 V50 H0 Z" />
+                                            </defs>
+                                            <use xlink:href="#wave" x="0" y="0" class="wave-path wave-back" />
+                                            <use xlink:href="#wave" x="0" y="3" class="wave-path wave-mid" />
+                                            <use xlink:href="#wave" x="0" y="5" class="wave-path wave-front" />
+                                        </svg>
+                                    </div>
                                 </div>
+                                <span class="level-text"></span>
                             </div>
-                            <span class="level-text"></span>
+                            <div class="tank-name"><?php echo $tankName1result['liquidtankname']; ?></div>
                         </div>
-                        <div class="tank-name"><?php echo $tankName2result['liquidtankname']; ?></div>
-                    </div>
-
-                    <div class="tank-card">
-                        <div class="tank" data-liquidsensor-id="3">
-                            <div class="glass-glare"></div>
-                            <div class="measurement">
-                                <div></div><div></div><div></div><div></div><div></div>
-                                <div></div><div></div><div></div><div></div><div></div>
-                                <div></div><div></div><div></div>
-                            </div>
-                            <div class="water">
-                                <div class="wave-container">
-                                    <svg class="waves-svg" viewBox="0 0 288 50" preserveAspectRatio="none">
-                                        <defs>
-                                            <path id="wave" d="M0,25 C48,50 96,0 144,25 C192,50 240,0 288,25 V50 H0 Z" />
-                                        </defs>
-                                        <use xlink:href="#wave" x="0" y="0" class="wave-path wave-back" />
-                                        <use xlink:href="#wave" x="0" y="3" class="wave-path wave-mid" />
-                                        <use xlink:href="#wave" x="0" y="5" class="wave-path wave-front" />
-                                    </svg>
+                    </a>
+                    
+                    <a href="view_tank_data.php?tankID=2" class="tank-card-btn">
+                        <div class="tank-card">
+                            <div class="tank" data-liquidsensor-id="2">
+                                <div class="glass-glare"></div>
+                                <div class="measurement">
+                                    <div></div><div></div><div></div><div></div><div></div>
+                                    <div></div><div></div><div></div><div></div><div></div>
+                                    <div></div><div></div><div></div>
                                 </div>
+                                <div class="water">
+                                    <div class="wave-container">
+                                        <svg class="waves-svg" viewBox="0 0 288 50" preserveAspectRatio="none">
+                                            <defs>
+                                                <path id="wave" d="M0,25 C48,50 96,0 144,25 C192,50 240,0 288,25 V50 H0 Z" />
+                                            </defs>
+                                            <use xlink:href="#wave" x="0" y="0" class="wave-path wave-back" />
+                                            <use xlink:href="#wave" x="0" y="3" class="wave-path wave-mid" />
+                                            <use xlink:href="#wave" x="0" y="5" class="wave-path wave-front" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <span class="level-text"></span>
                             </div>
-                            <span class="level-text"></span>
+                            <div class="tank-name"><?php echo $tankName2result['liquidtankname']; ?></div>
                         </div>
-                        <div class="tank-name"><?php echo $tankName3result['liquidtankname']; ?></div>
-                    </div>
+                    </a>
+                    
+                    <a href="view_tank_data.php?tankID=3" class="tank-card-btn">
+                        <div class="tank-card">
+                            <div class="tank" data-liquidsensor-id="3">
+                                <div class="glass-glare"></div>
+                                <div class="measurement">
+                                    <div></div><div></div><div></div><div></div><div></div>
+                                    <div></div><div></div><div></div><div></div><div></div>
+                                    <div></div><div></div><div></div>
+                                </div>
+                                <div class="water">
+                                    <div class="wave-container">
+                                        <svg class="waves-svg" viewBox="0 0 288 50" preserveAspectRatio="none">
+                                            <defs>
+                                                <path id="wave" d="M0,25 C48,50 96,0 144,25 C192,50 240,0 288,25 V50 H0 Z" />
+                                            </defs>
+                                            <use xlink:href="#wave" x="0" y="0" class="wave-path wave-back" />
+                                            <use xlink:href="#wave" x="0" y="3" class="wave-path wave-mid" />
+                                            <use xlink:href="#wave" x="0" y="5" class="wave-path wave-front" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <span class="level-text"></span>
+                            </div>
+                            <div class="tank-name"><?php echo $tankName3result['liquidtankname']; ?></div>
+                        </div>
+                    </a>
                 </div> 
             </div>
 
@@ -732,6 +764,27 @@ function fetchLiquidLevel() {
         })
         .catch(err => console.error(err));
 }
+
+// // Tank Modal
+// const tank1Btn = document.querySelector('.tank-btn1');
+// const tankModal = document.querySelector('.tankmodal');
+
+// tank1Btn.addEventListener('click', () => {
+//     tankModal.style.display = 'flex';
+//     tankModal.innerHTML = `
+//         <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 400px; width: 90%; text-align: center; position: relative;">
+//             <h2>Tank Details</h2>
+//             <p>More information about Tank 1 can be displayed here.</p>
+//             <button id="closeModal" style="margin-top: 1rem; padding: 0.5rem 1rem; border: none; background: #667eea; color: white; border-radius: 8px; cursor: pointer;">Close</button>
+//         </div>
+//     `;
+
+//     const closeModalBtn = document.getElementById('closeModal');
+//     closeModalBtn.addEventListener('click', () => {
+//         tankModal.style.display = 'none';
+//         tankModal.innerHTML = '';
+//     });
+// });
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchLiquidLevel();
