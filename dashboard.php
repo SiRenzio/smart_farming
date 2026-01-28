@@ -309,7 +309,7 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
 
         .tank {
             position: relative;
-            width: 65%;
+            width: 60%;
             margin: auto;
             background: rgba(255, 255, 255, 0.3);
             border: 2px solid rgba(255, 255, 255, 0.8);
@@ -370,7 +370,7 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
 
         .wave-container {
             position: absolute;
-            top: -40px; 
+            top: -15px; 
             left: 0;
             width: 100%;
             height: 40px;
@@ -379,7 +379,7 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
 
         .waves-svg {
             width: 200%;
-            height: 100%;
+            height: 60%;
         }
 
         .wave-path {
@@ -683,23 +683,42 @@ function updateTank(sensorID, newLevel) {
     const water = tank.querySelector('.water');
     const text  = tank.querySelector('.level-text');
 
-    const oldLevel = parseInt(tank.dataset.level ?? -1);
-    if (oldLevel === newLevel) return;
+    const oldLevel = parseInt(tank.dataset.level ?? newLevel);
+
+    // ✅ STOP previous animation
+    if (tank._counter) {
+        clearInterval(tank._counter);
+        tank._counter = null;
+    }
+
+    if (oldLevel === newLevel) {
+        text.innerText = newLevel + '%';
+        water.style.height = newLevel + '%';
+        return;
+    }
 
     tank.dataset.level = newLevel;
 
-    const VISUAL_MAX = 80;
-    const visualHeight = (newLevel / 100) * VISUAL_MAX;
+    // ✅ TRUE 1:1 mapping
+    water.style.height = newLevel + '%';
 
-    water.style.height = visualHeight + '%';
-
-    let current = oldLevel < 0 ? 0 : oldLevel;
+    let current = oldLevel;
     const step = current < newLevel ? 1 : -1;
 
-    const counter = setInterval(() => {
+    tank._counter = setInterval(() => {
         current += step;
+
+        // ✅ HARD CLAMP (prevents -1, -2, -3)
+        if (
+            (step === -1 && current <= newLevel) ||
+            (step === 1 && current >= newLevel)
+        ) {
+            current = newLevel;
+            clearInterval(tank._counter);
+            tank._counter = null;
+        }
+
         text.innerText = current + '%';
-        if (current === newLevel) clearInterval(counter);
     }, 15);
 }
 
