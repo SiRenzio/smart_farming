@@ -7,6 +7,8 @@ if (!isset($_SESSION['userID'])) {
     exit;
 }
 
+$tankID = $_GET['tankID'] ?? '';
+
 // Pagination
 
 $limit = 15;
@@ -23,22 +25,20 @@ $params = [];
 $types = "";
 
 if (!empty($filterDateFrom)) {
-    $whereSQL .= " AND sd.DateTime >= ?";
+    $whereSQL .= " AND dateandtime >= ?";
     $params[] = $filterDateFrom;
     $types .= "s";
 }
 
 if (!empty($filterDateTo)) {
-    $whereSQL .= " AND sd.DateTime <= ?";
+    $whereSQL .= " AND dateandtime <= ?";
     $params[] = $filterDateTo;
     $types .= "s";
 }
 
 // fetch data for pagination
 $countSql = "SELECT COUNT(*) as total 
-             FROM sensordata sd 
-             LEFT JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID 
-             LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID" 
+             FROM tankpumpevent" 
              . $whereSQL;
 
 $stmtCount = $conn->prepare($countSql);
@@ -51,25 +51,9 @@ $totalRows = $countResult->fetch_assoc()['total'];
 $totalPages = ceil($totalRows / $limit);
 $stmtCount->close();
 
-// fetch data for dropdown
-$sql = "SELECT sd.*, si.sensorName, fl.farmName, fl.locationID 
-        FROM sensordata sd 
-        LEFT JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID 
-        LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID"
-        . $whereSQL;
-
-$sql .= " ORDER BY sd.DateTime DESC LIMIT ? OFFSET ?";
-
-// Add limit and offset to params
-$params[] = $limit;
-$params[] = $offset;
-$types .= "ii";
-
-$stmt = $conn->prepare($sql);
-if (!empty($params)) {
-    $stmt->bind_param($types, ...$params);
-}
-
+// Fetch tank data from database
+$stmt = $conn->prepare("SELECT * FROM tankpumpevent WHERE liquidsensorID = ? AND wateringstatus = 1");
+$stmt->bind_param("i", $tankID);
 $stmt->execute();
 $result = $stmt->get_result();
 $data = [];
@@ -217,9 +201,9 @@ function getFilterParams($excludePage = true) {
                     <tbody>
                         <?php foreach ($data as $row): ?>
                             <tr>
-                                <td><?php echo date('M j, Y g:i A', strtotime($row['DateTime'])); ?></td>
-                                <td class="numeric-value"><?php echo $row['SoilN'] !== null ? htmlspecialchars($row['SoilN']) : '-'; ?></td>
-                                <td class="numeric-value"><?php echo $row['SoilP'] !== null ? htmlspecialchars($row['SoilP']) : '-'; ?></td>
+                                <td><?php echo date('M j, Y g:i A', strtotime($row['dateandtime'])); ?></td>
+                                <td class="numeric-value"><?php echo $row['wateringstatus'] !== null ? htmlspecialchars($row['wateringstatus']) : '-'; ?></td>
+                                <td class="numeric-value"><?php echo $row['wateringvolume'] !== null ? htmlspecialchars($row['wateringvolume']) : '-'; ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
