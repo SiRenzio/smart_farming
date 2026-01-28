@@ -7,20 +7,6 @@ if (!isset($_SESSION['userID'])) {
     exit;
 }
 
-// Handle data deletion
-if (isset($_POST['delete_data']) && isset($_POST['data_id'])) {
-    $dataID = (int)$_POST['data_id'];
-    
-    $deleteStmt = $conn->prepare('DELETE FROM sensordata WHERE SensorDataID = ?');
-    $deleteStmt->bind_param('i', $dataID);
-    if ($deleteStmt->execute()) {
-        $success = "Sensor data deleted successfully!";
-    } else {
-        $error = "Failed to delete sensor data: " . $conn->error . " (Error Code: " . $conn->errno . ")";
-    }
-    $deleteStmt->close();
-}
-
 // Pagination
 
 $limit = 15;
@@ -29,26 +15,12 @@ if ($page < 1) $page = 1;
 $offset = ($page - 1) * $limit;
 
 // filters
-$filterSensor = $_GET['sensor'] ?? '';
-$filterLocation = $_GET['location'] ?? '';
 $filterDateFrom = $_GET['dateFrom'] ?? '';
 $filterDateTo = $_GET['dateTo'] ?? '';
 
 $whereSQL = " WHERE 1=1";
 $params = [];
 $types = "";
-
-if (!empty($filterSensor)) {
-    $whereSQL .= " AND sd.SoilSensorID = ?";
-    $params[] = $filterSensor;
-    $types .= "i";
-}
-
-if (!empty($filterLocation)) {
-    $whereSQL .= " AND sd.locationID = ?";
-    $params[] = $filterLocation;
-    $types .= "i";
-}
 
 if (!empty($filterDateFrom)) {
     $whereSQL .= " AND sd.DateTime >= ?";
@@ -106,24 +78,6 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-
-// Fetch sensors for dropdown
-$sensorsList = [];
-$sensorQuery = $conn->query("SELECT * FROM sensorinfo ORDER BY sensorName");
-if($sensorQuery) {
-    while($row = $sensorQuery->fetch_assoc()) {
-        $sensorsList[] = $row;
-    }
-}
-
-// Fetch locations for dropdown
-$locationsList = [];
-$locQuery = $conn->query("SELECT * FROM farmlocation ORDER BY farmName");
-if($locQuery) {
-    while($row = $locQuery->fetch_assoc()) {
-        $locationsList[] = $row;
-    }
-}
 
 // Helper to keep filters in URL
 function getFilterParams($excludePage = true) {
@@ -213,9 +167,6 @@ function getFilterParams($excludePage = true) {
         </div>
 
         <div class="nav-links">
-            <a href="add_sensor.php">
-                <i class="fas fa-plus"></i> Add New Sensor
-            </a>
             <a href="dashboard.php">
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
             </a>
@@ -258,45 +209,17 @@ function getFilterParams($excludePage = true) {
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th><i class="fas fa-satellite-dish"></i> Sensor</th>
                             <th><i class="fas fa-calendar"></i> Date & Time</th>
-                            <th><i class="fas fa-leaf"></i> N</th>
-                            <th><i class="fas fa-seedling"></i> P</th>
-                            <th><i class="fas fa-tree"></i> K</th>
-                            <th><i class="fas fa-bolt"></i> EC</th>
-                            <th><i class="fas fa-tint"></i> pH</th>
-                            <th><i class="fas fa-thermometer-half"></i> Temp (°C)</th>
-                            <th><i class="fas fa-tint"></i> Moisture (%)</th>
-                            <th><i class="fas fa-water"></i> Liquid Volume</th>
-                            <th><i class="fas fa-cogs"></i> Action</th>
+                            <th><i class="fas fa-leaf"></i> Watering Status</th>
+                            <th><i class="fas fa-satellite-dish"></i> Watering Level</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($data as $row): ?>
                             <tr>
-                                <td>
-                                    <div class="sensor-info">
-                                        <strong><?php echo htmlspecialchars($row['sensorName']); ?></strong><br>
-                                        <small><?php echo htmlspecialchars($row['farmName'] ?? 'Unknown Location'); ?></small>
-                                    </div>
-                                </td>
                                 <td><?php echo date('M j, Y g:i A', strtotime($row['DateTime'])); ?></td>
                                 <td class="numeric-value"><?php echo $row['SoilN'] !== null ? htmlspecialchars($row['SoilN']) : '-'; ?></td>
                                 <td class="numeric-value"><?php echo $row['SoilP'] !== null ? htmlspecialchars($row['SoilP']) : '-'; ?></td>
-                                <td class="numeric-value"><?php echo $row['SoilK'] !== null ? htmlspecialchars($row['SoilK']) : '-'; ?></td>
-                                <td class="numeric-value"><?php echo $row['SoilEC'] !== null ? htmlspecialchars($row['SoilEC']) : '-'; ?></td>
-                                <td class="numeric-value"><?php echo $row['SoilPH'] !== null ? htmlspecialchars($row['SoilPH']) : '-'; ?></td>
-                                <td class="numeric-value"><?php echo $row['SoilT'] !== null ? htmlspecialchars($row['SoilT']) : '-'; ?></td>
-                                <td class="numeric-value"><?php echo $row['SoilMois'] !== null ? htmlspecialchars($row['SoilMois']) : '-'; ?></td>
-                                <td class="numeric-value"><?php echo $row['liquidVolume'] !== null ? htmlspecialchars($row['liquidVolume']) : '-'; ?></td>
-                                <td>
-                                    <div class="actions">
-                                        <form method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this sensor data? This action cannot be undone.');">
-                                            <input type="hidden" name="data_id" value="<?php echo $row['SensorDataID']; ?>">
-                                            <button type="submit" name="delete_data" class="btn btn-delete"><i class="fas fa-trash"></i> Delete</button>
-                                        </form>
-                                    </div>
-                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
