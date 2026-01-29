@@ -114,7 +114,7 @@ function getFilterParams($excludePage = true) {
         .nav-links button:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); text-decoration: none; }
 
         .data-table { width: 100%; border-collapse: collapse; margin-top: 1em; }
-        .data-table th, .data-table td { padding: 0.75em; text-align: center; border-bottom: 1px solid #dee2e6; }
+        .data-table th, .data-table td { padding: 0.75em; font-size: 1rem; text-align: center; border-bottom: 1px solid #dee2e6; }
         .data-table th { background: #f8f9fa; font-weight: bold; }
         .data-table tr:hover { background: #f8f9fa; }
         .btn { padding: 0.5em 1em; border: none; border-radius: 4px; text-decoration: none; font-size: 0.9em; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; height: 38px;}
