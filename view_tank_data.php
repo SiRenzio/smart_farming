@@ -92,7 +92,7 @@ function getFilterParams($excludePage = true) {
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: #333; }
-        .page-container { max-width: 1500px; margin: 0 auto; padding: 2rem; }
+        .page-container { max-width: 1300px; margin: 0 auto; padding: 2rem; }
         .page-header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 20px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); text-align: center; }
         .page-header .icon { width: 80px; height: 80px; background: linear-gradient(135deg, #2196F3, #1976D2); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 2rem; color: white; }
         .page-header h1 { font-size: 2.2rem; font-weight: 700; background: linear-gradient(135deg, #2196F3, #1976D2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem; }
@@ -194,7 +194,7 @@ function getFilterParams($excludePage = true) {
                         <?php foreach ($data as $row): ?>
                             <tr>
                                 <td><?php echo date('M j, Y g:i A', strtotime($row['dateandtime'])); ?></td>
-                                <td class="numeric-value"><?php echo $row['wateringstatus'] !== null ? htmlspecialchars($row['wateringstatus']) : '-'; ?></td>
+                                <td class="numeric-value"><?php echo $row['wateringstatus'] !== null ? 'Pumped' : '-'; ?></td>
                                 <td class="numeric-value"><?php echo $row['wateringvolume'] !== null ? htmlspecialchars($row['wateringvolume']) : '-'; ?></td>
                             </tr>
                         <?php endforeach; ?>

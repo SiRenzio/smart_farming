@@ -385,7 +385,7 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
 
         .water {
             position: absolute;
-            bottom: 0;
+            bottom: -7px;
             left: 0;
             width: 100%;
             height: 0; 
@@ -399,7 +399,7 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
             top: -15px; 
             left: 0;
             width: 100%;
-            height: 40px;
+            height: 30px;
             overflow: hidden;
         }
 
@@ -717,7 +717,6 @@ function updateTank(sensorID, newLevel) {
 
     const oldLevel = parseInt(tank.dataset.level ?? newLevel);
 
-    // ✅ STOP previous animation
     if (tank._counter) {
         clearInterval(tank._counter);
         tank._counter = null;
@@ -731,7 +730,6 @@ function updateTank(sensorID, newLevel) {
 
     tank.dataset.level = newLevel;
 
-    // ✅ TRUE 1:1 mapping
     water.style.height = newLevel + '%';
 
     let current = oldLevel;
@@ -740,7 +738,6 @@ function updateTank(sensorID, newLevel) {
     tank._counter = setInterval(() => {
         current += step;
 
-        // ✅ HARD CLAMP (prevents -1, -2, -3)
         if (
             (step === -1 && current <= newLevel) ||
             (step === 1 && current >= newLevel)
