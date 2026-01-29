@@ -110,7 +110,7 @@ function getFilterParams($excludePage = true) {
         .nav-links a { display: inline-block; margin: 0 0.5rem; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; border-radius: 25px; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
         .nav-links a:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); text-decoration: none; }
         
-        .nav-links button { display: inline-block; margin: 0 0.5rem; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; border-radius: 25px; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
+        .nav-links button { display: inline-block; margin: 0 0.5rem; padding: 0.75rem 1.5rem; cursor: pointer; border: none; background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; border-radius: 25px; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
         .nav-links button:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); text-decoration: none; }
 
         .data-table { width: 100%; border-collapse: collapse; margin-top: 1em; }
@@ -156,7 +156,7 @@ function getFilterParams($excludePage = true) {
             </a>
             <form method="POST" action="">
                 <button type="submit" class="tempbtn">
-                    <i class="fas fa-upload">Click Me</i>
+                    <i class="fas fa-upload"> Click Me</i>
                 </button>
             </form>
         </div>
