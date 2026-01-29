@@ -756,7 +756,7 @@ function fetchLiquidLevel() {
         .then(res => res.json())
         .then(data => {
             data.forEach(sensor => {
-                updateTank(sensor.liquidsensorID, parseInt(sensor.currentliquidlevel));
+                updateTank(sensor.liquidsensorID, parseInt(100 - sensor.currentliquidlevel));
             });
         })
         .catch(err => console.error(err));

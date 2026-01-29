@@ -135,7 +135,7 @@ function getFilterParams($excludePage = true) {
                 <i class="fas fa-tint"></i>
             </div>
             <h1><?php echo htmlspecialchars($tankName); ?></h1>
-            <p>Monitor your liquid tank data.</p>
+            <p>Monitor your liquid tank event.</p>
         </div>
 
         <div class="nav-links">
