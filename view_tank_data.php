@@ -9,6 +9,14 @@ if (!isset($_SESSION['userID'])) {
 
 $tankID = $_GET['tankID'] ?? '';
 
+// Temporary
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $stmt = $conn->prepare("INSERT INTO tankpumpevent (liquidsensorID, dateandtime, wateringstatus, wateringvolume) VALUES (?, NOW(), 1, FLOOR(RAND() * 100 + 1))");
+    $stmt->bind_param("i", $tankID);
+    $stmt->execute();
+    $stmt->close();
+}
+
 // Pagination
 $limit = 15;
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -98,9 +106,13 @@ function getFilterParams($excludePage = true) {
         .page-header h1 { font-size: 2.2rem; font-weight: 700; background: linear-gradient(135deg, #2196F3, #1976D2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem; }
         .page-header p { color: #666; font-size: 1.1rem; }
         .message-container { margin-bottom: 2rem; }
-        .nav-links { text-align: center; margin-bottom: 2rem; }
+        .nav-links { text-align: center; margin-bottom: 2rem; display: flex; justify-content: center;}
         .nav-links a { display: inline-block; margin: 0 0.5rem; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; border-radius: 25px; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
         .nav-links a:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); text-decoration: none; }
+        
+        .nav-links button { display: inline-block; margin: 0 0.5rem; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; border-radius: 25px; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
+        .nav-links button:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); text-decoration: none; }
+
         .data-table { width: 100%; border-collapse: collapse; margin-top: 1em; }
         .data-table th, .data-table td { padding: 0.75em; text-align: center; border-bottom: 1px solid #dee2e6; }
         .data-table th { background: #f8f9fa; font-weight: bold; }
@@ -142,6 +154,11 @@ function getFilterParams($excludePage = true) {
             <a href="dashboard.php">
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
             </a>
+            <form method="POST" action="">
+                <button type="submit" class="tempbtn">
+                    <i class="fas fa-upload">Click Me</i>
+                </button>
+            </form>
         </div>
         
         <div class="page-header">
