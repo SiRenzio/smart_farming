@@ -339,16 +339,6 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
             aspect-ratio: 4 / 5;
         }
 
-        /* .tankmodal {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        } */
-
         .measurement {
             position: absolute;
             right: 15px;
@@ -385,7 +375,7 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
 
         .water {
             position: absolute;
-            bottom: -7px;
+            bottom: -3px;
             left: 0;
             width: 100%;
             height: 0; 
@@ -405,7 +395,7 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
 
         .waves-svg {
             width: 200%;
-            height: 60%;
+            height: 65%;
         }
 
         .wave-path {
@@ -441,11 +431,11 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 700;
             color: #1976D2; 
             z-index: 10;
-            text-shadow: 0 2px 10px rgba(255,255,255,0.8);
+            text-shadow: 0 2px 10px rgba(255, 255, 255, 0.93);
         }
 
         @media (max-width: 768px) {
@@ -537,8 +527,8 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
                         <i class="fas fa-water"></i>
                     </div>
                     <div class="card-content">
-                        <h3>Water Tank Level Overview</h3>
-                        <p>Monitor current tanks water level.</p>
+                        <h3>Liquid Tank Level Overview</h3>
+                        <p>Monitor current tanks liquid level.</p>
                     </div>
                 </div>
 
@@ -702,8 +692,60 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
             </div>
         </div>
     </div>
-
 <script>
+function updateTank(sensorID, liters, percent) {
+    const tank = document.querySelector(
+        `.tank[data-liquidsensor-id="${sensorID}"]`
+    );
+    if (!tank) return;
+
+    const visualHeight = Math.max(0, Math.min(100, percent));
+
+    const water = tank.querySelector('.water');
+    const text  = tank.querySelector('.level-text');
+
+    text.innerText = liters + ' L';
+    water.style.height = visualHeight + '%';
+}
+
+function fetchLiquidLevel() {
+    fetch('fetch_liquidlevel_data.php')
+        .then(res => res.json())
+        .then(data => {
+            data.forEach(sensor => {
+
+                // 220L barrel tank - initial calculation
+                const diameter = 550; // mm
+                const totalHeight = 935; // mm
+                const radius = diameter / 2; // mm
+                const maxCapacity = 220; // Liters capacity of tank
+
+                const sensorReadingMM = sensor.currentliquidlevel * 10; //convert cm to mm
+                
+                let liquidHeightMM = totalHeight - sensorReadingMM; 
+                liquidHeightMM = Math.max(0, Math.min(totalHeight, liquidHeightMM));
+                let liquidLiters = (Math.PI * Math.pow(radius, 2) * liquidHeightMM) / 1000000;
+                
+                // Calculate percentage based on 220L limit
+                const percentage = (liquidLiters / maxCapacity) * 100;
+
+                updateTank(sensor.liquidsensorID, Math.round(liquidLiters, 2), percentage);
+            });
+        })
+        .catch(err => console.error(err));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    fetchLiquidLevel();
+    setInterval(fetchLiquidLevel, 2000);
+});
+</script>
+
+</body>
+</html> 
+
+
+<!-- <script>
 function updateTank(sensorID, newLevel) {
     const tank = document.querySelector(
         `.tank[data-liquidsensor-id="${sensorID}"]`
@@ -737,73 +779,6 @@ function fetchLiquidLevel() {
                 
                 liquidlevel = 100 - sensor.currentliquidlevel; // put calculation here if ready
                 updateTank(sensor.liquidsensorID, parseInt(liquidlevel));
-            });
-        })
-        .catch(err => console.error(err));
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    fetchLiquidLevel();
-    setInterval(fetchLiquidLevel, 2000);
-});
-</script>
-</body>
-</html> 
-
-<!-- <script>
-function updateTank(sensorID, liters, percent) {
-    const tank = document.querySelector(
-        `.tank[data-liquidsensor-id="${sensorID}"]`
-    );
-    if (!tank) return;
-
-    const visualHeight = Math.max(0, Math.min(100, percent));
-
-    const water = tank.querySelector('.water');
-    const text  = tank.querySelector('.level-text');
-
-    // Update Text to show Liters
-    text.innerText = liters + ' L';
-    
-    // Update Blue Wave height based on percentage relative to 220L
-    water.style.height = visualHeight + '%';
-}
-
-function fetchLiquidLevel() {
-    fetch('fetch_liquidlevel_data.php')
-        .then(res => res.json())
-        .then(data => {
-            data.forEach(sensor => {
-
-                // --- 1. Tank Physical Dimensions ---
-                // We keep these to calculate the actual volume based on the sensor reading
-                const diameter = 570; // mm
-                const totalHeight = 890; // mm
-                const radius = diameter / 2; // mm
-
-                // --- 2. Calculate Water Height ---
-                // Convert sensor reading from cm to mm
-                const sensorReadingMM = sensor.currentliquidlevel * 10; 
-                
-                // Calculate height of liquid (Tank Height - Empty Space)
-                let liquidHeightMM = totalHeight - sensorReadingMM; 
-
-                liquidHeightMM = Math.max(0, Math.min(totalHeight, liquidHeightMM));
-
-                // --- 3. Calculate Volume (Liters) ---
-                // Formula: (π * r² * h) / 1,000,000
-                const liquidLiters = (Math.PI * Math.pow(radius, 2) * liquidHeightMM) / 1000000;
-
-                // --- 4. Calculate Percentage (Scaled to 220L) ---
-                // CHANGE: We manually set max capacity to 220L here.
-                const maxCapacity = 220; 
-                
-                // Calculate percentage based on 220L limit
-                const percentage = (liquidLiters / maxCapacity) * 100;
-
-                // --- 5. Update UI ---
-                // We now pass 3 arguments: ID, Liters (Text), and Percentage (Visual)
-                updateTank(sensor.liquidsensorID, Math.round(liquidLiters), percentage);
             });
         })
         .catch(err => console.error(err));
