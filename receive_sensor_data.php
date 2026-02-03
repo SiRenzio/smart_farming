@@ -22,7 +22,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 // Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
+    http_response_code(400);
     exit();
 }
 
@@ -45,6 +45,7 @@ try {
         
         // Extract sensor data from the request
         $soilSensorID = $dataToLog['SoilSensorID'] ?? null;
+        $soilSensorID = $dataToLog['locationID'] ?? null;
         $soilN = $dataToLog['SoilN'] ?? null;
         $soilP = $dataToLog['SoilP'] ?? null;
         $soilK = $dataToLog['SoilK'] ?? null;
@@ -60,15 +61,16 @@ try {
         }
         
         // Prepare and execute the INSERT statement
-        $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
+        $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, locationID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
         
         if ($stmt === null) {
             throw new Exception('Failed to prepare SQL statement: ' . $conn->error);
         }
         
         // Bind parameters
-        $stmt->bind_param('iiiiidddd', 
-            $soilSensorID, 
+        $stmt->bind_param('iiiiiidddd', 
+            $soilSensorID,
+            $locationID, 
             $soilN, 
             $soilP, 
             $soilK, 
