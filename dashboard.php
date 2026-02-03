@@ -341,7 +341,7 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
 
         .measurement {
             position: absolute;
-            right: 15px;
+            right: 5px;
             top: 20px;
             bottom: 20px;
             width: 10px;
@@ -663,6 +663,23 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
                 <div class="card-action">
                     <a href="sensors.php" class="card-btn">
                         <i class="fas fa-list"></i> View Sensors
+                    </a>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon icon-sensor">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Deploy Sensors</h3>
+                        <p>Deploy and configure soil monitoring sensors</p>
+                    </div>
+                </div>
+                <div class="card-action">
+                    <a href="manage_sensors.php" class="card-btn">
+                        <i class="fas fa-paper-plane"></i> Deploy Sensor
                     </a>
                 </div>
             </div>
