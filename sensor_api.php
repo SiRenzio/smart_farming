@@ -22,6 +22,7 @@ function sendResponse($success, $message, $data = null) {
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // Get parameters from query string (Arduino sends these)
     $soilSensorID = isset($_GET['SoilSensorID']) ? (int)$_GET['SoilSensorID'] : null;
+    $locationID = isset($_GET['locationID']) ? (int)$_GET['locationID'] : null;
     $soilN = isset($_GET['SoilN']) ? (float)$_GET['SoilN'] : null;
     $soilP = isset($_GET['SoilP']) ? (float)$_GET['SoilP'] : null;
     $soilK = isset($_GET['SoilK']) ? (float)$_GET['SoilK'] : null;
@@ -29,23 +30,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $soilPH = isset($_GET['SoilPH']) ? (float)$_GET['SoilPH'] : null;
     $soilT = isset($_GET['SoilT']) ? (float)$_GET['SoilT'] : null;
     $soilMois = isset($_GET['SoilMois']) ? (float)$_GET['SoilMois'] : null;
-    $flowRate = isset($_GET['FlowRate']) ? (float)$_GET['FlowRate'] : null;
+    $liquidVolume = isset($_GET['liquidVolume']) ? (float)$_GET['liquidVolume'] : null;
     
     // Validate required fields
     if (!$soilSensorID) {
         sendResponse(false, 'SoilSensorID is required');
     }
+    if (!$locationID) {
+        sendResponse(false, 'LocationID is required');
+    }
     
     // Check if sensor exists
-    $checkStmt = $conn->prepare('SELECT soilSensorID FROM sensorinfo WHERE soilSensorID = ?');
-    $checkStmt->bind_param('i', $soilSensorID);
-    $checkStmt->execute();
-    $checkResult = $checkStmt->get_result();
+    $check_sensorStmt = $conn->prepare('SELECT soilSensorID FROM sensorinfo WHERE soilSensorID = ?');
+    $check_sensorStmt->bind_param('i', $soilSensorID);
+    $check_sensorStmt->execute();
+    $check_sensorResult = $check_sensorStmt->get_result();
     
-    if ($checkResult->num_rows === 0) {
+    if ($check_sensorResult->num_rows === 0) {
         sendResponse(false, 'Sensor ID ' . $soilSensorID . ' does not exist');
     }
-    $checkStmt->close();
+    $check_sensorStmt->close();
+
+    // Check if location exists
+    $check_locationStmt = $conn->prepare('SELECT locationID FROM locationinfo WHERE locationID = ?');
+    $check_locationStmt->bind_param('i', $locationID);
+    $check_locationStmt->execute();
+    $check_locationResult = $check_locationStmt->get_result();
+    
+    if ($check_locationResult->num_rows === 0) {
+        sendResponse(false, 'Location ID ' . $locationID . ' does not exist');
+    }
+    $check_locationStmt->close();
+
     
     // Validate data ranges
     if ($soilPH !== null && ($soilPH < 0 || $soilPH > 14)) {
@@ -60,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $dateTime = date('Y-m-d H:i:s');
     
     // Insert data into database
-    $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, FlowRate, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, locationID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
     
     // Handle NULL values properly
     $bindN = $soilN ?? 0;
@@ -70,10 +86,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $bindPH = $soilPH ?? 0.0;
     $bindT = $soilT ?? 0.0;
     $bindMois = $soilMois ?? 0.0;
-    $bindFlow = $flowRate ?? 0.0;
+    $bindFlow = $liquidVolume ?? 0.0;
     
-    $stmt->bind_param('iiiiidddds', 
+    $stmt->bind_param('iiiiiidddds', 
         $soilSensorID, 
+        $locationID,
         $bindN, 
         $bindP, 
         $bindK, 
@@ -90,6 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         sendResponse(true, 'Sensor data received and stored successfully', [
             'id' => $insertId,
             'sensor_id' => $soilSensorID,
+            'location_id' => $locationID,
             'timestamp' => $dateTime,
             'values' => [
                 'N' => $soilN,
