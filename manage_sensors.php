@@ -236,12 +236,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     button.disabled = !(checkbox.checked && this.value !== "");
                 });
             });
-                </script>
 
-                <?php if (!empty($selected)): ?>
-                <h3>Config Sent to ESP32</h3>
-                <pre><?= json_encode($selected, JSON_PRETTY_PRINT); ?></pre>
-                <?php endif; ?>
+            function updateSensors() {
+                fetch('fetch_sensor.php')
+                    .then(res => res.json())
+                    .then(data => {
+                        data.forEach(sensor => {
+                            const input = document.querySelector(
+                                `.sensor-box input[value="${sensor.soilSensorID}"]`
+                            );
+
+                            if (!input) return;
+
+                            const box = input.closest('.sensor-box');
+
+                            const nameEl = box.querySelector('.sensor-name');
+                            const indicator = box.querySelector('.indicator');
+                            const button = box.querySelector('.send-button');
+
+                            nameEl.textContent = `${sensor.sensorName}`;
+
+                            indicator.style.background =
+                                sensor.sensorStatus == 1 ? '#4CAF50' : '#f44336';
+                        });
+                    })
+                    .catch(err => console.error('AJAX error:', err));
+            }
+
+            // Poll every 3 seconds
+            setInterval(updateSensors, 3000);
+        </script>
         </div>
     </div>
 </body>
