@@ -674,7 +674,7 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
                     </div>
                     <div class="card-content">
                         <h3>Deploy Sensors</h3>
-                        <p>Deploy and configure soil monitoring sensors</p>
+                        <p>Deploy soil sensors to your farm locations</p>
                     </div>
                 </div>
                 <div class="card-action">
