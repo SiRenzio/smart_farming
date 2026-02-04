@@ -126,11 +126,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .pagination-info { text-align: center; margin-top: 1rem; color: rgba(14, 0, 0, 0.9); font-size: 0.9rem; }
         .sensors-container { display: flex; justify-content: center; max-width: 1200px; margin: 0 auto; gap: 1.5rem; }
         .sensor-box { margin-bottom: 15px; padding: 3rem; border: 1px solid #ccc; width: 500px; position: relative; display: flex; flex-direction: column; border-radius: 10px; background: #f9f9f9; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
-        .sensor-box label { margin: 0 auto; font-size: 1.2rem; font-weight: 600; cursor: pointer; padding-bottom: 1rem;}
-        .sensor-box input[type="checkbox"] { margin-right: 1rem; transform: scale(1.5); cursor: pointer; }
+        .sensor-box label { position: absolute; top: 1.5rem; left: 6rem; font-size: 1.2rem; font-weight: 600; cursor: pointer; padding-bottom: 1rem; width: 100%;}
+        .sensor-box input[type="checkbox"] { margin: 0.2rem; position: absolute; right: 7.5rem; transform: scale(1.5); cursor: pointer;  width: 1.5rem; height: 1.5rem; }
         .location-select { margin: 0 auto; display: none; }
-        .location-select select { padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; transition: all 0.3s ease; min-width: 200px; }
-        .send-button { display: block; margin: 2rem auto; padding: 0.75rem 2rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 25px; font-size: 1.1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: all 0.3s ease; }
+        .location-select select { padding: 0.5rem 1rem; margin-top: 2.5rem; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; transition: all 0.3s ease; min-width: 200px; }
+        .send-button { display: block; position: relative; margin: 0 auto; margin-top: 3rem; padding: 0.75rem 2rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 25px; font-size: 1.1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: all 0.3s ease; }
+        .send-button:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+        .sensor-box .icon { position: absolute; top: 1.5rem; left: 1.5rem; width: 60px; height: 60px; background: linear-gradient(135deg, #2196F3, #1976D2); border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem; color: white; }
+        .online { position: absolute; top: 3rem; left: 6rem; display: flex; align-items: center; gap: 0.4rem; font-weight: bold;}
+        .indicator { width: 12px; height: 12px; background: #4CAF50; border-radius: 50%; box-shadow: 0 0 8px rgba(76, 175, 80, 0.6); }
     </style>
 </head>
 <body>
@@ -167,9 +171,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <div class="sensors-container">
+            <?php if ($sensors->num_rows == 0): ?>
+                <div class="empty-state">
+                    <p>No sensors found. <a href="add_sensor.php">Add your first sensor</a> to get started.</p>
+                </div>
+            <?php endif; ?>
             <form method="POST">
                 <?php while ($sensor = $sensors->fetch_assoc()): ?>
                     <div class="sensor-box">
+                        <div class="icon">
+                            <i class="fas fa-microchip"></i>
+                        </div>
+                        <div class="online">
+                            <div class="indicator"></div>
+                            <p>Online</p>
+                        </div>
                         <label>
                             <input type="checkbox"
                                 name="sensor[]"
@@ -188,16 +204,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                        <button type="submit" class="send-button" disabled>Send to ESP32</button>
                     </div>
                 <?php endwhile; ?>
-                <button type="submit" class="send-button">Send to ESP32</button>
             </form>
 
                 <script>
                 function toggleLocation(cb) {
-                    const locDiv = cb.closest('.sensor-box').querySelector('.location-select');
-                    locDiv.style.display = cb.checked ? 'block' : 'none';
+                const box = cb.closest('.sensor-box');
+                const locDiv = box.querySelector('.location-select');
+                const select = box.querySelector('select');
+                const button = box.querySelector('.send-button');
+
+                if (cb.checked) {
+                    locDiv.style.display = 'block';
+                    select.required = true;
+                } else {
+                    locDiv.style.display = 'none';
+                    select.required = false;
+                    select.value = "";
+                    button.disabled = true;
                 }
+            }
+
+            document.querySelectorAll('.location-select select').forEach(select => {
+                select.addEventListener('change', function () {
+                    const box = this.closest('.sensor-box');
+                    const checkbox = box.querySelector('input[type="checkbox"]');
+                    const button = box.querySelector('.send-button');
+
+                    button.disabled = !(checkbox.checked && this.value !== "");
+                });
+            });
                 </script>
 
                 <?php if (!empty($selected)): ?>
