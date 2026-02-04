@@ -129,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .sensor-box label { position: absolute; top: 1.5rem; left: 6rem; font-size: 1.2rem; font-weight: 600; cursor: pointer; padding-bottom: 1rem; width: 100%;}
         .sensor-box input[type="checkbox"] { margin: 0.2rem; position: absolute; right: 7.5rem; transform: scale(1.5); cursor: pointer;  width: 1.5rem; height: 1.5rem; }
         .location-select { margin: 0 auto; display: none; }
-        .location-select select { padding: 0.5rem 1rem; margin-top: 2.5rem; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; transition: all 0.3s ease; min-width: 200px; }
+        .location-select select { padding: 1rem 1rem; margin-top: 2.5rem; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; transition: all 0.3s ease; min-width: 200px; }
         .send-button { display: block; position: relative; margin: 0 auto; margin-top: 3rem; padding: 0.75rem 2rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 25px; font-size: 1.1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: all 0.3s ease; }
         .send-button:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
         .sensor-box .icon { position: absolute; top: 1.5rem; left: 1.5rem; width: 60px; height: 60px; background: linear-gradient(135deg, #2196F3, #1976D2); border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem; color: white; }
@@ -191,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 name="sensor[]"
                                 value="<?= $sensor['soilSensorID'] ?>"
                                 onchange="toggleLocation(this)">
-                            <?= htmlspecialchars($sensor['sensorName']) ?>
+                                <span class="sensor-name"><?= htmlspecialchars($sensor['sensorName']) ?></span>
                         </label>
 
                         <div class="location-select">
@@ -209,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endwhile; ?>
             </form>
 
-                <script>
+        <script>
                 function toggleLocation(cb) {
                 const box = cb.closest('.sensor-box');
                 const locDiv = box.querySelector('.location-select');
@@ -237,6 +237,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 });
             });
                 </script>
+
+                <?php if (!empty($selected)): ?>
+                <h3>Config Sent to ESP32</h3>
+                <pre><?= json_encode($selected, JSON_PRETTY_PRINT); ?></pre>
+                <?php endif; ?>
         </div>
     </div>
 </body>
