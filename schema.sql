@@ -35,7 +35,7 @@ CREATE TABLE sensorinfo (
     soilSensorID INT(15) AUTO_INCREMENT PRIMARY KEY,
     sensorName VARCHAR(50),
     sensorMacAddress VARCHAR(30),
-    sensorIPAdress VARCHAR(30),
+    sensorIPAddress VARCHAR(30),
     sensorStatus TINYINT(1),
     dateAdded DATETIME
 );

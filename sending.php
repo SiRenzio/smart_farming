@@ -1,21 +1,28 @@
 <?php
-$esp32_url = "http://172.18.0.10/receive";
+function sendToESP32($sensorIP, $sensorID, $locationID) {
+    if (empty($sensorIP)) {
+        return "No IP address defined";
+    }
 
-$data = [
-    "SoilSensorID"   => 14,
-    "locationID" => 13
-];
+    $esp32_url = "http://{$sensorIP}/receive";
 
-$options = [
-    'http' => [
-        'header'  => "Content-Type: application/json\r\n",
-        'method'  => 'POST',
-        'content' => json_encode($data),
-        'timeout' => 5
-    ]
-];
+    $data = [
+        "SoilSensorID" => (int)$sensorID,
+        "locationID"  => (int)$locationID
+    ];
 
-$context = stream_context_create($options);
-$response = file_get_contents($esp32_url, false, $context);
+    $options = [
+        'http' => [
+            'header'  => "Content-Type: application/json\r\n",
+            'method'  => 'POST',
+            'content' => json_encode($data),
+            'timeout' => 5
+        ]
+    ];
 
-echo $response;
+    var_dump($esp32_url, $data);
+
+    $context = stream_context_create($options);
+    return @file_get_contents($esp32_url, false, $context) ?: "ESP32 not reachable";
+}
+?>

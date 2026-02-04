@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'db.php';
+require_once 'sending.php';
 
 if (!isset($_SESSION['userID'])) {
     header('Location: login.php');
@@ -10,7 +11,7 @@ if (!isset($_SESSION['userID'])) {
 // Fetch sensors
 $sensors = $conn->query("SELECT s.*, sd.*, f.* FROM sensorinfo s
     LEFT JOIN sensordata sd ON s.soilSensorID = sd.SoilSensorID
-    LEFT JOIN farmlocation f ON sd.locationID = f.locationID
+    LEFT JOIN farmlocation f ON sd.locationID = f.locationID WHERE s.sensorStatus = 1
     GROUP BY s.soilSensorID
     ORDER BY s.soilSensorID ASC");
 
@@ -28,18 +29,44 @@ while ($row = $mapResult->fetch_assoc()) {
     $sensorLocations[$row['soilSensorID']][] = $row;
 }
 
+$sensorIpMap = [];
+
+$ipQuery = $conn->query("
+    SELECT soilSensorID, sensorIPAddress
+    FROM sensorinfo
+");
+
+while ($row = $ipQuery->fetch_assoc()) {
+    $sensorIpMap[$row['soilSensorID']] = $row['sensorIPAddress'];
+}
+
 // Handle submission
 $selected = [];
+$espResponses = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($_POST['sensor'] ?? [] as $sensorID) {
         $locationID = $_POST['location'][$sensorID] ?? null;
-        if ($locationID) {
+        $sensorIP   = $sensorIpMap[$sensorID] ?? null;
+
+        if ($locationID && $sensorIP) {
             $selected[] = [
                 'sensor_id' => $sensorID,
-                'location_id' => $locationID
+                'location_id' => $locationID,
+                'sensor_ip' => $sensorIP
+            ];
+
+            $espResponses[] = [
+                'sensor_id' => $sensorID,
+                'location_id' => $locationID,
+                'ip' => $sensorIP,
+                'response' => sendToESP32($sensorIP, $sensorID, $locationID)
             ];
         }
+    }
+
+    if (!empty($espResponses)) {
+        $success = "Configuration sent to ESP32 device(s) successfully!";
     }
 }
 
@@ -161,9 +188,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <button type="submit" class="send-button">Send to ESP32</button>
                     </div>
                 <?php endwhile; ?>
+                <button type="submit" class="send-button">Send to ESP32</button>
             </form>
 
                 <script>
