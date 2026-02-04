@@ -1,13 +1,13 @@
 <?php
 require_once 'db.php';
 
-// Set headers to allow cross-origin requests if needed
+// Set headers for JSON and Cross-Origin
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST');
+header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Function to send JSON response
+// Function to send JSON response (Structure maintained for ESP32/Arduino)
 function sendResponse($success, $message, $data = null) {
     echo json_encode([
         'success' => $success,
@@ -18,51 +18,54 @@ function sendResponse($success, $message, $data = null) {
     exit;
 }
 
-// Check if this is a GET request (from Arduino)
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    // Get parameters from query string (Arduino sends these)
-    $soilSensorID = isset($_GET['SoilSensorID']) ? (int)$_GET['SoilSensorID'] : null;
-    $locationID = isset($_GET['locationID']) ? (int)$_GET['locationID'] : null;
-    $soilN = isset($_GET['SoilN']) ? (float)$_GET['SoilN'] : null;
-    $soilP = isset($_GET['SoilP']) ? (float)$_GET['SoilP'] : null;
-    $soilK = isset($_GET['SoilK']) ? (float)$_GET['SoilK'] : null;
-    $soilEC = isset($_GET['SoilEC']) ? (float)$_GET['SoilEC'] : null;
-    $soilPH = isset($_GET['SoilPH']) ? (float)$_GET['SoilPH'] : null;
-    $soilT = isset($_GET['SoilT']) ? (float)$_GET['SoilT'] : null;
-    $soilMois = isset($_GET['SoilMois']) ? (float)$_GET['SoilMois'] : null;
-    $liquidVolume = isset($_GET['liquidVolume']) ? (float)$_GET['liquidVolume'] : null;
+// Check if this is a POST request
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
-    // Validate required fields
-    if (!$soilSensorID) {
-        sendResponse(false, 'SoilSensorID is required');
+    // Fetch raw JSON payload from ESP32
+    $json_payload = file_get_contents('php://input');
+    $decoded_data = json_decode($json_payload, true);
+
+    if (!$decoded_data) {
+        sendResponse(false, 'Invalid JSON or empty payload');
     }
-    if (!$locationID) {
-        sendResponse(false, 'LocationID is required');
+
+    // Map ESP32 JSON keys to PHP variables
+    $soilSensorID = isset($decoded_data['SoilSensorID']) ? (int)$decoded_data['SoilSensorID'] : null;
+    $locationID = isset($decoded_data['locationID']) ? (int)$decoded_data['locationID'] : null;
+    $soilN = isset($decoded_data['soilN']) ? (float)$decoded_data['soilN'] : 0;
+    $soilP = isset($decoded_data['soilP']) ? (float)$decoded_data['soilP'] : 0;
+    $soilK = isset($decoded_data['soilK']) ? (float)$decoded_data['soilK'] : 0;
+    $soilEC = isset($decoded_data['soilEC']) ? (float)$decoded_data['soilEC'] : 0;
+    $soilPH = isset($decoded_data['soilpH']) ? (float)$decoded_data['soilpH'] : 0.0;
+    $soilT = isset($decoded_data['soilT']) ? (float)$decoded_data['soilT'] : 0.0;
+    $soilMois = isset($decoded_data['soilM']) ? (float)$decoded_data['soilM'] : 0.0;
+    $liquidVolume = isset($decoded_data['soilLV']) ? (float)$decoded_data['soilLV'] : 0.0;
+    
+    // Validate required IDs
+    if (!$soilSensorID || !$locationID) {
+        sendResponse(false, 'SoilSensorID and locationID are required');
     }
     
     // Check if sensor exists
     $check_sensorStmt = $conn->prepare('SELECT soilSensorID FROM sensorinfo WHERE soilSensorID = ?');
     $check_sensorStmt->bind_param('i', $soilSensorID);
     $check_sensorStmt->execute();
-    $check_sensorResult = $check_sensorStmt->get_result();
-    
-    if ($check_sensorResult->num_rows === 0) {
+    if ($check_sensorStmt->get_result()->num_rows === 0) {
+        $check_sensorStmt->close();
         sendResponse(false, 'Sensor ID ' . $soilSensorID . ' does not exist');
     }
     $check_sensorStmt->close();
 
     // Check if location exists
-    $check_locationStmt = $conn->prepare('SELECT locationID FROM locationinfo WHERE locationID = ?');
+    $check_locationStmt = $conn->prepare('SELECT locationID FROM farmlocation WHERE locationID = ?');
     $check_locationStmt->bind_param('i', $locationID);
     $check_locationStmt->execute();
-    $check_locationResult = $check_locationStmt->get_result();
-    
-    if ($check_locationResult->num_rows === 0) {
+    if ($check_locationStmt->get_result()->num_rows === 0) {
+        $check_locationStmt->close();
         sendResponse(false, 'Location ID ' . $locationID . ' does not exist');
     }
     $check_locationStmt->close();
 
-    
     // Validate data ranges
     if ($soilPH !== null && ($soilPH < 0 || $soilPH > 14)) {
         sendResponse(false, 'Soil pH must be between 0 and 14. Received: ' . $soilPH);
@@ -71,35 +74,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($soilMois !== null && ($soilMois < 0 || $soilMois > 100)) {
         sendResponse(false, 'Soil moisture must be between 0% and 100%. Received: ' . $soilMois . '%');
     }
-    
+
     // Set current timestamp
     $dateTime = date('Y-m-d H:i:s');
     
     // Insert data into database
-    $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, locationID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, locationID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
     
-    // Handle NULL values properly
-    $bindN = $soilN ?? 0;
-    $bindP = $soilP ?? 0;
-    $bindK = $soilK ?? 0;
-    $bindEC = $soilEC ?? 0;
-    $bindPH = $soilPH ?? 0.0;
-    $bindT = $soilT ?? 0.0;
-    $bindMois = $soilMois ?? 0.0;
-    $bindFlow = $liquidVolume ?? 0.0;
-    
-    $stmt->bind_param('iiiiiidddds', 
+    $stmt->bind_param('iidddddddd', 
         $soilSensorID, 
         $locationID,
-        $bindN, 
-        $bindP, 
-        $bindK, 
-        $bindEC, 
-        $bindPH, 
-        $bindT, 
-        $bindMois, 
-        $bindFlow, 
-        $dateTime
+        $soilN, 
+        $soilP, 
+        $soilK, 
+        $soilEC, 
+        $soilPH, 
+        $soilT, 
+        $soilMois, 
+        $liquidVolume
     );
     
     if ($stmt->execute()) {
@@ -117,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'pH' => $soilPH,
                 'Temperature' => $soilT,
                 'Moisture' => $soilMois,
-                'FlowRate' => $flowRate
+                'Volume' => $liquidVolume
             ]
         ]);
     } else {
@@ -127,6 +119,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $stmt->close();
 }
 
-// If not GET request, send error
-sendResponse(false, 'Only GET requests are accepted for sensor data');
+sendResponse(false, 'Only POST requests are accepted for sensor data');
 ?>
