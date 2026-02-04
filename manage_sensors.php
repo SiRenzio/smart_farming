@@ -237,11 +237,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 });
             });
                 </script>
-
-                <?php if (!empty($selected)): ?>
-                <h3>Config Sent to ESP32</h3>
-                <pre><?= json_encode($selected, JSON_PRETTY_PRINT); ?></pre>
-                <?php endif; ?>
         </div>
     </div>
 </body>

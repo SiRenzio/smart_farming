@@ -20,8 +20,6 @@ function sendToESP32($sensorIP, $sensorID, $locationID) {
         ]
     ];
 
-    var_dump($esp32_url, $data);
-
     $context = stream_context_create($options);
     return @file_get_contents($esp32_url, false, $context) ?: "ESP32 not reachable";
 }
