@@ -294,7 +294,7 @@ function getFilterParams($excludePage = true) {
                             <th><i class="fas fa-cogs"></i> Action</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="sensor-data-body">
                         <?php foreach ($data as $row): ?>
                             <tr>
                                 <td>
@@ -363,5 +363,23 @@ function getFilterParams($excludePage = true) {
             <?php endif; ?>
         </div>
     </div>
+    <script>
+        function reloadSensorData() {
+            const params = new URLSearchParams(window.location.search);
+
+            fetch('fetch_sensor_data.php?' + params.toString())
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('sensor-data-body').innerHTML = html;
+                })
+                .catch(err => console.error('Auto reload failed:', err));
+        }
+
+        // reload every 5 seconds
+        setInterval(reloadSensorData, 5000);
+
+        // optional: initial refresh after page load
+        reloadSensorData();
+    </script>
 </body>
 </html>

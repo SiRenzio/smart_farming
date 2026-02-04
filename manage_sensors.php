@@ -98,8 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .pagination-link.disabled { background: rgba(255, 255, 255, 0.5); color: #aaa; cursor: not-allowed; pointer-events: none; }
         .pagination-info { text-align: center; margin-top: 1rem; color: rgba(14, 0, 0, 0.9); font-size: 0.9rem; }
         .sensors-container { display: flex; justify-content: center; max-width: 1200px; margin: 0 auto; gap: 1.5rem; }
-        .sensor-box { margin-bottom: 15px; padding: 3rem; border: 1px solid #ccc; width: 500px; position: relative; display: flex; border-radius: 10px; background: #f9f9f9; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
-        .sensor-box label { margin: 0 auto; font-size: 1.2rem; font-weight: 600; cursor: pointer; }
+        .sensor-box { margin-bottom: 15px; padding: 3rem; border: 1px solid #ccc; width: 500px; position: relative; display: flex; flex-direction: column; border-radius: 10px; background: #f9f9f9; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+        .sensor-box label { margin: 0 auto; font-size: 1.2rem; font-weight: 600; cursor: pointer; padding-bottom: 1rem;}
         .sensor-box input[type="checkbox"] { margin-right: 1rem; transform: scale(1.5); cursor: pointer; }
         .location-select { margin: 0 auto; display: none; }
         .location-select select { padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; transition: all 0.3s ease; min-width: 200px; }
@@ -161,10 +161,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                        <button type="submit" class="send-button">Send to ESP32</button>
                     </div>
                 <?php endwhile; ?>
-
-                <button type="submit" class="send-button">Send to ESP32</button>
             </form>
 
                 <script>
