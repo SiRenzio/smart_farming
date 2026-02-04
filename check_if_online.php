@@ -1,7 +1,7 @@
 <?php
-session_start();
 require_once 'db.php';
 header('Content-Type: application/json; charset=utf-8');
+date_default_timezone_set('Asia/Manila');
 
 // Get POST data
 $input = file_get_contents('php://input');
@@ -17,6 +17,9 @@ if (!isset($data['macAddress']) || !isset($data['ipAddress'])) {
 $mac = $conn->real_escape_string($data['macAddress']);
 $ip  = $conn->real_escape_string($data['ipAddress']);
 
+// Set current timestamp
+$dateTime = date('Y-m-d H:i:s');
+
 // Check if sensor exists
 $sql = "SELECT sensorMacAddress FROM sensorinfo WHERE sensorMacAddress='$mac' LIMIT 1";
 $result = $conn->query($sql);
@@ -26,7 +29,7 @@ $response = [];
 if ($result && $result->num_rows > 0) {   
     // Update IP and set status to 1 (Online)
     $updateSql = "UPDATE sensorinfo 
-                  SET sensorIPAddress = '$ip', sensorStatus = 1 
+                  SET sensorIPAddress = '$ip', sensorStatus = 1, last_sensor_online = '$dateTime'
                   WHERE sensorMacAddress = '$mac'";
 
     if ($conn->query($updateSql) === TRUE) {
