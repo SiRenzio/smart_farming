@@ -14,22 +14,19 @@
 // Include database connection
 require_once 'db.php';
 
-// Set headers to allow cross-origin requests (useful for IoT devices)
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 header('Content-Type: application/json; charset=utf-8');
 
-// Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(400);
+    http_response_code(200); // Changed to 200 for successful preflight
     exit();
 }
 
-// Initialize response array
 $response = [
     'status' => 'success',
-    'message' => 'Data received successfully',
+    'message' => 'Process started',
     'timestamp' => date('Y-m-d H:i:s'),
     'method' => $_SERVER['REQUEST_METHOD'],
     'data_received' => null,
@@ -37,39 +34,39 @@ $response = [
 ];
 
 try {
-    // Get all incoming data (GET, POST, COOKIE)
-    $dataToLog = $_REQUEST;
-    
+    // --- KEY FIX: READ RAW JSON DATA ---
+    $json = file_get_contents('php://input');
+    $dataToLog = json_decode($json, true);
+    // ------------------------------------
+
     if (!empty($dataToLog)) {
-        $response['data_received'] = 'Data received via ' . $_SERVER['REQUEST_METHOD'];
-        
-        // Extract sensor data from the request
-        $soilSensorID = $dataToLog['SoilSensorID'] ?? null;
-        $soilSensorID = $dataToLog['locationID'] ?? null;
-        $soilN = $dataToLog['SoilN'] ?? null;
-        $soilP = $dataToLog['SoilP'] ?? null;
-        $soilK = $dataToLog['SoilK'] ?? null;
-        $soilEC = $dataToLog['SoilEC'] ?? null;
-        $soilPH = $dataToLog['SoilPH'] ?? null;
-        $soilT = $dataToLog['SoilT'] ?? null;
-        $soilMois = $dataToLog['SoilMois'] ?? null;
-        $liquidVolume = $dataToLog['liquidVolume'] ?? null;
-        
-        // Validate required fields
-        if ($soilSensorID === null) {
-            throw new Exception('SoilSensorID is required');
+        $response['data_received'] = $dataToLog; // Log actual data for debugging
+
+        // Extract sensor data (Match the keys from your ESP32 Arduino code)
+        // ESP32 uses: soilSensorID, locationID, soilN, soilP, soilK, soilEC, soilpH, soilT, soilM, soilLV
+        $SoilSensorID = $dataToLog['SoilSensorID'] ?? null;
+        $locationID   = $dataToLog['locationID'] ?? null;
+        $soilN        = $dataToLog['soilN'] ?? null;
+        $soilP        = $dataToLog['soilP'] ?? null;
+        $soilK        = $dataToLog['soilK'] ?? null;
+        $soilEC       = $dataToLog['soilEC'] ?? null;
+        $soilPH       = $dataToLog['soilpH'] ?? null;
+        $soilT        = $dataToLog['soilT'] ?? null;
+        $soilMois     = $dataToLog['soilM'] ?? null;
+        $liquidVolume = $dataToLog['soilLV'] ?? null;
+
+        if ($SoilSensorID === null) {
+            throw new Exception('SoilSensorID is missing in JSON payload');
         }
-        
-        // Prepare and execute the INSERT statement
+
         $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, locationID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
         
-        if ($stmt === null) {
-            throw new Exception('Failed to prepare SQL statement: ' . $conn->error);
+        if ($stmt === false) {
+            throw new Exception('Prepare failed: ' . $conn->error);
         }
-        
-        // Bind parameters
-        $stmt->bind_param('iiiiiidddd', 
-            $soilSensorID,
+
+        $stmt->bind_param('iidddddddd', 
+            $SoilSensorID,
             $locationID, 
             $soilN, 
             $soilP, 
@@ -80,16 +77,13 @@ try {
             $soilMois, 
             $liquidVolume
         );
-        
-        // Execute the statement
+
         if ($stmt->execute()) {
-            $insertedID = $conn->insert_id;
-            $response['database_insert'] = 'Data inserted successfully with ID: ' . $insertedID;
-            $response['message'] = 'Sensor data saved to database successfully';
+            $response['database_insert'] = 'Success, ID: ' . $conn->insert_id;
+            $response['message'] = 'Sensor data saved successfully';
         } else {
-            throw new Exception('Failed to execute SQL statement: ' . $stmt->error);
+            throw new Exception('Execute failed: ' . $stmt->error);
         }
-        
         $stmt->close();
         
     } else {
@@ -100,13 +94,10 @@ try {
     
 } catch (Exception $e) {
     $response['status'] = 'error';
-    $response['message'] = 'Exception occurred: ' . $e->getMessage();
-    $response['data_received'] = 'Exception during processing';
-    $response['database_insert'] = 'Failed to insert data';
+    $response['message'] = $e->getMessage();
 }
 
-// Return JSON response
-echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+echo json_encode($response);
 
 /* 
 // COMMENTED OUT: File logging code (keeping for reference)
