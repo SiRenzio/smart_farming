@@ -1,5 +1,6 @@
 <?php
 require_once 'db.php';
+require_once 'check_if_offline.php';
 header('Content-Type: application/json; charset=utf-8');
 date_default_timezone_set('Asia/Manila');
 

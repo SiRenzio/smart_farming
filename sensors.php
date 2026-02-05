@@ -344,12 +344,22 @@ function getFilterParams($excludePage = true) {
                            <i class="fa fa-chevron-circle-left"></i>
                         </a>
 
+                        <a href="?<?php echo $queryParams; ?>&page=1"
+                            class="pagination-link <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                            First
+                        </a>
+
                         <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
                             <a href="?<?php echo $queryParams; ?>&page=<?php echo $i; ?>" 
                                class="pagination-link <?php echo ($i == $page) ? 'active' : ''; ?>">
                                <?php echo $i; ?>
                             </a>
                         <?php endfor; ?>
+
+                        <a href="?<?php echo $queryParams; ?>&page=<?php echo $totalPages; ?>"
+                            class="pagination-link <?php echo ($page >= $totalPages) ? 'disabled' : ''; ?>">
+                            Last
+                        </a>
 
                         <a href="?<?php echo $queryParams; ?>&page=<?php echo min($totalPages, $page + 1); ?>" 
                            class="pagination-link <?php echo ($page >= $totalPages) ? 'disabled' : ''; ?>">

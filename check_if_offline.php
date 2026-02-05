@@ -37,8 +37,3 @@ function checkIF_Offline($conn) {
         }
     }
 }
-
-while (true) {
-    checkIF_Offline($conn);
-    sleep(1); // Wait 1 minute
-}
