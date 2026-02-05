@@ -177,6 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <form method="POST">
                 <?php while ($sensor = $sensors->fetch_assoc()): ?>
+                    <?php if ($sensor['sensorStatus'] != 1) continue; ?>
                     <div class="sensor-box">
                         <div class="icon">
                             <i class="fas fa-microchip"></i>
