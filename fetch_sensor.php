@@ -9,7 +9,6 @@ $result = $conn->query("
         sd.locationID
     FROM sensorinfo s
     LEFT JOIN sensordata sd ON s.soilSensorID = sd.soilSensorID
-    WHERE s.sensorStatus = 1
     GROUP BY s.soilSensorID
 ");
 
