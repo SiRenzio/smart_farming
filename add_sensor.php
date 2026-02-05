@@ -22,16 +22,23 @@ $stmt->close();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sensorName = trim($_POST['sensorName'] ?? '');
+    $sensorMacAddress = trim($_POST['sensorMacAddress'] ?? '');
 
     // Validate
-    if (!$sensorName) {
+    if (!$sensorName && !$sensorMacAddress) {
+        $errors[] = 'Sensor name and MAC address are required.';
+    }
+    else if (!$sensorName) {
         $errors[] = 'Sensor name is required.';
+    }
+    else if (!$sensorMacAddress) {
+        $errors[] = 'Sensor MAC address is required.';
     }
 
     if (!$errors) {
         // Insert sensor name to database
         $namestmt = $conn->prepare('INSERT INTO sensorinfo (sensorName, sensorMacAddress, dateAdded) VALUES (?, ?, NOW())');
-        $namestmt->bind_param('ss', $sensorName, $_POST['sensorMacAddress']);
+        $namestmt->bind_param('ss', $sensorName, $sensorMacAddress);
         if ($namestmt->execute()) {
             $sensorID = $conn->insert_id; // Get the auto-generated ID
             $success = 'Sensor added successfully! <a href="sensors.php">View all sensors</a>.';
@@ -294,7 +301,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            name="sensorName" 
                            class="form-input"
                            placeholder="Enter sensor name (e.g., Sensor A, Sensor B)" 
-                           required 
                            value="<?php echo htmlspecialchars($_POST['sensorName'] ?? ''); ?>">
                 </div>
 
@@ -305,7 +311,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            name="sensorMacAddress" 
                            class="form-input"
                            placeholder="Enter sensor MAC address (e.g., 00:11:22:33:44:55)" 
-                           required 
                            value="<?php echo htmlspecialchars($_POST['sensorMacAddress'] ?? ''); ?>">
                 </div>
 

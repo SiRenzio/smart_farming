@@ -644,8 +644,8 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
                     </div>
                 </div>
                 <div class="card-action">
-                    <a href="add_sensor.php" class="card-btn">
-                        <i class="fas fa-plus"></i> Add New Sensor
+                    <a href="manage_sensors.php" class="card-btn">
+                        <i class="fas fa-paper-plane"></i> Deploy Sensor
                     </a>
                 </div>
             </div>
@@ -666,23 +666,7 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
                     </a>
                 </div>
             </div>
-
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="card-icon icon-sensor">
-                        <i class="fas fa-microchip"></i>
-                    </div>
-                    <div class="card-content">
-                        <h3>Deploy Sensors</h3>
-                        <p>Deploy soil sensors to your farm locations</p>
-                    </div>
-                </div>
-                <div class="card-action">
-                    <a href="manage_sensors.php" class="card-btn">
-                        <i class="fas fa-paper-plane"></i> Deploy Sensor
-                    </a>
-                </div>
-            </div>
+            
         </div>
 
         <div class="stats-section">
