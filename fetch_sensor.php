@@ -6,9 +6,11 @@ $result = $conn->query("
         s.soilSensorID,
         s.sensorName,
         s.sensorStatus,
-        sd.locationID
+        sd.locationID,
+        fl.farmName
     FROM sensorinfo s
     LEFT JOIN sensordata sd ON s.soilSensorID = sd.soilSensorID
+    LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID
     GROUP BY s.soilSensorID
 ");
 

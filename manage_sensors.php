@@ -136,6 +136,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .online { position: absolute; top: 3rem; left: 6rem; display: flex; align-items: center; gap: 0.4rem; font-weight: bold;}
         .indicator { width: 12px; height: 12px; background: #4CAF50; border-radius: 50%; box-shadow: 0 0 8px rgba(76, 175, 80, 0.6); }
         .empty-state { font-size: 1.2rem; color: #333; background: rgba(255, 255, 255, 0.8); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+        .location { position: absolute; top: 1.5rem; right: 2rem; font-size: 1.2rem; font-weight: bold; }
+        .disconnect { position: relative; margin: 1rem auto 0; padding: 0.5rem 1.5rem; background: #dc3545; color: white; border: none; border-radius: 25px; font-size: 1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3); transition: all 0.3s ease; }
     </style>
 </head>
 <body>
@@ -177,23 +179,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <form method="POST">
                 <?php while ($sensor = $sensors->fetch_assoc()): ?>
-                    <?php if ($sensor['sensorStatus'] != 1) continue; ?>
                     <div class="sensor-box">
                         <div class="icon">
                             <i class="fas fa-microchip"></i>
                         </div>
                         <div class="online">
                             <div class="indicator"></div>
-                            <p>Online</p>
+                            <p class="status-text">Offline</p>
                         </div>
                         <label>
                             <input type="checkbox"
                                 name="sensor[]"
                                 value="<?= $sensor['soilSensorID'] ?>"
-                                onchange="toggleLocation(this)">
+                                onchange="toggleLocation(this)"
+                                class="sensor-checkbox">
                                 <span class="sensor-name"><?= htmlspecialchars($sensor['sensorName']) ?></span>
                         </label>
-
+                        <span class="location" style="display: none;"></span>
                         <div class="location-select">
                             <select name="location[<?= $sensor['soilSensorID'] ?>]">
                                 <option value="">Select location</option>
@@ -205,12 +207,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </select>
                         </div>
                         <button type="submit" class="send-button" disabled>Send to ESP32</button>
+                        <button class="disconnect" style="display: none;" data-ip="<?= htmlspecialchars($sensorIpMap[$sensor['soilSensorID']] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
                     </div>
                 <?php endwhile; ?>
             </form>
 
         <script>
-                function toggleLocation(cb) {
+            function toggleLocation(cb) {
                 const box = cb.closest('.sensor-box');
                 const locDiv = box.querySelector('.location-select');
                 const select = box.querySelector('select');
@@ -237,12 +240,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 });
             });
 
+            function disconnectSensor(btn) {
+                const sensorIP = btn.dataset.ip;
+
+                if (!sensorIP) {
+                    alert('No sensor IP found');
+                    return;
+                }
+
+                btn.disabled = true;
+
+                fetch('disconnect_sensor.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        sensor_ip: sensorIP
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Sensor disconnected successfully');
+                    } else {
+                        alert(data.message || 'Disconnect failed');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Server error');
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                });
+            }
+
             function updateSensors() {
                 fetch('fetch_sensor.php')
                     .then(res => res.json())
                     .then(data => {
-                        let onlineCount = 0;
                         const emptyState = document.querySelector('.empty-state');
+                        if (data.length === 0) {
+                            emptyState.style.display = 'block';
+                        } else {
+                            emptyState.style.display = 'none';
+                        }
 
                         data.forEach(sensor => {
                             const input = document.querySelector(
@@ -252,25 +295,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             if (!input) return;
 
                             const box = input.closest('.sensor-box');
-
+                            const disconnectBtn = box.querySelector('.disconnect');
+                            const statusText = box.querySelector('.status-text');
                             const nameEl = box.querySelector('.sensor-name');
                             const indicator = box.querySelector('.indicator');
                             const button = box.querySelector('.send-button');
+                            const sensorCheckbox = box.querySelector('.sensor-checkbox');
+                            const location = box.querySelector('.location');
 
                             if (sensor.sensorStatus == 1) {
                                 box.style.display = 'block';
                                 nameEl.textContent = `${sensor.sensorName}`;
-                                onlineCount++;
+                                location.textContent = `${sensor.farmName}`;
+                                location.style.display = 'block';
+                                statusText.textContent = "Online";
+                                sensorCheckbox.style.display = 'none';
+                                disconnectBtn.style.display = 'block';
+                                button.style.display = 'none';
                             } else {
-                                box.style.display = 'none';
+                                statusText.textContent = "Offline";
+                                sensorCheckbox.style.display = 'inline-block';
+                                button.style.display = 'block';
+                                disconnectBtn.style.display = 'none';
+                                location.style.display = 'none';
                             }
 
                             indicator.style.background =
                                 sensor.sensorStatus == 1 ? '#4CAF50' : '#f44336';
                         });
-                        if (emptyState) {
-                            emptyState.style.display = onlineCount === 0 ? 'block' : 'none';
-                        }
                     })
                     .catch(err => console.error('AJAX error:', err));
             }
