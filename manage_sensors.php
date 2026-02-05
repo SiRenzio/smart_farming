@@ -11,7 +11,7 @@ if (!isset($_SESSION['userID'])) {
 // Fetch sensors
 $sensors = $conn->query("SELECT s.*, sd.*, f.* FROM sensorinfo s
     LEFT JOIN sensordata sd ON s.soilSensorID = sd.SoilSensorID
-    LEFT JOIN farmlocation f ON sd.locationID = f.locationID WHERE s.sensorStatus = 1
+    LEFT JOIN farmlocation f ON sd.locationID = f.locationID
     GROUP BY s.soilSensorID
     ORDER BY s.soilSensorID ASC");
 
@@ -128,13 +128,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .sensor-box { margin-bottom: 15px; padding: 3rem; border: 1px solid #ccc; width: 500px; position: relative; display: flex; flex-direction: column; border-radius: 10px; background: #f9f9f9; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
         .sensor-box label { position: absolute; top: 1.5rem; left: 6rem; font-size: 1.2rem; font-weight: 600; cursor: pointer; padding-bottom: 1rem; width: 100%;}
         .sensor-box input[type="checkbox"] { margin: 0.2rem; position: absolute; right: 7.5rem; transform: scale(1.5); cursor: pointer;  width: 1.5rem; height: 1.5rem; }
-        .location-select { margin: 0 auto; display: none; }
+        .location-select { margin: 0 auto; display: none; justify-content: center;}
         .location-select select { padding: 1rem 1rem; margin-top: 2.5rem; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; transition: all 0.3s ease; min-width: 200px; }
         .send-button { display: block; position: relative; margin: 0 auto; margin-top: 3rem; padding: 0.75rem 2rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 25px; font-size: 1.1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: all 0.3s ease; }
         .send-button:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
         .sensor-box .icon { position: absolute; top: 1.5rem; left: 1.5rem; width: 60px; height: 60px; background: linear-gradient(135deg, #2196F3, #1976D2); border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem; color: white; }
         .online { position: absolute; top: 3rem; left: 6rem; display: flex; align-items: center; gap: 0.4rem; font-weight: bold;}
         .indicator { width: 12px; height: 12px; background: #4CAF50; border-radius: 50%; box-shadow: 0 0 8px rgba(76, 175, 80, 0.6); }
+        .empty-state { font-size: 1.2rem; color: #333; background: rgba(255, 255, 255, 0.8); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
     </style>
 </head>
 <body>
@@ -171,11 +172,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <div class="sensors-container">
-            <?php if ($sensors->num_rows == 0): ?>
-                <div class="empty-state">
-                    <p>No sensors found. <a href="add_sensor.php">Add your first sensor</a> to get started.</p>
-                </div>
-            <?php endif; ?>
+            <div class="empty-state" style="display: none;">
+                <p>No sensors found. <a href="add_sensor.php">Add your first sensor</a> to get started.</p>
+            </div>
             <form method="POST">
                 <?php while ($sensor = $sensors->fetch_assoc()): ?>
                     <div class="sensor-box">
@@ -217,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 const button = box.querySelector('.send-button');
 
                 if (cb.checked) {
-                    locDiv.style.display = 'block';
+                    locDiv.style.display = 'flex';
                     select.required = true;
                 } else {
                     locDiv.style.display = 'none';
@@ -241,6 +240,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 fetch('fetch_sensor.php')
                     .then(res => res.json())
                     .then(data => {
+                        let onlineCount = 0;
+                        const emptyState = document.querySelector('.empty-state');
+
                         data.forEach(sensor => {
                             const input = document.querySelector(
                                 `.sensor-box input[value="${sensor.soilSensorID}"]`
@@ -254,11 +256,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             const indicator = box.querySelector('.indicator');
                             const button = box.querySelector('.send-button');
 
-                            nameEl.textContent = `${sensor.sensorName}`;
+                            if (sensor.sensorStatus == 1) {
+                                box.style.display = 'block';
+                                nameEl.textContent = `${sensor.sensorName}`;
+                                onlineCount++;
+                            } else {
+                                box.style.display = 'none';
+                            }
 
                             indicator.style.background =
                                 sensor.sensorStatus == 1 ? '#4CAF50' : '#f44336';
                         });
+                        if (emptyState) {
+                            emptyState.style.display = onlineCount === 0 ? 'block' : 'none';
+                        }
                     })
                     .catch(err => console.error('AJAX error:', err));
             }
