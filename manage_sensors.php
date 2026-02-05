@@ -281,17 +281,36 @@ while ($row = $ipQuery->fetch_assoc()) {
                             const sensorCheckbox = box.querySelector('.sensor-checkbox');
                             const location = box.querySelector('.location');
 
-                            if (sensor.sensorStatus == 1) {
-                                box.style.display = 'block';
-                                nameEl.textContent = `${sensor.sensorName}`;
+                            if (sensor.sensorStatus == 1 && sensor.isConnected == 1) {
+                                // 🟢 CONFIGURED
+                                sensorCheckbox.style.display = 'none';
                                 location.style.display = 'block';
-                                statusText.textContent = "Online";
-                            } else {
-                                statusText.textContent = "Offline";
-                                button.style.display = 'block';
-                                location.style.display = 'none';
-                            }
+                                button.style.display = 'none';
+                                disconnectBtn.style.display = 'block';
+                                statusText.textContent = 'Online';
+                                indicator.style.background = '#4CAF50';
 
+                            } else if (sensor.sensorStatus == 1 && sensor.isConnected == 0) {
+                                // 🟡 ONLINE BUT IDLE
+                                sensorCheckbox.style.display = 'inline-block';
+                                sensorCheckbox.disabled = false;
+                                button.style.display = 'block';
+                                disconnectBtn.style.display = 'none';
+                                location.style.display = 'none';
+                                statusText.textContent = 'Online';
+                                indicator.style.background = '#4CAF50';
+
+                            } else {
+                                // 🔴 OFFLINE
+                                sensorCheckbox.checked = false;
+                                sensorCheckbox.disabled = true;
+                                sensorCheckbox.style.display = 'inline-block';
+                                button.style.display = 'none';
+                                disconnectBtn.style.display = 'none';
+                                location.style.display = 'none';
+                                statusText.textContent = 'Offline';
+                                indicator.style.background = '#f44336';
+                            }
                             indicator.style.background =
                                 sensor.sensorStatus == 1 ? '#4CAF50' : '#f44336';
                         });
@@ -379,6 +398,30 @@ while ($row = $ipQuery->fetch_assoc()) {
                 .then(data => {
                     if (data.success) {
                         alert('Sensor disconnected successfully');
+                        const box = btn.closest('.sensor-box');
+                        const checkbox = box.querySelector('.sensor-checkbox');
+                        const select = box.querySelector('select');
+                        const locDiv = box.querySelector('.location-select');
+                        const sendBtn = box.querySelector('.send-button');
+                        const statusText = box.querySelector('.status-text');
+                        const indicator = box.querySelector('.indicator');
+
+                        // ✅ UI RESET
+                        btn.style.display = 'none';
+
+                        checkbox.style.display = 'inline-block';
+                        checkbox.disabled = false;
+                        checkbox.checked = false;
+
+                        select.disabled = false;
+                        select.value = '';
+                        locDiv.style.display = 'none';
+
+                        sendBtn.style.display = 'block';
+                        sendBtn.disabled = true;
+
+                        statusText.textContent = 'Offline';
+                        indicator.style.background = '#f44336';
                     } else {
                         alert(data.message || 'Disconnect failed');
                     }

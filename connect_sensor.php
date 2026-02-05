@@ -30,6 +30,12 @@ if (stripos($response, 'not reachable') !== false) {
     exit;
 }
 
+$stmt = $conn->prepare(
+    "UPDATE sensorinfo SET isConnected = 1 WHERE soilSensorID = ?"
+);
+$stmt->bind_param("i", $sensorID);
+$stmt->execute();
+
 echo json_encode([
     'success' => true,
     'esp_response' => $response

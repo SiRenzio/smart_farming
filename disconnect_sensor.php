@@ -19,6 +19,12 @@ if (!$sensorIP) {
 
 $response = sendToDisconnect($sensorIP, $command);
 
+$stmt = $conn->prepare(
+    "UPDATE sensorinfo SET isConnected = 0 WHERE sensorIPAddress = ?"
+);
+$stmt->bind_param("s", $sensorIP);
+$stmt->execute();
+
 echo json_encode([
     'success' => true,
     'response' => $response
