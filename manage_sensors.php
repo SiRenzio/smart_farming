@@ -40,35 +40,35 @@ while ($row = $ipQuery->fetch_assoc()) {
     $sensorIpMap[$row['soilSensorID']] = $row['sensorIPAddress'];
 }
 
-// Handle submission
-$selected = [];
-$espResponses = [];
+// // Handle submission
+// $selected = [];
+// $espResponses = [];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    foreach ($_POST['sensor'] ?? [] as $sensorID) {
-        $locationID = $_POST['location'][$sensorID] ?? null;
-        $sensorIP   = $sensorIpMap[$sensorID] ?? null;
+// if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+//     foreach ($_POST['sensor'] ?? [] as $sensorID) {
+//         $locationID = $_POST['location'][$sensorID] ?? null;
+//         $sensorIP   = $sensorIpMap[$sensorID] ?? null;
 
-        if ($locationID && $sensorIP) {
-            $selected[] = [
-                'sensor_id' => $sensorID,
-                'location_id' => $locationID,
-                'sensor_ip' => $sensorIP
-            ];
+//         if ($locationID && $sensorIP) {
+//             $selected[] = [
+//                 'sensor_id' => $sensorID,
+//                 'location_id' => $locationID,
+//                 'sensor_ip' => $sensorIP
+//             ];
 
-            $espResponses[] = [
-                'sensor_id' => $sensorID,
-                'location_id' => $locationID,
-                'ip' => $sensorIP,
-                'response' => sendToESP32($sensorIP, $sensorID, $locationID)
-            ];
-        }
-    }
+//             $espResponses[] = [
+//                 'sensor_id' => $sensorID,
+//                 'location_id' => $locationID,
+//                 'ip' => $sensorIP,
+//                 'response' => sendToESP32($sensorIP, $sensorID, $locationID)
+//             ];
+//         }
+//     }
 
-    if (!empty($espResponses)) {
-        $success = "Configuration sent to ESP32 device(s) successfully!";
-    }
-}
+//     if (!empty($espResponses)) {
+//         $success = "Configuration sent to ESP32 device(s) successfully!";
+//     }
+// }
 
 ?>
 
@@ -136,6 +136,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .online { position: absolute; top: 3rem; left: 6rem; display: flex; align-items: center; gap: 0.4rem; font-weight: bold;}
         .indicator { width: 12px; height: 12px; background: #4CAF50; border-radius: 50%; box-shadow: 0 0 8px rgba(76, 175, 80, 0.6); }
         .empty-state { font-size: 1.2rem; color: #333; background: rgba(255, 255, 255, 0.8); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+        .location { position: absolute; top: 1.5rem; right: 2rem; font-size: 1.2rem; font-weight: bold; }
+        .disconnect { position: relative; margin: 1rem auto 0; padding: 0.5rem 1.5rem; background: #dc3545; color: white; border: none; border-radius: 25px; font-size: 1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3); transition: all 0.3s ease; }
         .btn-primary {
             background: linear-gradient(135deg, #2196F3, #1976D2) !important;
             box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3) !important;
@@ -189,9 +191,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="empty-state" style="display: none;">
                 <p>No sensors found. <a href="add_sensor.php">Add your first sensor</a> to get started.</p>
             </div>
-            <form method="POST">
+            <!-- <form method="POST"> -->
                 <?php while ($sensor = $sensors->fetch_assoc()): ?>
-                    <div class="sensor-box">
+                    <div class="sensor-box" data-sensor-id="<?= $sensor['soilSensorID'] ?>" data-ip="<?= htmlspecialchars($sensorIpMap[$sensor['soilSensorID']] ?? '') ?>">
                         <div class="icon">
                             <i class="fas fa-microchip"></i>
                         </div>
@@ -218,11 +220,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <button type="submit" class="send-button" disabled>Send to ESP32</button>
+                        <button type="button" class="send-button" onclick="sendToESP32(this)" disabled>Send to ESP32</button>
                         <button class="disconnect" style="display: none;" data-ip="<?= htmlspecialchars($sensorIpMap[$sensor['soilSensorID']] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
                     </div>
                 <?php endwhile; ?>
-            </form>
+            <!-- </form> -->
 
         <script>
             function toggleLocation(cb) {
@@ -251,6 +253,108 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     button.disabled = !(checkbox.checked && this.value !== "");
                 });
             });
+
+            function updateSensors() {
+                fetch('fetch_sensor.php')
+                    .then(res => res.json())
+                    .then(data => {
+                        const emptyState = document.querySelector('.empty-state');
+                        if (data.length === 0) {
+                            emptyState.style.display = 'block';
+                        } else {
+                            emptyState.style.display = 'none';
+                        }
+
+                        data.forEach(sensor => {
+                            const input = document.querySelector(
+                                `.sensor-box input[value="${sensor.soilSensorID}"]`
+                            );
+
+                            if (!input) return;
+
+                            const box = input.closest('.sensor-box');
+                            const disconnectBtn = box.querySelector('.disconnect');
+                            const statusText = box.querySelector('.status-text');
+                            const nameEl = box.querySelector('.sensor-name');
+                            const indicator = box.querySelector('.indicator');
+                            const button = box.querySelector('.send-button');
+                            const sensorCheckbox = box.querySelector('.sensor-checkbox');
+                            const location = box.querySelector('.location');
+
+                            if (sensor.sensorStatus == 1) {
+                                box.style.display = 'block';
+                                nameEl.textContent = `${sensor.sensorName}`;
+                                location.style.display = 'block';
+                                statusText.textContent = "Online";
+                            } else {
+                                statusText.textContent = "Offline";
+                                button.style.display = 'block';
+                                location.style.display = 'none';
+                            }
+
+                            indicator.style.background =
+                                sensor.sensorStatus == 1 ? '#4CAF50' : '#f44336';
+                        });
+                    })
+                    .catch(err => console.error('AJAX error:', err));
+            }
+
+            function sendToESP32(btn) {
+                const box = btn.closest('.sensor-box');
+                const sensorID = box.dataset.sensorId;
+                const sensorIP = box.dataset.ip;
+                const select = box.querySelector('select');
+                const checkbox = box.querySelector('.sensor-checkbox');
+                const disconnectBtn = box.querySelector('.disconnect');
+                const statusText = box.querySelector('.status-text');
+                const indicator = box.querySelector('.indicator');
+
+                const locationID = select.value;
+
+                if (!sensorID || !sensorIP || !locationID) {
+                    alert('Missing sensor configuration');
+                    return;
+                }
+
+                btn.disabled = true;
+
+                fetch('connect_sensor.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sensor_id: sensorID,
+                        location_id: locationID,
+                        sensor_ip: sensorIP
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert(data.message || 'Failed to send data');
+                        btn.disabled = false;
+                        return;
+                    }
+
+                    // ✅ UI SUCCESS STATE
+                    checkbox.style.display = 'none';
+                    checkbox.disabled = true;
+
+                    select.disabled = true;
+                    box.querySelector('.location-select').style.display = 'none';
+
+                    btn.style.display = 'none';
+                    disconnectBtn.style.display = 'block';
+
+                    statusText.textContent = 'Online';
+                    indicator.style.background = '#4CAF50';
+
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Server error');
+                    btn.disabled = false;
+                });
+            }
 
             function disconnectSensor(btn) {
                 const sensorIP = btn.dataset.ip;
@@ -286,57 +390,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 .finally(() => {
                     btn.disabled = false;
                 });
-            }
-
-            function updateSensors() {
-                fetch('fetch_sensor.php')
-                    .then(res => res.json())
-                    .then(data => {
-                        const emptyState = document.querySelector('.empty-state');
-                        if (data.length === 0) {
-                            emptyState.style.display = 'block';
-                        } else {
-                            emptyState.style.display = 'none';
-                        }
-
-                        data.forEach(sensor => {
-                            const input = document.querySelector(
-                                `.sensor-box input[value="${sensor.soilSensorID}"]`
-                            );
-
-                            if (!input) return;
-
-                            const box = input.closest('.sensor-box');
-                            const disconnectBtn = box.querySelector('.disconnect');
-                            const statusText = box.querySelector('.status-text');
-                            const nameEl = box.querySelector('.sensor-name');
-                            const indicator = box.querySelector('.indicator');
-                            const button = box.querySelector('.send-button');
-                            const sensorCheckbox = box.querySelector('.sensor-checkbox');
-                            const location = box.querySelector('.location');
-
-                            if (sensor.sensorStatus == 1) {
-                                box.style.display = 'block';
-                                nameEl.textContent = `${sensor.sensorName}`;
-                                location.textContent = `${sensor.farmName}`;
-                                location.style.display = 'block';
-                                statusText.textContent = "Online";
-                                sensorCheckbox.style.display = 'none';
-                                disconnectBtn.style.display = 'block';
-                                button.style.display = 'none';
-                            } else {
-                                statusText.textContent = "Offline";
-                                sensorCheckbox.style.display = 'inline-block';
-                                button.style.display = 'block';
-                                disconnectBtn.style.display = 'none';
-                                location.style.display = 'none';
-                            }
-
-                            indicator.style.background =
-                                sensor.sensorStatus == 1 ? '#4CAF50' : '#f44336';
-                        });
-                    })
-                    .catch(err => console.error('AJAX error:', err));
             }
 
             // Poll every 3 seconds
