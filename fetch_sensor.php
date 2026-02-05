@@ -11,7 +11,6 @@ $result = $conn->query("
     FROM sensorinfo s
     LEFT JOIN sensordata sd ON s.soilSensorID = sd.soilSensorID
     LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID
-    GROUP BY s.soilSensorID
 ");
 
 $sensors = [];

@@ -9,44 +9,15 @@ if (!isset($_SESSION['userID'])) {
 
 $errors = [];
 $success = '';
-$sensorLocationID = 0;
-$sensorLocation = '';
 
-// Fetch all sensors
-$sensors = [];
-$stmt = $conn->prepare("SELECT * FROM sensorinfo");
-$stmt->execute();
-$result = $stmt->get_result();
-while ($row = $result->fetch_assoc()) {
-    $sensors[] = $row;
-}
-$stmt->close();
-
-// Fetch all locations
-$locations = [];
-$locstmt = $conn->prepare("SELECT * FROM farmlocation");
-$locstmt->execute();
-$locresult = $locstmt->get_result();
-while ($locrow = $locresult->fetch_assoc()) {
-    $locations[] = $locrow;
-}
-$locstmt->close();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $soilSensorID = trim($_POST['soilSensorID'] ?? '');
 
-    if (!empty($_POST['sensorLocation'])) {
-        $sensorLocation = trim($_POST['sensorLocation'] ?? '');
-    } else if (!empty($_POST['sensorLocID'])) {
-        $sensorLocation = trim($_POST['sensorLocID'] ?? '');
-    }
+    $sensorLocation = trim($_POST['sensorLocation'] ?? '');
 
     // Validate
     if (!$sensorLocation) {
         $errors[] = 'Sensor location is required.';
-    }
-    if (!$soilSensorID) {
-        $errors[] = 'Sensor ID is required';
     }
 
     if (!$errors) {
@@ -55,22 +26,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sensorlocstmt->bind_param('s', $sensorLocation);
         if ($sensorlocstmt->execute()) {
             $sensorLocationID = $conn->insert_id;
-            $success = 'Sensor location addedd successfully.';
+            $success = 'Sensor location added successfully.';
         } else {
-            $errors[] = 'Failed to add sensor: ' . $conn->error . ' (Error Code: ' . $conn->errno . ')';
+            $errors[] = 'Failed to add location: ' . $conn->error . ' (Error Code: ' . $conn->errno . ')';
         }
         $sensorlocstmt->close();
-
-        // Insert sensor and sensor location to sensordata table
-        $stmt = $conn->prepare('INSERT INTO sensordata (soilSensorID, locationID, DateTime) VALUES (?, ?, NOW())');
-        $stmt->bind_param('ii', $soilSensorID, $sensorLocationID);
-        if ($stmt->execute()) {
-            $sensorID = $conn->insert_id; // Get the auto-generated ID
-            $success = 'Sensor #' . $sensorID . ' added successfully! <a href="sensors.php">View all sensors</a> or <a href="add_sensor_data.php">add sensor data</a>.';
-        } else {
-            $errors[] = 'Failed to add sensor location: ' . $conn->error . ' (Error Code: ' . $conn->errno . ')';
-        }
-        $stmt->close();
     }
 }
 ?>
@@ -343,28 +303,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            placeholder="Enter sensor location (e.g., Field 1, Plot 1)" 
                            value="<?php echo htmlspecialchars($_POST['sensorLocation'] ?? ''); ?>">
                 </div>
-                <div class="separator">OR</div>
-                <div class="form-group">
-                    <select name="sensorLocID" id="sensorLocID">
-                        <option value="">Select an existing location</option>
-                        <?php foreach ($locations as $location): ?>
-                            <option value="<?php echo $location['locationID']; ?>" <?php echo ($_POST['locationID'] ?? '') == $location['locationID'] ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($location['farmName']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="soilSensorID">Sensor *</label>
-                    <select name="soilSensorID" id="soilSensorID">
-                        <option value="">Select a sensor</option>
-                        <?php foreach ($sensors as $sensor): ?>
-                            <option value="<?php echo $sensor['soilSensorID']; ?>" <?php echo ($_POST['soilSensorID'] ?? '') == $sensor['soilSensorID'] ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($sensor['sensorName']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
 
                 <button type="submit" class="submit-btn">
                     <i class="fas fa-plus"></i> Add Sensor Location
@@ -372,11 +310,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
 
             <div class="nav-links">
-                <a href="dashboard.php">
-                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                <a href="manage_sensors.php">
+                    <i class="fas fa-arrow-left"></i> Back to Sensors
                 </a>
-                <a href="sensors.php">
-                    <i class="fas fa-list"></i> View All Sensors
+
+                <a href="dashboard.php">
+                    <i class="fas fa-tachometer-alt"></i> Back to Dashboard
                 </a>
             </div>
         </div>

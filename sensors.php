@@ -213,8 +213,8 @@ function getFilterParams($excludePage = true) {
         </div>
 
         <div class="nav-links">
-            <a href="add_sensor.php">
-                <i class="fas fa-plus"></i> Add New Sensor
+            <a href="manage_sensors.php">
+                <i class="fas fa-list"></i> Manage Sensors
             </a>
             <a href="dashboard.php">
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
