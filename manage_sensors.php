@@ -136,6 +136,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .online { position: absolute; top: 3rem; left: 6rem; display: flex; align-items: center; gap: 0.4rem; font-weight: bold;}
         .indicator { width: 12px; height: 12px; background: #4CAF50; border-radius: 50%; box-shadow: 0 0 8px rgba(76, 175, 80, 0.6); }
         .empty-state { font-size: 1.2rem; color: #333; background: rgba(255, 255, 255, 0.8); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #2196F3, #1976D2) !important;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3) !important;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4) !important;
+        }
     </style>
 </head>
 <body>
@@ -163,12 +172,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <div class="nav-links">
-            <a href="add_sensor.php">
-                <i class="fas fa-plus"></i> Add New Sensor
-            </a>
             <a href="dashboard.php">
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
             </a>
+
+            <a href="add_sensor.php" class="btn-primary">
+                <i class="fas fa-plus"></i> Add New Sensor
+            </a>
+
+            <a href="add_sensor_location.php" class="btn-primary">
+                <i class="fas fa-plus"></i> Add New Location
+            </a>
+            
         </div>
 
         <div class="sensors-container">

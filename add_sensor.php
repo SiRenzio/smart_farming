@@ -30,11 +30,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         // Insert sensor name to database
-        $namestmt = $conn->prepare('INSERT INTO sensorinfo (sensorName, dateAdded) VALUES (?, NOW())');
-        $namestmt->bind_param('s', $sensorName);
+        $namestmt = $conn->prepare('INSERT INTO sensorinfo (sensorName, sensorMacAddress, dateAdded) VALUES (?, ?, NOW())');
+        $namestmt->bind_param('ss', $sensorName, $_POST['sensorMacAddress']);
         if ($namestmt->execute()) {
             $sensorID = $conn->insert_id; // Get the auto-generated ID
-            $success = 'Sensor added successfully! <a href="add_sensor_location.php">Next, add sensor location</a>';
+            $success = 'Sensor added successfully! <a href="sensors.php">View all sensors</a>.';
             // Refresh sensor data
             $sensors = [];
             $stmt = $conn->prepare("SELECT * FROM sensorinfo");
@@ -298,18 +298,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            value="<?php echo htmlspecialchars($_POST['sensorName'] ?? ''); ?>">
                 </div>
 
+                <div class="form-group">
+                    <label for="sensorMacAddress">Sensor MAC Address *</label>
+                    <input type="text" 
+                           id="sensorMacAddress"
+                           name="sensorMacAddress" 
+                           class="form-input"
+                           placeholder="Enter sensor MAC address (e.g., 00:11:22:33:44:55)" 
+                           required 
+                           value="<?php echo htmlspecialchars($_POST['sensorMacAddress'] ?? ''); ?>">
+                </div>
+
                 <button type="submit" class="submit-btn">
                     <i class="fas fa-plus"></i> Add Sensor
                 </button>
             </form>
 
             <div class="nav-links">
+                <a href="manage_sensors.php">
+                    <i class="fas fa-arrow-left"></i> Back to Sensors
+                </a>
+
                 <a href="dashboard.php">
-                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    <i class="fas fa-tachometer-alt"></i> Back to Dashboard
                 </a>
-                <a href="sensors.php">
-                    <i class="fas fa-list"></i> View All Sensors
-                </a>
+                
             </div>
         </div>
     </div>

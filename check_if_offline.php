@@ -23,7 +23,7 @@ function checkIF_Offline($conn) {
             $timeDiffSeconds = $currentTime - $lastOnlineTime;
 
             // If inactive for more than 30 seconds, update status
-            if ($timeDiffSeconds > 10) {
+            if ($timeDiffSeconds > 5) {
                 $updateSql = "UPDATE sensorinfo SET sensorStatus = 0 WHERE soilSensorID = ?";
                 $stmt = $conn->prepare($updateSql);
                 
