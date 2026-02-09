@@ -81,7 +81,6 @@ while ($row = $ipQuery->fetch_assoc()) {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* [Styles kept exactly as before] */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: #333; }
         .page-container { max-width: 1500px; margin: 0 auto; padding: 2rem; }
@@ -95,49 +94,96 @@ while ($row = $ipQuery->fetch_assoc()) {
         .nav-links { text-align: center; margin-bottom: 2rem; }
         .nav-links a { display: inline-block; margin: 0 0.5rem; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; border-radius: 25px; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
         .nav-links a:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); text-decoration: none; }
-        .data-table { width: 100%; border-collapse: collapse; margin-top: 1em; }
-        .data-table th, .data-table td { padding: 0.75em; text-align: center; border-bottom: 1px solid #dee2e6; }
-        .data-table th { background: #f8f9fa; font-weight: bold; }
-        .data-table tr:hover { background: #f8f9fa; }
-        .btn { padding: 0.5em 1em; border: none; border-radius: 4px; text-decoration: none; font-size: 0.9em; cursor: pointer; }
-        .btn-edit { background: #ffc107; color: #212529; }
-        .btn-delete { background: #dc3545; color: white; }
-        .btn-clear { background: #dc3545; color: white; }
-        .btn:hover { opacity: 0.8; }
-        .error { color: #b30000; background: #ffe5e5; padding: 0.5em; border-radius: 4px; margin-bottom: 1em; }
-        .success { color: #155724; background: #d4edda; padding: 0.5em; border-radius: 4px; margin-bottom: 1em; }
-        a { color: #007bff; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        .empty-state { text-align: center; color: #6c757d; padding: 2em; }
-        .sensor-info { background: #e3f2fd; padding: 0.5em; border-radius: 4px; margin-bottom: 0.5em; }
-        .numeric-value { font-family: monospace; }
-        .actions { display: flex; gap: 0.5em; }
-        .filters-container { display: flex; flex-wrap: wrap; gap: 2rem; margin-bottom: 2rem; justify-content: center; align-items: flex-end; }
-        .filter { display: flex; flex-direction: column; align-items: flex-start; }
-        .filter label { font-weight: 500; margin-bottom: 0.3rem; color: #333; }
-        .filter select, .filter input { padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; transition: all 0.3s ease; min-width: 180px; }
-        .filter select:hover, .filter input:hover { border-color: #667eea; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2); }
-        .pagination-container { display: flex; justify-content: center; align-item: center; margin-top: 2rem; gap: 5px}
-        .pagination-link { display: flex; align-item: center; justify-content: center; min-width: 40px; height: 40px; background: rgba(255, 255, 255, 0.9); padding: 0.5rem 0.5rem; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; color: #555; font-weight: 600; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .pagination-link { font-size: 1.1rem;}
-        .pagination-link:hover { background: white; color: #667eea; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-decoration: none; }
-        .pagination-link.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-color: transparent; box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3); }
-        .pagination-link.disabled { background: rgba(255, 255, 255, 0.5); color: #aaa; cursor: not-allowed; pointer-events: none; }
-        .pagination-info { text-align: center; margin-top: 1rem; color: rgba(14, 0, 0, 0.9); font-size: 0.9rem; }
         .sensors-container { display: flex; justify-content: center; max-width: 1200px; margin: 0 auto; gap: 1.5rem; }
-        .sensor-box { margin-bottom: 15px; padding: 3rem; border: 1px solid #ccc; width: 500px; min-height: 260px; box-sizing: border-box; position: relative; display: flex; flex-direction: column; border-radius: 10px; background: #f9f9f9; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+        .sensor-box {
+            margin-bottom: 15px;
+            padding: 1.8rem;
+            border: 1px solid #ccc;
+            width: 500px;
+            min-height: 280px;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-radius: 20px;
+            background: #f9f9f9;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .sensor-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #2196F3, #1976D2);
+        }
+        
         .sensor-box label { position: absolute; top: 1.5rem; left: 6rem; font-size: 1.2rem; font-weight: 600; cursor: pointer; padding-bottom: 1rem; width: auto; max-width: calc(100% - 7rem);}
         .sensor-box input[type="checkbox"] { margin: 0.2rem; position: absolute; right: 1.5rem; top: 1.8rem; transform: scale(1.5); cursor: pointer;  width: 1.5rem; height: 1.5rem; }
-        .location-select { margin: 0 auto; display: none; justify-content: center;}
-        .location-select select { padding: 1rem 1rem; margin-top: 2.5rem; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; transition: all 0.3s ease; min-width: 200px; }
-        .send-button { display: block; position: relative; width: 12rem; margin: 0 auto; margin-top: 3rem; padding: 0.75rem 2rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 25px; font-size: 1.1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: all 0.3s ease; }
-        .send-button:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+        .location-select { 
+            display: none;
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            text-align: center;
+        }
+
+        .location-select select { 
+            width: 100%; 
+            padding: 0.8rem; 
+            border-radius: 12px; 
+            border: 2px solid #e0e0e0; 
+            background: #fafafa; 
+            font-size: 1rem;
+            cursor: pointer;
+            transition: border-color 0.3s;
+            margin-top: 5rem;
+        }
+        .send-button {
+            display: block;
+            width: 100%;
+            margin-top: auto;
+            padding: 0.85rem 2rem;
+            background: #1976D2;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .send-button:hover:not(:disabled) {
+            background: #1565C0;
+            transform: translateY(-2px);
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
         .sensor-box .icon { position: absolute; top: 1.5rem; left: 1.5rem; width: 60px; height: 60px; background: linear-gradient(135deg, #2196F3, #1976D2); border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem; color: white; }
         .online { position: absolute; top: 3rem; left: 6rem; display: flex; align-items: center; gap: 0.4rem; font-weight: bold;}
         .indicator { width: 12px; height: 12px; background: #4CAF50; border-radius: 50%; box-shadow: 0 0 8px rgba(76, 175, 80, 0.6); }
         .empty-state { font-size: 1.2rem; color: #333; background: rgba(255, 255, 255, 0.8); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
         .location { position: absolute; top: 1.5rem; right: 2rem; font-size: 1.2rem; font-weight: bold; }
-        .disconnect { position: relative; margin: 1rem auto 0; padding: 0.5rem 1.5rem; background: #dc3545; color: white; border: none; border-radius: 25px; font-size: 1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3); transition: all 0.3s ease; }
+        .disconnect {
+            width: 100%;
+            margin-top: auto;
+            padding: 0.85rem 2rem;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
         .btn-primary {
             background: linear-gradient(135deg, #2196F3, #1976D2) !important;
             box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3) !important;
@@ -204,16 +250,19 @@ while ($row = $ipQuery->fetch_assoc()) {
                         <label>
                             <span class="sensor-name"><?= htmlspecialchars($sensor['sensorName']) ?></span>
                         </label>
-                        <input type="checkbox"
-                            name="sensor[]"
-                            value="<?= $sensor['soilSensorID'] ?>"
-                            onchange="toggleLocation(this)"
-                            class="sensor-checkbox">
-                        </input>
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" 
+                                id="cb-<?= $sensor['soilSensorID'] ?>"
+                                name="sensor[]" 
+                                value="<?= $sensor['soilSensorID'] ?>" 
+                                onchange="toggleLocation(this)" 
+                                class="sensor-checkbox">
+                            <label for="cb-<?= $sensor['soilSensorID'] ?>" class="toggle-label"></label>
+                        </div>
                         <span class="location" style="display: none;"></span>
                         <div class="location-select">
                             <select name="location[<?= $sensor['soilSensorID'] ?>]">
-                                <option value="">Select location</option>
+                                <option value="">Select Farm Location</option>
                                 <?php foreach ($sensorLocations[$sensor['soilSensorID']] ?? [] as $loc): ?>
                                     <option value="<?= $loc['locationID'] ?>">
                                         <?= htmlspecialchars($loc['farmName']) ?>
