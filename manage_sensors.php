@@ -436,7 +436,7 @@ while ($row = $ipQuery->fetch_assoc()) {
             }
 
             // Poll every 3 seconds
-            setInterval(updateSensors, 3000);
+            setInterval(updateSensors, 100);
         </script>
         </div>
     </div>
