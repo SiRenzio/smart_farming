@@ -125,12 +125,12 @@ while ($row = $ipQuery->fetch_assoc()) {
         .pagination-link.disabled { background: rgba(255, 255, 255, 0.5); color: #aaa; cursor: not-allowed; pointer-events: none; }
         .pagination-info { text-align: center; margin-top: 1rem; color: rgba(14, 0, 0, 0.9); font-size: 0.9rem; }
         .sensors-container { display: flex; justify-content: center; max-width: 1200px; margin: 0 auto; gap: 1.5rem; }
-        .sensor-box { margin-bottom: 15px; padding: 3rem; border: 1px solid #ccc; width: 500px; position: relative; display: flex; flex-direction: column; border-radius: 10px; background: #f9f9f9; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
-        .sensor-box label { position: absolute; top: 1.5rem; left: 6rem; font-size: 1.2rem; font-weight: 600; cursor: pointer; padding-bottom: 1rem; width: 100%;}
-        .sensor-box input[type="checkbox"] { margin: 0.2rem; position: absolute; right: 7.5rem; transform: scale(1.5); cursor: pointer;  width: 1.5rem; height: 1.5rem; }
+        .sensor-box { margin-bottom: 15px; padding: 3rem; border: 1px solid #ccc; width: 500px; min-height: 260px; box-sizing: border-box; position: relative; display: flex; flex-direction: column; border-radius: 10px; background: #f9f9f9; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+        .sensor-box label { position: absolute; top: 1.5rem; left: 6rem; font-size: 1.2rem; font-weight: 600; cursor: pointer; padding-bottom: 1rem; width: auto; max-width: calc(100% - 7rem);}
+        .sensor-box input[type="checkbox"] { margin: 0.2rem; position: absolute; right: 1.5rem; top: 1.8rem; transform: scale(1.5); cursor: pointer;  width: 1.5rem; height: 1.5rem; }
         .location-select { margin: 0 auto; display: none; justify-content: center;}
         .location-select select { padding: 1rem 1rem; margin-top: 2.5rem; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; transition: all 0.3s ease; min-width: 200px; }
-        .send-button { display: block; position: relative; margin: 0 auto; margin-top: 3rem; padding: 0.75rem 2rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 25px; font-size: 1.1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: all 0.3s ease; }
+        .send-button { display: block; position: relative; width: 12rem; margin: 0 auto; margin-top: 3rem; padding: 0.75rem 2rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 25px; font-size: 1.1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: all 0.3s ease; }
         .send-button:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
         .sensor-box .icon { position: absolute; top: 1.5rem; left: 1.5rem; width: 60px; height: 60px; background: linear-gradient(135deg, #2196F3, #1976D2); border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem; color: white; }
         .online { position: absolute; top: 3rem; left: 6rem; display: flex; align-items: center; gap: 0.4rem; font-weight: bold;}
@@ -202,13 +202,14 @@ while ($row = $ipQuery->fetch_assoc()) {
                             <p class="status-text">Offline</p>
                         </div>
                         <label>
-                            <input type="checkbox"
-                                name="sensor[]"
-                                value="<?= $sensor['soilSensorID'] ?>"
-                                onchange="toggleLocation(this)"
-                                class="sensor-checkbox">
-                                <span class="sensor-name"><?= htmlspecialchars($sensor['sensorName']) ?></span>
+                            <span class="sensor-name"><?= htmlspecialchars($sensor['sensorName']) ?></span>
                         </label>
+                        <input type="checkbox"
+                            name="sensor[]"
+                            value="<?= $sensor['soilSensorID'] ?>"
+                            onchange="toggleLocation(this)"
+                            class="sensor-checkbox">
+                        </input>
                         <span class="location" style="display: none;"></span>
                         <div class="location-select">
                             <select name="location[<?= $sensor['soilSensorID'] ?>]">
@@ -225,6 +226,7 @@ while ($row = $ipQuery->fetch_assoc()) {
                     </div>
                 <?php endwhile; ?>
             <!-- </form> -->
+<<<<<<< HEAD
 
         <script>
             function toggleLocation(cb) {
@@ -438,7 +440,186 @@ while ($row = $ipQuery->fetch_assoc()) {
             // Poll every 3 seconds
             setInterval(updateSensors, 100);
         </script>
+=======
+>>>>>>> 2f5bd625324ecf263ebae722a204fc232bce4072
         </div>
     </div>
+    <script>
+        // UI States
+        const UI_STATES = {
+            OFFLINE: 'offline',
+            ONLINE_IDLE: 'online_idle',
+            CONFIGURED: 'configured'
+        };
+
+        // Helper to get elements within a sensor box
+        function getBoxEls(box) {
+            return {
+                checkbox: box.querySelector('.sensor-checkbox'),
+                locationLabel: box.querySelector('.location'),
+                locationSelect: box.querySelector('.location-select'),
+                select: box.querySelector('select'),
+                sendBtn: box.querySelector('.send-button'),
+                disconnectBtn: box.querySelector('.disconnect'),
+                statusText: box.querySelector('.status-text'),
+                indicator: box.querySelector('.indicator')
+            };
+        }
+
+        function renderState(box, state) {
+            const els = getBoxEls(box);
+
+            switch (state) {
+                case UI_STATES.CONFIGURED:
+                    els.checkbox.style.display = 'none';
+                    els.locationLabel.style.display = 'block';
+
+                     els.locationSelect.style.display = 'none';
+                     els.select.disabled = true;
+
+                    els.sendBtn.style.display = 'none';
+                    els.disconnectBtn.style.display = 'block';
+
+                    els.statusText.textContent = 'Online';
+                    els.indicator.style.background = '#4CAF50';
+                    break;
+
+                case UI_STATES.ONLINE_IDLE:
+                    els.checkbox.style.display = 'inline-block';
+                    els.checkbox.disabled = false;
+                    els.checkbox.checked = false;
+
+                    els.locationLabel.style.display = 'none';
+                    els.locationSelect.style.display = 'none';
+                    els.select.disabled = false;
+                    els.select.value = '';
+
+                    els.sendBtn.style.display = 'block';
+                    els.sendBtn.disabled = true;
+                    els.disconnectBtn.style.display = 'none';
+
+                     els.statusText.textContent = 'Online';
+                     els.indicator.style.background = '#4CAF50';
+                     break;
+
+                case UI_STATES.OFFLINE:
+                default:
+                    els.checkbox.style.display = 'none';
+                    els.checkbox.disabled = true;
+                    els.checkbox.checked = false;
+
+                    els.locationLabel.style.display = 'none';
+                    els.locationSelect.style.display = 'none';
+
+                    els.sendBtn.style.display = 'none';
+                    els.disconnectBtn.style.display = 'none';
+
+                    els.statusText.textContent = 'Offline';
+                    els.indicator.style.background = '#f44336';
+                    break;
+            }
+        }
+
+        function toggleLocation(cb) {
+            const box = cb.closest('.sensor-box');
+            const { locationSelect, select, sendBtn } = getBoxEls(box);
+
+            box.dataset.userInteracting = cb.checked ? '1' : '0';
+
+            locationSelect.style.display = cb.checked ? 'block' : 'none';
+            select.required = cb.checked;
+            if (!cb.checked) {
+                select.value = '';
+                sendBtn.disabled = true;
+            }
+        }
+
+        document.querySelectorAll('.location-select select').forEach(select => {
+            select.addEventListener('change', () => {
+                const box = select.closest('.sensor-box');
+                const { checkbox, sendBtn } = getBoxEls(box);
+                sendBtn.disabled = !(checkbox.checked && select.value);
+            });
+        });
+
+        function updateSensors() {
+            fetch('fetch_sensor.php')
+                .then(res => res.json())
+                .then(data => {
+                    document.querySelector('.empty-state').style.display =
+                        data.length === 0 ? 'block' : 'none';
+
+                    data.forEach(sensor => {
+                        const input = document.querySelector(
+                            `.sensor-box input[value="${sensor.soilSensorID}"]`
+                        );
+                        if (!input) return;
+
+                        const box = input.closest('.sensor-box');
+
+                        if (box.dataset.userInteracting === '1') return;
+
+                        if (sensor.sensorStatus == 1 && sensor.isConnected == 1) {
+                            renderState(box, UI_STATES.CONFIGURED);
+                        } else if (sensor.sensorStatus == 1) {
+                            renderState(box, UI_STATES.ONLINE_IDLE);
+                        } else {
+                            renderState(box, UI_STATES.OFFLINE);
+                        }
+                    });
+                })
+                .catch(err => console.error('AJAX error:', err));
+        }
+
+        function sendToESP32(btn) {
+            const box = btn.closest('.sensor-box');
+            const { select } = getBoxEls(box);
+
+             btn.disabled = true;
+
+            fetch('connect_sensor.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sensor_id: box.dataset.sensorId,
+                    location_id: select.value,
+                    sensor_ip: box.dataset.ip
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) throw new Error(data.message);
+                box.dataset.userInteracting = '0';
+                renderState(box, UI_STATES.CONFIGURED);
+            })
+            .catch(err => {
+                alert(err.message || 'Server error');
+                btn.disabled = false;
+            });
+        }
+
+        function disconnectSensor(btn) {
+            const box = btn.closest('.sensor-box');
+
+            btn.disabled = true;
+
+            fetch('disconnect_sensor.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ sensor_ip: btn.dataset.ip })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) throw new Error(data.message);
+                box.dataset.userInteracting = '0';
+                renderState(box, UI_STATES.ONLINE_IDLE);
+            })
+            .catch(err => alert(err.message || 'Server error'))
+            .finally(() => btn.disabled = false);
+        }
+
+        // Poll every 3 seconds
+        setInterval(updateSensors, 3000);
+    </script>
 </body>
 </html>
