@@ -95,6 +95,37 @@ while ($row = $ipQuery->fetch_assoc()) {
         .nav-links a { display: inline-block; margin: 0 0.5rem; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; border-radius: 25px; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
         .nav-links a:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); text-decoration: none; }
         .sensors-container { display: flex; justify-content: center; max-width: 1200px; margin: 0 auto; gap: 1.5rem; }
+        .offline-text {
+            position: absolute;
+            bottom: 4.5rem;
+            left: 1.5rem;
+            right: 1.5rem;
+            background: #ffebee;
+            color: #c62828;
+            padding: 0.8rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.1);
+        }
+
+        .online-text {
+            position: absolute;
+            bottom: 7rem;
+            left: 1.5rem;
+            right: 1.5rem;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 0.8rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(0, 255, 0, 0.1);
+        }
         .sensor-box {
             margin-bottom: 15px;
             padding: 1.8rem;
@@ -259,6 +290,14 @@ while ($row = $ipQuery->fetch_assoc()) {
                                 class="sensor-checkbox">
                             <label for="cb-<?= $sensor['soilSensorID'] ?>" class="toggle-label"></label>
                         </div>
+                        <div class="online-text" style="display: none;">
+                            <i class="fas fa-circle-check"></i>
+                            <span>The sensor is online and ready for configuration.</span>
+                        </div>
+                        <div class="offline-text" style="display: none;">
+                            <i class="fas fa-circle-exclamation"></i>
+                            <span>The sensor is currently offline. Please ensure it is powered on and connected to the network.</span>
+                        </div>
                         <span class="location" style="display: none;"></span>
                         <div class="location-select">
                             <select name="location[<?= $sensor['soilSensorID'] ?>]">
@@ -295,7 +334,9 @@ while ($row = $ipQuery->fetch_assoc()) {
                 sendBtn: box.querySelector('.send-button'),
                 disconnectBtn: box.querySelector('.disconnect'),
                 statusText: box.querySelector('.status-text'),
-                indicator: box.querySelector('.indicator')
+                indicator: box.querySelector('.indicator'),
+                offlineText: box.querySelector('.offline-text'),
+                onlineText: box.querySelector('.online-text')
             };
         }
 
@@ -315,6 +356,8 @@ while ($row = $ipQuery->fetch_assoc()) {
 
                     els.statusText.textContent = 'Connected';
                     els.indicator.style.background = '#4CAF50';
+                    els.offlineText.style.display = 'none';
+                    els.onlineText.style.display = 'none';
                     break;
 
                 case UI_STATES.ONLINE_IDLE:
@@ -331,8 +374,10 @@ while ($row = $ipQuery->fetch_assoc()) {
                     els.sendBtn.disabled = true;
                     els.disconnectBtn.style.display = 'none';
 
-                     els.statusText.textContent = 'Online';
-                     els.indicator.style.background = '#4CAF50';
+                    els.statusText.textContent = 'Online';
+                    els.indicator.style.background = '#4CAF50';
+                    els.offlineText.style.display = 'none';
+                    els.onlineText.style.display = 'block';
                      break;
 
                 case UI_STATES.OFFLINE:
@@ -349,15 +394,18 @@ while ($row = $ipQuery->fetch_assoc()) {
 
                     els.statusText.textContent = 'Offline';
                     els.indicator.style.background = '#f44336';
+                    els.offlineText.style.display = 'block';
+                    els.onlineText.style.display = 'none';
                     break;
             }
         }
 
         function toggleLocation(cb) {
             const box = cb.closest('.sensor-box');
-            const { locationSelect, select, sendBtn } = getBoxEls(box);
+            const { locationSelect, select, sendBtn, onlineText } = getBoxEls(box);
 
             box.dataset.userInteracting = cb.checked ? '1' : '0';
+            onlineText.style.display = 'none';
 
             locationSelect.style.display = cb.checked ? 'block' : 'none';
             select.required = cb.checked;
