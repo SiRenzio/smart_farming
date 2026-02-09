@@ -1,8 +1,43 @@
 <?php
 require_once 'db.php';
-require_once 'check_if_offline.php';
 header('Content-Type: application/json; charset=utf-8');
 date_default_timezone_set('Asia/Manila');
+
+// Function to check and update offline sensors
+function checkIF_Offline($conn) {
+    $currentTime = time();
+
+    $checkSql = "SELECT soilSensorID, sensorMacAddress, last_sensor_online 
+                 FROM sensorinfo 
+                 WHERE sensorStatus = 1";
+
+    $result = $conn->query($checkSql);
+
+    if ($result && $result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $soilSensorID = $row['soilSensorID'];
+            $macAddress   = $row['sensorMacAddress'];
+            $lastOnline   = $row['last_sensor_online'];
+
+            // Calculate time difference
+            $lastOnlineTime = strtotime($lastOnline);
+            $timeDiffSeconds = $currentTime - $lastOnlineTime;
+
+            // If inactive for more than 10 seconds, update status
+            if ($timeDiffSeconds > 10) {
+                $updateSql = "UPDATE sensorinfo SET sensorStatus = 0, isConnected = 0 WHERE soilSensorID = ?";
+                $stmt = $conn->prepare($updateSql);
+                
+                $stmt->bind_param("i", $soilSensorID);
+                
+                if ($stmt->execute()) {
+                    echo "[" . date('Y-m-d H:i:s') . "] Sensor ID {$soilSensorID} (MAC: {$macAddress}) set to Offline.\n";
+                }
+                $stmt->close();
+            }
+        }
+    }
+}
 
 // Get POST data
 $input = file_get_contents('php://input');
@@ -57,6 +92,11 @@ if ($result && $result->num_rows > 0) {
 
 // Return JSON to ESP32
 echo json_encode($response);
+
+while (true) {
+    checkIF_Offline($conn);
+    sleep(5);
+}
 
 $conn->close();
 ?>

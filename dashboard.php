@@ -738,7 +738,7 @@ function fetchLiquidLevel() {
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchLiquidLevel();
-    setInterval(fetchLiquidLevel, 2000);
+    setInterval(fetchLiquidLevel, 1000);
 });
 </script>
 

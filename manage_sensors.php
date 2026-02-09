@@ -313,7 +313,7 @@ while ($row = $ipQuery->fetch_assoc()) {
                     els.sendBtn.style.display = 'none';
                     els.disconnectBtn.style.display = 'block';
 
-                    els.statusText.textContent = 'Online';
+                    els.statusText.textContent = 'Connected';
                     els.indicator.style.background = '#4CAF50';
                     break;
 
@@ -452,7 +452,7 @@ while ($row = $ipQuery->fetch_assoc()) {
         }
 
         // Poll every 3 seconds
-        setInterval(updateSensors, 3000);
+        setInterval(updateSensors, 100);
     </script>
 </body>
 </html>
