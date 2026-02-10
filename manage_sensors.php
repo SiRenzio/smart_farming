@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
         .nav-links { text-align: center; margin-bottom: 2rem; }
         .nav-links a { display: inline-block; margin: 0 0.5rem; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; border-radius: 25px; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
         .nav-links a:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); text-decoration: none; }
-        .sensors-container { display: flex; justify-content: center; max-width: 1200px; margin: 0 auto; gap: 1.5rem; }
+        .sensors-container { display: flex; justify-content: center; flex-wrap: wrap; max-width: 1300px; margin: 0 auto; gap: 1.5rem; }
         .offline-text {
             position: absolute;
             bottom: 4.5rem;
