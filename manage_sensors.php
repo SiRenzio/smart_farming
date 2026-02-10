@@ -55,6 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
 
         if ($stmt->execute()) {
             $success = "Sensor registered successfully.";
+            $_SESSION['success'] = $success;
+            header("Location: manage_sensors.php");
         } else {
             $error = "Error registering sensor: " . $conn->error;
         }
@@ -435,9 +437,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                 </div>
             <?php endif; ?>
             
-            <?php if (isset($success)): ?>
+            <?php if (isset($_SESSION['success'])): ?>
                 <div class="success-message">
-                    <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($success); ?>
+                    <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($_SESSION['success']) ?>
                 </div>
             <?php endif; ?>
         </div>
@@ -471,11 +473,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                         <p class="status-text">Offline</p>
                     </div>
                     <label class="sensor-label">
-                        <?php if ($sensor['isRegistered'] == 0): ?>
-                            <span class="sensor-name unregistered">Unknown</span>
-                        <?php else: ?>
-                            <span class="sensor-name"><?= htmlspecialchars($sensor['sensorName']) ?></span>
-                        <?php endif; ?>
+                        <span class="sensor-name"><?= htmlspecialchars($sensor['sensorName']) ?></span>
                     </label>
                     <div class="checkbox-wrapper">
                         <input type="checkbox" 
@@ -534,7 +532,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                             <div class="form-group">
                                 <label for="sensorName" class="form-label">Sensor Name *</label>
                                 <input type="text" 
-                                    id="sensorName"
                                     name="sensorName" 
                                     class="form-input"
                                     placeholder="Enter sensor name (e.g., Sensor A, Sensor B)" 
@@ -578,7 +575,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                 unregisteredText: box.querySelector('.unregistered-text'),
                 registerBtn: box.querySelector('.register'),
                 addSensorModal: box.querySelector('.add-sensor-modal'),
-                formSensorName: box.querySelector('#sensorName')
+                formSensorName: box.querySelector('.form-input'),
+                sensorNameLabel: box.querySelector('.sensor-name')
             };
         }
 
@@ -722,8 +720,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                             renderState(box, UI_STATES.CONFIGURED);
                         } else if (sensor.sensorStatus == 1) {
                             renderState(box, UI_STATES.ONLINE_IDLE);
+                            els.sensorNameLabel.textContent = sensor.sensorName || 'Unknown';
                         } else if (sensor.isRegistered == 0) {
                             renderState(box, UI_STATES.UNREGISTERED);
+                            els.sensorNameLabel.textContent = 'Unknown';
                         } else {
                             renderState(box, UI_STATES.OFFLINE);
                         }
