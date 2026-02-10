@@ -84,10 +84,22 @@ if ($result && $result->num_rows > 0) {
 
 } else {
     //DEVICE DOES NOT EXIST
-    $response = [
-        "status" => "error",
-        "message" => "Device not registered in database"
-    ];
+
+    $regiterSql = "INSERT INTO sensorinfo (sensorMacAddress, sensorIPAddress, sensorStatus, isConnected, isRegistered, last_sensor_online) 
+                    VALUES ('$mac', '$ip', 0, 0, 0, '$dateTime')";
+    if ($conn->query($regiterSql) === TRUE) {
+        $response = [
+            "status" => "success",
+            "message" => "New device detected and ready to be registered",
+            "received_mac" => $mac,
+            "received_ip" => $ip
+        ];
+    } else {
+        $response = [
+            "status" => "error",
+            "message" => "Failed to register new device: " . $conn->error
+        ];
+    }
 }
 
 // Return JSON to ESP32
