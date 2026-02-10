@@ -687,58 +687,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
         });
 
         function updateSensors() {
-            let isReloading = false;
-
             fetch('fetch_sensor.php')
                 .then(res => res.json())
                 .then(data => {
-                    document.querySelector('.empty-state').style.display =
-                        data.length === 0 ? 'block' : 'none';
+                    const container = document.querySelector('.sensors-container');
+                    const emptyState = document.querySelector('.empty-state');
 
+                    // Handle empty state
+                    emptyState.style.display = data.length === 0 ? 'block' : 'none';
+
+                    // Collect sensor IDs from backend
+                    const serverIDs = new Set(
+                        data.map(s => String(s.soilSensorID))
+                    );
+
+                    //  Remove DOM sensors not in DB anymore
+                    container.querySelectorAll('.sensor-box').forEach(box => {
+                        const id = box.dataset.sensorId;
+                        if (!serverIDs.has(id)) {
+                            box.remove();
+                        }
+                    });
+
+                    // Update existing sensors
                     data.forEach(sensor => {
                         const box = document.querySelector(
-                        `.sensor-box[data-sensor-id="${sensor.soilSensorID}"]`
+                            `.sensor-box[data-sensor-id="${sensor.soilSensorID}"]`
                         );
-                        if (!box && !isReloading) {
-                            isReloading = true;
-                            setTimeout(() => {
-                                location.reload();
-                            }, 1); // small delay = smoother UI
+
+                        // If brand-new sensor appears
+                        if (!box) {
+                            location.reload();
                             return;
                         }
 
-                        if (box && isReloading) {
-                            isReloading = true;
-                            setTimeout(() => {
-                                location.reload();
-                            }, 1); // small delay = smoother UI
-                            return;
-                        }
-                        
                         const els = getBoxEls(box);
-                        
+
                         // Update location name if configured
                         if (sensor.sensorStatus == 1 && sensor.isConnected == 1) {
                             if (els.displayName) {
                                 els.displayName.textContent = sensor.farmName || 'Unknown';
                             }
                         }
-
+                        
                         if (box.dataset.userInteracting === '1') return;
 
-                        // Update the UI State based on database values
+                        // Render correct UI state
                         if (sensor.sensorStatus == 1 && sensor.isConnected == 1) {
                             renderState(box, UI_STATES.CONFIGURED);
-                        } else if (sensor.sensorStatus == 1) {
+                        } 
+                        else if (sensor.sensorStatus == 1) {
                             renderState(box, UI_STATES.ONLINE_IDLE);
                             els.sensorNameLabel.textContent = sensor.sensorName || 'Unknown';
-                        } else if (sensor.isRegistered == 0) {
+                        } 
+                        else if (sensor.isRegistered == 0) {
                             renderState(box, UI_STATES.UNREGISTERED);
                             els.sensorNameLabel.textContent = 'Unknown';
-                        } else {
+                        } 
+                        else {
                             renderState(box, UI_STATES.OFFLINE);
                         }
-
                     });
                 })
                 .catch(err => console.error('AJAX error:', err));
@@ -810,7 +818,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
         }
 
         // Poll every 3 seconds
-        setInterval(updateSensors, 1);
+        setInterval(updateSensors, 1000);
     </script>
 </body>
 </html>
