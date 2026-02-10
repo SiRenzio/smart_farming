@@ -15,21 +15,15 @@ $sensors = $conn->query("SELECT s.*, sd.*, f.* FROM sensorinfo s
     GROUP BY s.soilSensorID
     ORDER BY s.soilSensorID ASC");
 
-// Fetch sensor-location mapping
-$mapQuery = "
-    SELECT DISTINCT sl.soilSensorID, l.locationID, l.farmName
-    FROM sensordata sl
-    JOIN farmlocation l ON sl.locationID = l.locationID
-";
-$mapResult = $conn->query($mapQuery);
 
-// Build mapping array
-$sensorLocations = [];
+// Fetch all farm locations
+$locations = [];
+$mapResult = $conn->query("SELECT locationID, farmName FROM farmlocation");
+
 while ($row = $mapResult->fetch_assoc()) {
-    $sensorLocations[$row['soilSensorID']][] = $row;
+    $locations[] = $row;
 }
 
-$sensorIpMap = [];
 
 $ipQuery = $conn->query("
     SELECT soilSensorID, sensorIPAddress
@@ -450,8 +444,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
             </a>
 
-            <a href="add_sensor.php" class="btn-primary">
-                <i class="fas fa-plus"></i> Add New Sensor
+            <a href="sensors.php">
+                <i class="fas fa-satellite-dish"></i> Sensor Overview
             </a>
 
             <a href="add_sensor_location.php" class="btn-primary">
@@ -505,7 +499,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                     <div class="location-select">
                         <select name="location[<?= $sensor['soilSensorID'] ?>]">
                             <option value="">Select Farm Location</option>
-                            <?php foreach ($sensorLocations[$sensor['soilSensorID']] ?? [] as $loc): ?>
+                            <?php foreach ($locations as $loc): ?>
                                 <option value="<?= $loc['locationID'] ?>">
                                     <?= htmlspecialchars($loc['farmName']) ?>
                                 </option>
