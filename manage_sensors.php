@@ -12,7 +12,6 @@ if (!isset($_SESSION['userID'])) {
 $sensors = $conn->query("SELECT s.*, sd.*, f.* FROM sensorinfo s
     LEFT JOIN sensordata sd ON s.soilSensorID = sd.SoilSensorID
     LEFT JOIN farmlocation f ON sd.locationID = f.locationID
-    WHERE s.isRegistered = 1
     GROUP BY s.soilSensorID
     ORDER BY s.soilSensorID ASC");
 
@@ -282,29 +281,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <span class="sensor-name unregistered">Unknown</span>
                         <?php else: ?>
                             <span class="sensor-name"><?= htmlspecialchars($sensor['sensorName']) ?></span>
-                        </label>
-                        <div class="checkbox-wrapper">
-                            <input type="checkbox" 
-                                id="cb-<?= $sensor['soilSensorID'] ?>"
-                                name="sensor[]" 
-                                value="<?= $sensor['soilSensorID'] ?>" 
-                                onchange="toggleLocation(this)" 
-                                class="sensor-checkbox">
-                            <label for="cb-<?= $sensor['soilSensorID'] ?>" class="toggle-label"></label>
-                        </div>
-                        <div class="online-text" style="display: none;">
-                            <i class="fas fa-circle-check"></i>
-                            <span>The sensor is online and ready for configuration.</span>
-                        </div>
-                        <div class="offline-text" style="display: none;">
-                            <i class="fas fa-circle-exclamation"></i>
-                            <span>The sensor is currently offline. Please ensure it is powered on and connected to the network.</span>
-                        </div>
-                        <div class="configured-text" style="display: none;">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>Location: <strong class="display-location-name"></strong></span>
-                        </div>
-                        <div class="unregistered-text" style="display: none;">
+                        <?php endif; ?>
+                    </label>
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" 
+                            id="cb-<?= $sensor['soilSensorID'] ?>"
+                            name="sensor[]" 
+                            value="<?= $sensor['soilSensorID'] ?>" 
+                            onchange="toggleLocation(this)" 
+                            class="sensor-checkbox">
+                        <label for="cb-<?= $sensor['soilSensorID'] ?>" class="toggle-label"></label>
+                    </div>
+                    <div class="online-text" style="display: none;">
+                        <i class="fas fa-circle-check"></i>
+                        <span>The sensor is online and ready for configuration.</span>
+                    </div>
+                    <div class="offline-text" style="display: none;">
+                        <i class="fas fa-circle-exclamation"></i>
+                        <span>The sensor is currently offline. Please ensure it is powered on and connected to the network.</span>
+                    </div>
+                    <div class="configured-text" style="display: none;">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Location: <strong class="display-location-name"></strong></span>
+                    </div>
+                    <div class="unregistered-text" style="display: none;">
                         <i class="fas fa-circle-question"></i>
                         <span>This sensor is unregistered. Please register the sensor before configuration.</span>
                     </div>
@@ -322,7 +322,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <button type="button" class="send-button" onclick="sendToESP32(this)" disabled>Send to ESP32</button>
                         <button class="disconnect" style="display: none;" data-ip="<?= htmlspecialchars($sensorIpMap[$sensor['soilSensorID']] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
                     </div>
-                <?php endwhile; ?>
+            <?php endwhile; ?>
             <!-- </form> -->
         </div>
     </div>
@@ -346,9 +346,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 statusText: box.querySelector('.status-text'),
                 indicator: box.querySelector('.indicator'),
                 offlineText: box.querySelector('.offline-text'),
-                onlineText: box.querySelector('.online-text')
+                onlineText: box.querySelector('.online-text'),
                 configuredText: box.querySelector('.configured-text'),
-                displayName: box.querySelector('.display-location-name')
+                displayName: box.querySelector('.display-location-name'),
                 unregisteredText: box.querySelector('.unregistered-text')
             };
         }
@@ -395,7 +395,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     els.offlineText.style.display = 'none';
                     els.onlineText.style.display = 'block';
                     els.unregisteredText.style.display = 'none';
-                     break;
+                    break;
 
                 case UI_STATES.UNREGISTERED:
                     els.checkbox.style.display = 'none';
@@ -405,7 +405,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     els.locationLabel.style.display = 'none';
                     els.locationSelect.style.display = 'none';
                     els.configuredText.style.display = 'none';
-                    
+
                     els.sendBtn.style.display = 'none';
                     els.disconnectBtn.style.display = 'none';
 
