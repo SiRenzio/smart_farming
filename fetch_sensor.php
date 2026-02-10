@@ -7,6 +7,7 @@ $result = $conn->query("
         s.sensorName,
         s.sensorStatus,
         s.isConnected,
+        s.isRegistered,
         sd.locationID,
         fl.farmName
     FROM sensorinfo s

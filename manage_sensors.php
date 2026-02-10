@@ -126,6 +126,28 @@ while ($row = $ipQuery->fetch_assoc()) {
             gap: 0.5rem;
             box-shadow: 0 4px 15px rgba(0, 255, 0, 0.1);
         }
+
+        .unregistered-text {
+            position: absolute;
+            bottom: 5rem;
+            left: 1.5rem;
+            right: 1.5rem;
+            background: #fff3e0;
+            color: #ef6c00;
+            padding: 0.8rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(255, 165, 0, 0.1);
+        }
+
+        .unregistered {
+            color: #ef6c00;
+            font-style: italic;
+        }
+
         .sensor-box {
             margin-bottom: 15px;
             padding: 1.8rem;
@@ -268,52 +290,58 @@ while ($row = $ipQuery->fetch_assoc()) {
             <div class="empty-state" style="display: none;">
                 <p>No sensors found. <a href="add_sensor.php">Add your first sensor</a> to get started.</p>
             </div>
-            <!-- <form method="POST"> -->
-                <?php while ($sensor = $sensors->fetch_assoc()): ?>
-                    <div class="sensor-box" data-sensor-id="<?= $sensor['soilSensorID'] ?>" data-ip="<?= htmlspecialchars($sensorIpMap[$sensor['soilSensorID']] ?? '') ?>">
-                        <div class="icon">
-                            <i class="fas fa-microchip"></i>
-                        </div>
-                        <div class="online">
-                            <div class="indicator"></div>
-                            <p class="status-text">Offline</p>
-                        </div>
-                        <label>
-                            <span class="sensor-name"><?= htmlspecialchars($sensor['sensorName']) ?></span>
-                        </label>
-                        <div class="checkbox-wrapper">
-                            <input type="checkbox" 
-                                id="cb-<?= $sensor['soilSensorID'] ?>"
-                                name="sensor[]" 
-                                value="<?= $sensor['soilSensorID'] ?>" 
-                                onchange="toggleLocation(this)" 
-                                class="sensor-checkbox">
-                            <label for="cb-<?= $sensor['soilSensorID'] ?>" class="toggle-label"></label>
-                        </div>
-                        <div class="online-text" style="display: none;">
-                            <i class="fas fa-circle-check"></i>
-                            <span>The sensor is online and ready for configuration.</span>
-                        </div>
-                        <div class="offline-text" style="display: none;">
-                            <i class="fas fa-circle-exclamation"></i>
-                            <span>The sensor is currently offline. Please ensure it is powered on and connected to the network.</span>
-                        </div>
-                        <span class="location" style="display: none;"></span>
-                        <div class="location-select">
-                            <select name="location[<?= $sensor['soilSensorID'] ?>]">
-                                <option value="">Select Farm Location</option>
-                                <?php foreach ($sensorLocations[$sensor['soilSensorID']] ?? [] as $loc): ?>
-                                    <option value="<?= $loc['locationID'] ?>">
-                                        <?= htmlspecialchars($loc['farmName']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <button type="button" class="send-button" onclick="sendToESP32(this)" disabled>Send to ESP32</button>
-                        <button class="disconnect" style="display: none;" data-ip="<?= htmlspecialchars($sensorIpMap[$sensor['soilSensorID']] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
+            <?php while ($sensor = $sensors->fetch_assoc()): ?>
+                <div class="sensor-box" data-sensor-id="<?= $sensor['soilSensorID'] ?>" data-ip="<?= htmlspecialchars($sensorIpMap[$sensor['soilSensorID']] ?? '') ?>">
+                    <div class="icon">
+                        <i class="fas fa-microchip"></i>
                     </div>
-                <?php endwhile; ?>
-            <!-- </form> -->
+                    <div class="online">
+                        <div class="indicator"></div>
+                        <p class="status-text">Offline</p>
+                    </div>
+                    <label>
+                        <?php if ($sensor['isRegistered'] == 0): ?>
+                            <span class="sensor-name unregistered">Unknown</span>
+                        <?php else: ?>
+                            <span class="sensor-name"><?= htmlspecialchars($sensor['sensorName']) ?></span>
+                        <?php endif; ?>
+                    </label>
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" 
+                            id="cb-<?= $sensor['soilSensorID'] ?>"
+                            name="sensor[]" 
+                            value="<?= $sensor['soilSensorID'] ?>" 
+                            onchange="toggleLocation(this)" 
+                            class="sensor-checkbox">
+                        <label for="cb-<?= $sensor['soilSensorID'] ?>" class="toggle-label"></label>
+                    </div>
+                    <div class="online-text" style="display: none;">
+                        <i class="fas fa-circle-check"></i>
+                        <span>The sensor is online and ready for configuration.</span>
+                    </div>
+                    <div class="offline-text" style="display: none;">
+                        <i class="fas fa-circle-exclamation"></i>
+                        <span>The sensor is currently offline. Please ensure it is powered on and connected to the network.</span>
+                    </div>
+                    <div class="unregistered-text" style="display: none;">
+                        <i class="fas fa-circle-question"></i>
+                        <span>This sensor is unregistered. Please register the sensor before configuration.</span>
+                    </div>
+                    <span class="location" style="display: none;"></span>
+                    <div class="location-select">
+                        <select name="location[<?= $sensor['soilSensorID'] ?>]">
+                            <option value="">Select Farm Location</option>
+                            <?php foreach ($sensorLocations[$sensor['soilSensorID']] ?? [] as $loc): ?>
+                                <option value="<?= $loc['locationID'] ?>">
+                                    <?= htmlspecialchars($loc['farmName']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <button type="button" class="send-button" onclick="sendToESP32(this)" disabled>Send to ESP32</button>
+                    <button class="disconnect" style="display: none;" data-ip="<?= htmlspecialchars($sensorIpMap[$sensor['soilSensorID']] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
+                </div>
+            <?php endwhile; ?>
         </div>
     </div>
     <script>
@@ -336,7 +364,8 @@ while ($row = $ipQuery->fetch_assoc()) {
                 statusText: box.querySelector('.status-text'),
                 indicator: box.querySelector('.indicator'),
                 offlineText: box.querySelector('.offline-text'),
-                onlineText: box.querySelector('.online-text')
+                onlineText: box.querySelector('.online-text'),
+                unregisteredText: box.querySelector('.unregistered-text')
             };
         }
 
@@ -358,6 +387,7 @@ while ($row = $ipQuery->fetch_assoc()) {
                     els.indicator.style.background = '#4CAF50';
                     els.offlineText.style.display = 'none';
                     els.onlineText.style.display = 'none';
+                    els.unregisteredText.style.display = 'none';
                     break;
 
                 case UI_STATES.ONLINE_IDLE:
@@ -378,7 +408,26 @@ while ($row = $ipQuery->fetch_assoc()) {
                     els.indicator.style.background = '#4CAF50';
                     els.offlineText.style.display = 'none';
                     els.onlineText.style.display = 'block';
+                    els.unregisteredText.style.display = 'none';
                      break;
+
+                case UI_STATES.UNREGISTERED:
+                    els.checkbox.style.display = 'none';
+                    els.checkbox.disabled = true;
+                    els.checkbox.checked = false;
+
+                    els.locationLabel.style.display = 'none';
+                    els.locationSelect.style.display = 'none';
+
+                    els.sendBtn.style.display = 'none';
+                    els.disconnectBtn.style.display = 'none';
+
+                    els.statusText.textContent = 'Unregistered';
+                    els.indicator.style.background = '#ff9800';
+                    els.offlineText.style.display = 'none';
+                    els.onlineText.style.display = 'none';
+                    els.unregisteredText.style.display = 'block';
+                    break;  
 
                 case UI_STATES.OFFLINE:
                 default:
@@ -396,6 +445,7 @@ while ($row = $ipQuery->fetch_assoc()) {
                     els.indicator.style.background = '#f44336';
                     els.offlineText.style.display = 'block';
                     els.onlineText.style.display = 'none';
+                    els.unregisteredText.style.display = 'none';
                     break;
             }
         }
@@ -444,6 +494,8 @@ while ($row = $ipQuery->fetch_assoc()) {
                             renderState(box, UI_STATES.CONFIGURED);
                         } else if (sensor.sensorStatus == 1) {
                             renderState(box, UI_STATES.ONLINE_IDLE);
+                        } else if (sensor.isRegistered == 0) {
+                            renderState(box, UI_STATES.UNREGISTERED);
                         } else {
                             renderState(box, UI_STATES.OFFLINE);
                         }
