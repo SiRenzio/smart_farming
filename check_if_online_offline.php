@@ -7,9 +7,8 @@ date_default_timezone_set('Asia/Manila');
 function checkIF_Offline($conn) {
     $currentTime = time();
 
-    $checkSql = "SELECT soilSensorID, sensorMacAddress, last_sensor_online 
-                 FROM sensorinfo 
-                 WHERE sensorStatus = 1";
+    $checkSql = "SELECT soilSensorID, sensorMacAddress, last_sensor_online, sensorStatus, isRegistered 
+                 FROM sensorinfo";
 
     $result = $conn->query($checkSql);
 
@@ -18,13 +17,25 @@ function checkIF_Offline($conn) {
             $soilSensorID = $row['soilSensorID'];
             $macAddress   = $row['sensorMacAddress'];
             $lastOnline   = $row['last_sensor_online'];
+            $status       = (int)$row['sensorStatus'];
+            $isRegistered = (int)$row['isRegistered'];
 
             // Calculate time difference
             $lastOnlineTime = strtotime($lastOnline);
             $timeDiffSeconds = $currentTime - $lastOnlineTime;
 
+            // If unregistered and offline for more than 60 seconds, delete sensor
+            if ($isRegistered === 0 && $status === 0 && $timeDiffSeconds > 60) {
+                $deleteSql = "DELETE FROM sensorinfo WHERE soilSensorID = ?";
+                $stmt = $conn->prepare($deleteSql);
+                $stmt->bind_param("i", $soilSensorID);
+                $stmt->execute();
+                $stmt->close();
+                continue; // Skip to next sensor after deletion
+            }
+
             // If inactive for more than 10 seconds, update status
-            if ($timeDiffSeconds > 10) {
+            if ($isRegistered === 1 && $status === 1 && $timeDiffSeconds > 10) {
                 $updateSql = "UPDATE sensorinfo SET sensorStatus = 0, isConnected = 0 WHERE soilSensorID = ?";
                 $stmt = $conn->prepare($updateSql);
                 
@@ -57,31 +68,51 @@ $ip  = $conn->real_escape_string($data['ipAddress']);
 $dateTime = date('Y-m-d H:i:s');
 
 // Check if sensor exists
-$sql = "SELECT sensorMacAddress FROM sensorinfo WHERE sensorMacAddress='$mac' LIMIT 1";
+$sql = "SELECT sensorMacAddress, isRegistered FROM sensorinfo WHERE sensorMacAddress='$mac' LIMIT 1";
 $result = $conn->query($sql);
 
 $response = [];
 
-if ($result && $result->num_rows > 0) {   
-    // Update IP and set status to 1 (Online)
-    $updateSql = "UPDATE sensorinfo 
-                  SET sensorIPAddress = '$ip', sensorStatus = 1, last_sensor_online = '$dateTime'
-                  WHERE sensorMacAddress = '$mac'";
+if ($result && $result->num_rows > 0) {
+    
+    $row = $result->fetch_assoc();
+    $isRegistered = $row['isRegistered'];
 
-    if ($conn->query($updateSql) === TRUE) {
+    if($isRegistered == 1) {
+        // Update IP and set status to 1 (Online)
+        $updateSql = "UPDATE sensorinfo 
+                    SET sensorIPAddress = '$ip', sensorStatus = 1, last_sensor_online = '$dateTime'
+                    WHERE sensorMacAddress = '$mac'";
+
+        if ($conn->query($updateSql) === TRUE) {
+            $response = [
+                "status" => "success",
+                "message" => "Device updated to Online",
+                "received_mac" => $mac,
+                "received_ip" => $ip
+            ];
+        } else {
+            $response = [
+                "status" => "error",
+                "message" => "Database update failed: " . $conn->error
+            ];
+        }
+    } else {
+        // if not registered, just update IP and last online time without changing status
+        $updateSql = "UPDATE sensorinfo 
+                    SET sensorIPAddress = '$ip', last_sensor_online = '$dateTime'
+                    WHERE sensorMacAddress = '$mac'";
+
+        $conn->query($updateSql);
         $response = [
-            "status" => "success",
-            "message" => "Device updated to Online",
+            "status" => "unregistered",
+            "message" => "Device is not registered yet",
             "received_mac" => $mac,
             "received_ip" => $ip
         ];
-    } else {
-        $response = [
-            "status" => "error",
-            "message" => "Database update failed: " . $conn->error
-        ];
     }
 
+    
 } else {
     //DEVICE DOES NOT EXIST
 
