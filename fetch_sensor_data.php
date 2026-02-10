@@ -57,7 +57,7 @@ while ($row = $result->fetch_assoc()):
             <small><?= htmlspecialchars($row['farmName'] ?? 'Unknown') ?></small>
         </div>
     </td>
-    <td><?= date('M j, Y g:i A', strtotime($row['DateTime'])) ?></td>
+    <td><?= date('M j, Y g:i:s A', strtotime($row['DateTime'])) ?></td>
     <td><?= $row['SoilN'] ?? '-' ?></td>
     <td><?= $row['SoilP'] ?? '-' ?></td>
     <td><?= $row['SoilK'] ?? '-' ?></td>
