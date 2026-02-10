@@ -35,7 +35,7 @@ function checkIF_Offline($conn) {
             }
 
             // If inactive for more than 10 seconds, update status
-            if ($isRegistered === 1 && $status === 1 && $timeDiffSeconds > 10) {
+            if ($isRegistered === 1 && $status === 1 && $timeDiffSeconds > 15) {
                 $updateSql = "UPDATE sensorinfo SET sensorStatus = 0, isConnected = 0 WHERE soilSensorID = ?";
                 $stmt = $conn->prepare($updateSql);
                 
@@ -138,7 +138,7 @@ echo json_encode($response);
 
 while (true) {
     checkIF_Offline($conn);
-    sleep(5);
+    sleep(4);
 }
 
 $conn->close();
