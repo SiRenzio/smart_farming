@@ -41,10 +41,26 @@ while ($row = $ipQuery->fetch_assoc()) {
 }
 $locationID = '';
 
-// Sensor location assignment handling
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $locationID = trim($_POST['sensorLocation'] ?? '');
 
+// Register Senor Handling
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isset($_POST['modalSensorID'])) {
+    $sensorName = trim($_POST['sensorName'] ?? '');
+    $sensorID = trim($_POST['modalSensorID']);
+
+    if (empty($sensorName)) {
+        $error = "Sensor name is required.";
+    } else {
+        $stmt = $conn->prepare("UPDATE sensorinfo SET sensorName = ?, isRegistered = 1 WHERE soilSensorID = ?");
+        $stmt->bind_param("si", $sensorName, $sensorID);
+
+        if ($stmt->execute()) {
+            $success = "Sensor registered successfully.";
+        } else {
+            $error = "Error registering sensor: " . $conn->error;
+        }
+
+        $stmt->close();
+    }
 }
 
 ?>
@@ -106,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .unregistered-text {
             position: absolute;
-            bottom: 5rem;
+            bottom: 5.7rem;
             left: 1.5rem;
             right: 1.5rem;
             background: #fff3e0;
@@ -150,7 +166,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: linear-gradient(90deg, #2196F3, #1976D2);
         }
         
-        .sensor-box label { position: absolute; top: 1.5rem; left: 6rem; font-size: 1.2rem; font-weight: 600; cursor: pointer; padding-bottom: 1rem; width: auto; max-width: calc(100% - 7rem);}
         .sensor-box input[type="checkbox"] { margin: 0.2rem; position: absolute; right: 1.5rem; top: 1.8rem; transform: scale(1.5); cursor: pointer;  width: 1.5rem; height: 1.5rem; }
         .location-select { 
             display: none;
@@ -171,6 +186,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transition: border-color 0.3s;
             margin-top: 5rem;
         }
+
+        .sensor-label {
+            position: absolute; 
+            top: 1.5rem; 
+            left: 6rem; 
+            font-size: 1.2rem;
+            font-weight: 600; 
+            cursor: pointer; 
+            padding-bottom: 1rem; 
+            width: auto; 
+            max-width: calc(100% - 7rem);
+        }
+
+        .toggle-label {
+            position: absolute; 
+            top: 1.5rem; 
+            left: 6rem; 
+            font-size: 1.2rem;
+            font-weight: 600; 
+            cursor: pointer; 
+            padding-bottom: 1rem; 
+            width: auto; 
+            max-width: calc(100% - 7rem);
+        }
+
         .send-button {
             display: block;
             width: 100%;
@@ -201,6 +241,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .indicator { width: 12px; height: 12px; background: #4CAF50; border-radius: 50%; box-shadow: 0 0 8px rgba(76, 175, 80, 0.6); }
         .empty-state { font-size: 1.2rem; color: #333; background: rgba(255, 255, 255, 0.8); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
         .location { position: absolute; top: 1.5rem; right: 2rem; font-size: 1.2rem; font-weight: bold; }
+        
+        /* Disconnect Button */
         .disconnect {
             width: 100%;
             margin-top: auto;
@@ -209,11 +251,163 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: white;
             border: none;
             border-radius: 12px;
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
         }
+
+        .disconnect:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        /* Register Button */
+        .register {
+            width: 100%;
+            margin-top: auto;
+            padding: 0.85rem 2rem;
+            background: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        /* Modal Backdrop */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        /* Add Sensor Modal */
+        .add-sensor-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            width: 500px;
+            max-width: 90%;
+        }
+
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            padding-left: 3.7rem;
+            color: #333;
+        }
+
+        .add-sensor-modal .icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .modal-description p {
+            color: #666;
+            font-size: 1rem;
+            line-height: 1.4;
+            padding-top: 1rem;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 0 0 1rem 0;
+        }
+
+        .close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #666;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: 500;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .form-input {
+            display: block;
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+            background: white;
+        }
+
+        .form-input::placeholder {
+            color: #999;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+            margin-bottom: 1.5rem;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+        }
+
         .btn-primary {
             background: linear-gradient(135deg, #2196F3, #1976D2) !important;
             box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3) !important;
@@ -276,7 +470,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="indicator"></div>
                         <p class="status-text">Offline</p>
                     </div>
-                    <label>
+                    <label class="sensor-label">
                         <?php if ($sensor['isRegistered'] == 0): ?>
                             <span class="sensor-name unregistered">Unknown</span>
                         <?php else: ?>
@@ -308,22 +502,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <i class="fas fa-circle-question"></i>
                         <span>This sensor is unregistered. Please register the sensor before configuration.</span>
                     </div>
-                        <span class="location" style="display: none;"></span>
-                        <div class="location-select">
-                            <select name="location[<?= $sensor['soilSensorID'] ?>]">
-                                <option value="">Select Farm Location</option>
-                                <?php foreach ($sensorLocations[$sensor['soilSensorID']] ?? [] as $loc): ?>
-                                    <option value="<?= $loc['locationID'] ?>">
-                                        <?= htmlspecialchars($loc['farmName']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <button type="button" class="send-button" onclick="sendToESP32(this)" disabled>Send to ESP32</button>
-                        <button class="disconnect" style="display: none;" data-ip="<?= htmlspecialchars($sensorIpMap[$sensor['soilSensorID']] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
+                    <span class="location" style="display: none;"></span>
+                    <div class="location-select">
+                        <select name="location[<?= $sensor['soilSensorID'] ?>]">
+                            <option value="">Select Farm Location</option>
+                            <?php foreach ($sensorLocations[$sensor['soilSensorID']] ?? [] as $loc): ?>
+                                <option value="<?= $loc['locationID'] ?>">
+                                    <?= htmlspecialchars($loc['farmName']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
+                    <button type="button" class="send-button" onclick="sendToESP32(this)" disabled>Send to ESP32</button>
+                    <button class="disconnect" style="display: none;" data-ip="<?= htmlspecialchars($sensorIpMap[$sensor['soilSensorID']] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
+                    <button class="register" style="display: none;" onclick="registerSensor(<?= $sensor['soilSensorID'] ?>)">Register</button>
+                    <div class="add-sensor-modal" style="display: none;">
+                        <div class="modal-header">
+                            <div class="icon">
+                                <i class="fas fa-key"></i>
+                            </div>
+                            <h2>Register Sensor</h2>
+                            <div class="modal-description">
+                                <p>Please provide a name for the sensor to register it in the system.</p>
+                            </div>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="close">
+                            <i class="fas fa-times" onclick="closeRegisterModal()"></i>
+                        </div>
+                        <form action="manage_sensors.php" method="post">
+                            <div class="form-group">
+                                <label for="sensorName" class="form-label">Sensor Name *</label>
+                                <input type="text" 
+                                    id="sensorName"
+                                    name="sensorName" 
+                                    class="form-input"
+                                    placeholder="Enter sensor name (e.g., Sensor A, Sensor B)" 
+                                    value="<?php echo htmlspecialchars($_POST['sensorName'] ?? ''); ?>">
+                            </div>
+                            <input type="hidden" value="<?= $sensor['soilSensorID'] ?>" name="modalSensorID">
+                            <button type="submit" class="submit-btn">
+                                <i class="fas fa-plus"></i> Register Sensor
+                            </button>
+                        </form>
+                    </div>
+                </div>
             <?php endwhile; ?>
-            <!-- </form> -->
+            <div id="modal-backdrop" class="modal-backdrop" style="display:none;"></div>
         </div>
     </div>
     <script>
@@ -331,7 +556,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const UI_STATES = {
             OFFLINE: 'offline',
             ONLINE_IDLE: 'online_idle',
-            CONFIGURED: 'configured'
+            CONFIGURED: 'configured',
+            UNREGISTERED: 'unregistered'
         };
 
         // Helper to get elements within a sensor box
@@ -349,7 +575,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 onlineText: box.querySelector('.online-text'),
                 configuredText: box.querySelector('.configured-text'),
                 displayName: box.querySelector('.display-location-name'),
-                unregisteredText: box.querySelector('.unregistered-text')
+                unregisteredText: box.querySelector('.unregistered-text'),
+                registerBtn: box.querySelector('.register'),
+                addSensorModal: box.querySelector('.add-sensor-modal'),
+                formSensorName: box.querySelector('#sensorName')
             };
         }
 
@@ -373,6 +602,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     els.offlineText.style.display = 'none';
                     els.onlineText.style.display = 'none';
                     els.unregisteredText.style.display = 'none';
+                    els.registerBtn.style.display = 'none';
                     break;
 
                 case UI_STATES.ONLINE_IDLE:
@@ -395,6 +625,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     els.offlineText.style.display = 'none';
                     els.onlineText.style.display = 'block';
                     els.unregisteredText.style.display = 'none';
+                    els.registerBtn.style.display = 'none';
                     break;
 
                 case UI_STATES.UNREGISTERED:
@@ -414,6 +645,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     els.offlineText.style.display = 'none';
                     els.onlineText.style.display = 'none';
                     els.unregisteredText.style.display = 'block';
+                    els.registerBtn.style.display = 'block';
                     break;  
 
                 case UI_STATES.OFFLINE:
@@ -434,6 +666,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     els.offlineText.style.display = 'block';
                     els.onlineText.style.display = 'none';
                     els.unregisteredText.style.display = 'none';
+                    els.registerBtn.style.display = 'none';
                     break;
             }
         }
@@ -469,12 +702,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         data.length === 0 ? 'block' : 'none';
 
                     data.forEach(sensor => {
-                        const input = document.querySelector(
-                            `.sensor-box input[value="${sensor.soilSensorID}"]`
+                        const box = document.querySelector(
+                        `.sensor-box[data-sensor-id="${sensor.soilSensorID}"]`
                         );
-                        if (!input) return;
-
-                        const box = input.closest('.sensor-box');
+                        if (!box) return;
                         const els = getBoxEls(box);
                         
                         // Update location name if configured
@@ -499,6 +730,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     });
                 })
                 .catch(err => console.error('AJAX error:', err));
+        }
+
+        function registerSensor(sensorID) {
+            const box = document.querySelector(`.sensor-box[data-sensor-id="${sensorID}"]`);
+            const { addSensorModal, formSensorName } = getBoxEls(box);
+
+            formSensorName.value = '';
+            addSensorModal.style.display = 'block';
+            document.getElementById('modal-backdrop').style.display = 'block';
+        }
+
+        function closeRegisterModal() {
+            document.querySelectorAll('.add-sensor-modal').forEach(modal => {
+                modal.style.display = 'none';
+            });
+            document.getElementById('modal-backdrop').style.display = 'none';
         }
 
         function sendToESP32(btn) {
