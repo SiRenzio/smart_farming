@@ -441,6 +441,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                 <div class="success-message">
                     <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($_SESSION['success']) ?>
                 </div>
+                <?php unset($_SESSION['success']); ?>
             <?php endif; ?>
         </div>
 
