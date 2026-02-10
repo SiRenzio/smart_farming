@@ -411,6 +411,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
         .btn-primary:hover {
             box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4) !important;
         }
+
+        #app-loading {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #app-loading .loader {
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        #app-loading i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -686,12 +707,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
             });
         });
 
+        let firstLoadDone = false;
+
         function updateSensors() {
             fetch('fetch_sensor.php')
                 .then(res => res.json())
                 .then(data => {
                     const container = document.querySelector('.sensors-container');
                     const emptyState = document.querySelector('.empty-state');
+
+                    if (!firstLoadDone) {
+                        document.getElementById('app-loading').style.display = 'none';
+                        firstLoadDone = true;
+                    }
 
                     // Handle empty state
                     emptyState.style.display = data.length === 0 ? 'block' : 'none';
@@ -729,7 +757,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                                 els.displayName.textContent = sensor.farmName || 'Unknown';
                             }
                         }
-                        
+
                         if (box.dataset.userInteracting === '1') return;
 
                         // Render correct UI state
@@ -821,4 +849,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
         setInterval(updateSensors, 1000);
     </script>
 </body>
+<div id="app-loading">
+    <div class="loader">
+        <i class="fas fa-circle-notch fa-spin"></i>
+        <p>Loading sensors…</p>
+    </div>
+</div>
 </html>
