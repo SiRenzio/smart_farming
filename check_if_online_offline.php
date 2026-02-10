@@ -31,7 +31,7 @@ function checkIF_Offline($conn) {
                 $stmt->bind_param("i", $soilSensorID);
                 $stmt->execute();
                 $stmt->close();
-                continue; // Skip to next sensor after deletion
+                continue; 
             }
 
             // If inactive for more than 10 seconds, update status
