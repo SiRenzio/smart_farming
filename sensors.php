@@ -303,7 +303,7 @@ function getFilterParams($excludePage = true) {
                                         <small><?php echo htmlspecialchars($row['farmName'] ?? 'Unknown Location'); ?></small>
                                     </div>
                                 </td>
-                                <td><?php echo date('M j, Y g:i A', strtotime($row['DateTime'])); ?></td>
+                                <td><?php echo date('M j, Y g:i:s A', strtotime($row['DateTime'])); ?></td>
                                 <td class="numeric-value"><?php echo $row['SoilN'] !== null ? htmlspecialchars($row['SoilN']) : '-'; ?></td>
                                 <td class="numeric-value"><?php echo $row['SoilP'] !== null ? htmlspecialchars($row['SoilP']) : '-'; ?></td>
                                 <td class="numeric-value"><?php echo $row['SoilK'] !== null ? htmlspecialchars($row['SoilK']) : '-'; ?></td>

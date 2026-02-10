@@ -12,6 +12,7 @@ if (!isset($_SESSION['userID'])) {
 $sensors = $conn->query("SELECT s.*, sd.*, f.* FROM sensorinfo s
     LEFT JOIN sensordata sd ON s.soilSensorID = sd.SoilSensorID
     LEFT JOIN farmlocation f ON sd.locationID = f.locationID
+    WHERE s.isRegistered = 1
     GROUP BY s.soilSensorID
     ORDER BY s.soilSensorID ASC");
 
@@ -39,36 +40,13 @@ $ipQuery = $conn->query("
 while ($row = $ipQuery->fetch_assoc()) {
     $sensorIpMap[$row['soilSensorID']] = $row['sensorIPAddress'];
 }
+$locationID = '';
 
-// // Handle submission
-// $selected = [];
-// $espResponses = [];
+// Sensor location assignment handling
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $locationID = trim($_POST['sensorLocation'] ?? '');
 
-// if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-//     foreach ($_POST['sensor'] ?? [] as $sensorID) {
-//         $locationID = $_POST['location'][$sensorID] ?? null;
-//         $sensorIP   = $sensorIpMap[$sensorID] ?? null;
-
-//         if ($locationID && $sensorIP) {
-//             $selected[] = [
-//                 'sensor_id' => $sensorID,
-//                 'location_id' => $locationID,
-//                 'sensor_ip' => $sensorIP
-//             ];
-
-//             $espResponses[] = [
-//                 'sensor_id' => $sensorID,
-//                 'location_id' => $locationID,
-//                 'ip' => $sensorIP,
-//                 'response' => sendToESP32($sensorIP, $sensorID, $locationID)
-//             ];
-//         }
-//     }
-
-//     if (!empty($espResponses)) {
-//         $success = "Configuration sent to ESP32 device(s) successfully!";
-//     }
-// }
+}
 
 ?>
 
@@ -111,7 +89,7 @@ while ($row = $ipQuery->fetch_assoc()) {
             box-shadow: 0 4px 15px rgba(255, 0, 0, 0.1);
         }
 
-        .online-text {
+        .online-text, .configured-text {
             position: absolute;
             bottom: 7rem;
             left: 1.5rem;
@@ -304,44 +282,48 @@ while ($row = $ipQuery->fetch_assoc()) {
                             <span class="sensor-name unregistered">Unknown</span>
                         <?php else: ?>
                             <span class="sensor-name"><?= htmlspecialchars($sensor['sensorName']) ?></span>
-                        <?php endif; ?>
-                    </label>
-                    <div class="checkbox-wrapper">
-                        <input type="checkbox" 
-                            id="cb-<?= $sensor['soilSensorID'] ?>"
-                            name="sensor[]" 
-                            value="<?= $sensor['soilSensorID'] ?>" 
-                            onchange="toggleLocation(this)" 
-                            class="sensor-checkbox">
-                        <label for="cb-<?= $sensor['soilSensorID'] ?>" class="toggle-label"></label>
-                    </div>
-                    <div class="online-text" style="display: none;">
-                        <i class="fas fa-circle-check"></i>
-                        <span>The sensor is online and ready for configuration.</span>
-                    </div>
-                    <div class="offline-text" style="display: none;">
-                        <i class="fas fa-circle-exclamation"></i>
-                        <span>The sensor is currently offline. Please ensure it is powered on and connected to the network.</span>
-                    </div>
-                    <div class="unregistered-text" style="display: none;">
+                        </label>
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" 
+                                id="cb-<?= $sensor['soilSensorID'] ?>"
+                                name="sensor[]" 
+                                value="<?= $sensor['soilSensorID'] ?>" 
+                                onchange="toggleLocation(this)" 
+                                class="sensor-checkbox">
+                            <label for="cb-<?= $sensor['soilSensorID'] ?>" class="toggle-label"></label>
+                        </div>
+                        <div class="online-text" style="display: none;">
+                            <i class="fas fa-circle-check"></i>
+                            <span>The sensor is online and ready for configuration.</span>
+                        </div>
+                        <div class="offline-text" style="display: none;">
+                            <i class="fas fa-circle-exclamation"></i>
+                            <span>The sensor is currently offline. Please ensure it is powered on and connected to the network.</span>
+                        </div>
+                        <div class="configured-text" style="display: none;">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Location: <strong class="display-location-name"></strong></span>
+                        </div>
+                        <div class="unregistered-text" style="display: none;">
                         <i class="fas fa-circle-question"></i>
                         <span>This sensor is unregistered. Please register the sensor before configuration.</span>
                     </div>
-                    <span class="location" style="display: none;"></span>
-                    <div class="location-select">
-                        <select name="location[<?= $sensor['soilSensorID'] ?>]">
-                            <option value="">Select Farm Location</option>
-                            <?php foreach ($sensorLocations[$sensor['soilSensorID']] ?? [] as $loc): ?>
-                                <option value="<?= $loc['locationID'] ?>">
-                                    <?= htmlspecialchars($loc['farmName']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <span class="location" style="display: none;"></span>
+                        <div class="location-select">
+                            <select name="location[<?= $sensor['soilSensorID'] ?>]">
+                                <option value="">Select Farm Location</option>
+                                <?php foreach ($sensorLocations[$sensor['soilSensorID']] ?? [] as $loc): ?>
+                                    <option value="<?= $loc['locationID'] ?>">
+                                        <?= htmlspecialchars($loc['farmName']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <button type="button" class="send-button" onclick="sendToESP32(this)" disabled>Send to ESP32</button>
+                        <button class="disconnect" style="display: none;" data-ip="<?= htmlspecialchars($sensorIpMap[$sensor['soilSensorID']] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
                     </div>
-                    <button type="button" class="send-button" onclick="sendToESP32(this)" disabled>Send to ESP32</button>
-                    <button class="disconnect" style="display: none;" data-ip="<?= htmlspecialchars($sensorIpMap[$sensor['soilSensorID']] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
-                </div>
-            <?php endwhile; ?>
+                <?php endwhile; ?>
+            <!-- </form> -->
         </div>
     </div>
     <script>
@@ -364,7 +346,9 @@ while ($row = $ipQuery->fetch_assoc()) {
                 statusText: box.querySelector('.status-text'),
                 indicator: box.querySelector('.indicator'),
                 offlineText: box.querySelector('.offline-text'),
-                onlineText: box.querySelector('.online-text'),
+                onlineText: box.querySelector('.online-text')
+                configuredText: box.querySelector('.configured-text'),
+                displayName: box.querySelector('.display-location-name')
                 unregisteredText: box.querySelector('.unregistered-text')
             };
         }
@@ -382,6 +366,7 @@ while ($row = $ipQuery->fetch_assoc()) {
 
                     els.sendBtn.style.display = 'none';
                     els.disconnectBtn.style.display = 'block';
+                    els.configuredText.style.display = 'block';
 
                     els.statusText.textContent = 'Connected';
                     els.indicator.style.background = '#4CAF50';
@@ -397,6 +382,7 @@ while ($row = $ipQuery->fetch_assoc()) {
 
                     els.locationLabel.style.display = 'none';
                     els.locationSelect.style.display = 'none';
+                    els.configuredText.style.display = 'none';
                     els.select.disabled = false;
                     els.select.value = '';
 
@@ -418,7 +404,8 @@ while ($row = $ipQuery->fetch_assoc()) {
 
                     els.locationLabel.style.display = 'none';
                     els.locationSelect.style.display = 'none';
-
+                    els.configuredText.style.display = 'none';
+                    
                     els.sendBtn.style.display = 'none';
                     els.disconnectBtn.style.display = 'none';
 
@@ -437,6 +424,7 @@ while ($row = $ipQuery->fetch_assoc()) {
 
                     els.locationLabel.style.display = 'none';
                     els.locationSelect.style.display = 'none';
+                    els.configuredText.style.display = 'none';
 
                     els.sendBtn.style.display = 'none';
                     els.disconnectBtn.style.display = 'none';
@@ -487,9 +475,18 @@ while ($row = $ipQuery->fetch_assoc()) {
                         if (!input) return;
 
                         const box = input.closest('.sensor-box');
+                        const els = getBoxEls(box);
+                        
+                        // Update location name if configured
+                        if (sensor.sensorStatus == 1 && sensor.isConnected == 1) {
+                            if (els.displayName) {
+                                els.displayName.textContent = sensor.farmName || 'Unknown';
+                            }
+                        }
 
                         if (box.dataset.userInteracting === '1') return;
 
+                        // Update the UI State based on database values
                         if (sensor.sensorStatus == 1 && sensor.isConnected == 1) {
                             renderState(box, UI_STATES.CONFIGURED);
                         } else if (sensor.sensorStatus == 1) {
@@ -506,9 +503,10 @@ while ($row = $ipQuery->fetch_assoc()) {
 
         function sendToESP32(btn) {
             const box = btn.closest('.sensor-box');
-            const { select } = getBoxEls(box);
+            const { select, displayName } = getBoxEls(box);
 
-             btn.disabled = true;
+            btn.disabled = true;
+            const selectLocationName = select.options[select.selectedIndex].text;
 
             fetch('connect_sensor.php', {
                 method: 'POST',
@@ -522,6 +520,7 @@ while ($row = $ipQuery->fetch_assoc()) {
             .then(res => res.json())
             .then(data => {
                 if (!data.success) throw new Error(data.message);
+                if(displayName) displayName.textContent = selectLocationName;
                 box.dataset.userInteracting = '0';
                 renderState(box, UI_STATES.CONFIGURED);
             })
@@ -552,7 +551,7 @@ while ($row = $ipQuery->fetch_assoc()) {
         }
 
         // Poll every 3 seconds
-        setInterval(updateSensors, 100);
+        setInterval(updateSensors, 1000);
     </script>
 </body>
 </html>
