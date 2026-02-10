@@ -25,7 +25,7 @@ function checkIF_Offline($conn) {
             $timeDiffSeconds = $currentTime - $lastOnlineTime;
 
             // If unregistered and offline for more than 60 seconds, delete sensor
-            if ($isRegistered === 0 && $status === 0 && $timeDiffSeconds > 60) {
+            if ($isRegistered === 0 && $status === 0 && $timeDiffSeconds > 30) {
                 $deleteSql = "DELETE FROM sensorinfo WHERE soilSensorID = ?";
                 $stmt = $conn->prepare($deleteSql);
                 $stmt->bind_param("i", $soilSensorID);
