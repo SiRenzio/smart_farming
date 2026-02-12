@@ -7,7 +7,7 @@
 const char* webServerIp = "172.18.0.9";
 
 String verifyDeviceURL = "http://" + String(webServerIp) + "/smart_farming/webServer.php";
-String sendDataURL     = "http://" + String(webServerIp) + "/smart_farming/sensor_api.php";
+String sendDataURL     = "http://" + String(webServerIp) + "/smart_farming/api/sensor_api.php";
 
 /* ===================== WIFI CREDENTIALS ===================== */
 const char* ssid = "CompDeptWiFiAdmin";
