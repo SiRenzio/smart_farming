@@ -221,11 +221,11 @@
 
         <!-- Action Links -->
         <div class="action-links">
-            <a href="register.php" class="action-link btn-register">
+            <a href="pages/register.php" class="action-link btn-register">
                 <i class="fas fa-user-plus"></i>
                 Get Started
             </a>
-            <a href="login.php" class="action-link btn-login">
+            <a href="pages/login.php" class="action-link btn-login">
                 <i class="fas fa-sign-in-alt"></i>
                 Sign In
             </a>

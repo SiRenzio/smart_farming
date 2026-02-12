@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'db.php';
+require_once '../db.php';
 
 if (!isset($_SESSION['userID'])) {
     header('Location: login.php');
@@ -710,7 +710,7 @@ function updateTank(sensorID, liters, percent) {
 }
 
 function fetchLiquidLevel() {
-    fetch('fetch_liquidlevel_data.php')
+    fetch('../api/fetch_liquidlevel_data.php')
         .then(res => res.json())
         .then(data => {
             data.forEach(sensor => {

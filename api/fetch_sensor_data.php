@@ -1,5 +1,5 @@
 <?php
-require_once 'db.php';
+require_once '../db.php';
 
 $filterSensor = $_GET['sensor'] ?? '';
 $filterLocation = $_GET['location'] ?? '';

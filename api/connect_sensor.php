@@ -1,5 +1,5 @@
 <?php
-require_once 'db.php';
+require_once '../db.php';
 // Removed duplicate require_once 'sending.php'
 
 session_start();

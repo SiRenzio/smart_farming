@@ -1,5 +1,5 @@
 <?php
-require_once 'db.php';
+require_once '../db.php';
 
 // Set headers for JSON and Cross-Origin
 header('Content-Type: application/json');

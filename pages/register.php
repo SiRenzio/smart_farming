@@ -1,34 +1,45 @@
 <?php
-session_start();
-require_once 'db.php';
+require_once '../db.php';
 
-$error = '';
+$errors = [];
+$success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username_email = trim($_POST['username_email'] ?? '');
+    $username = trim($_POST['username'] ?? '');
+    $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
 
-    if (!$username_email || !$password) {
-        $error = 'All fields are required.';
-    } else {
-        $stmt = $conn->prepare('SELECT userID, username, password_hash FROM users WHERE username = ? OR email = ?');
-        $stmt->bind_param('ss', $username_email, $username_email);
+    // Validate
+    if (!$username || !$email || !$password || !$confirm_password) {
+        $errors[] = 'All fields are required.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = 'Invalid email address.';
+    } elseif ($password !== $confirm_password) {
+        $errors[] = 'Passwords do not match.';
+    }
+
+    // Check for existing username/email
+    if (!$errors) {
+        $stmt = $conn->prepare('SELECT userID FROM users WHERE username = ? OR email = ?');
+        $stmt->bind_param('ss', $username, $email);
         $stmt->execute();
         $stmt->store_result();
-        if ($stmt->num_rows === 1) {
-            $stmt->bind_result($userID, $username, $password_hash);
-            $stmt->fetch();
-            if (password_verify($password, $password_hash)) {
-                // Success: set session and redirect
-                $_SESSION['userID'] = $userID;
-                $_SESSION['username'] = $username;
-                header('Location: dashboard.php');
-                exit;
-            } else {
-                $error = 'Invalid credentials.';
-            }
+        if ($stmt->num_rows > 0) {
+            $errors[] = 'Username or email already exists.';
+        }
+        $stmt->close();
+    }
+
+    // Register user
+    if (!$errors) {
+        $password_hash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $conn->prepare('INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)');
+        $stmt->bind_param('sss', $username, $email, $password_hash);
+        if ($stmt->execute()) {
+            $success = 'Registration successful! <a href="login.php">Login here</a>.';
         } else {
-            $error = 'Invalid credentials.';
+            $errors[] = 'Registration failed. Please try again.';
         }
         $stmt->close();
     }
@@ -39,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Smart Farming</title>
+    <title>Register - Smart Farming</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -59,13 +70,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #333;
         }
 
-        .login-container {
+        .register-container {
             width: 100%;
-            max-width: 450px;
+            max-width: 500px;
             padding: 2rem;
         }
 
-        .login-card {
+        .register-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 25px;
@@ -76,22 +87,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             overflow: hidden;
         }
 
-        .login-card::before {
+        .register-card::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             height: 5px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
+            background: linear-gradient(90deg, #4CAF50, #45a049);
         }
 
-        .login-header {
+        .register-header {
             text-align: center;
             margin-bottom: 2.5rem;
         }
 
-        .login-header .logo {
+        .register-header .logo {
             width: 80px;
             height: 80px;
             background: linear-gradient(135deg, #4CAF50, #45a049);
@@ -104,17 +115,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: white;
         }
 
-        .login-header h1 {
+        .register-header h1 {
             font-size: 2rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #4CAF50, #45a049);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             margin-bottom: 0.5rem;
         }
 
-        .login-header p {
+        .register-header p {
             color: #666;
             font-size: 1rem;
         }
@@ -128,6 +139,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             text-align: center;
             font-weight: 500;
             box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .success-message a {
+            color: white;
+            text-decoration: underline;
+            font-weight: 600;
         }
 
         .form-group {
@@ -154,8 +182,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .form-input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
             background: white;
         }
 
@@ -163,9 +191,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #999;
         }
 
-        .login-btn {
+        .register-btn {
             width: 100%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #4CAF50, #45a049);
             color: white;
             border: none;
             padding: 1rem;
@@ -174,30 +202,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
             margin-bottom: 1.5rem;
         }
 
-        .login-btn:hover {
+        .register-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
         }
 
-        .register-link {
+        .login-link {
             text-align: center;
             color: #666;
             font-size: 0.95rem;
         }
 
-        .register-link a {
-            color: #667eea;
+        .login-link a {
+            color: #4CAF50;
             text-decoration: none;
             font-weight: 600;
             transition: color 0.3s ease;
         }
 
-        .register-link a:hover {
-            color: #764ba2;
+        .login-link a:hover {
+            color: #45a049;
         }
 
         .input-icon {
@@ -218,49 +246,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         @media (max-width: 480px) {
-            .login-container {
+            .register-container {
                 padding: 1rem;
             }
             
-            .login-card {
+            .register-card {
                 padding: 2rem;
             }
             
-            .login-header h1 {
+            .register-header h1 {
                 font-size: 1.75rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-card">
-            <div class="login-header">
+    <div class="register-container">
+        <div class="register-card">
+            <div class="register-header">
                 <div class="logo">
-                    <i class="fas fa-seedling"></i>
+                    <i class="fas fa-user-plus"></i>
                 </div>
-                <h1>Welcome Back</h1>
-                <p>Sign in to your Smart Farming account</p>
+                <h1>Join Smart Farming</h1>
+                <p>Create your account to get started</p>
             </div>
 
-            <?php if ($error): ?>
+            <?php if ($errors): ?>
                 <div class="error-message">
-                    <i class="fas fa-exclamation-triangle"></i> <?php echo htmlspecialchars($error); ?>
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    <?php foreach ($errors as $e) echo htmlspecialchars($e) . '<br>'; ?>
                 </div>
             <?php endif; ?>
 
-            <form method="post" action="login.php">
+            <?php if ($success): ?>
+                <div class="success-message">
+                    <i class="fas fa-check-circle"></i> <?php echo $success; ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="post" action="register.php">
                 <div class="form-group">
-                    <label for="username_email">Username or Email</label>
+                    <label for="username">Username</label>
                     <div class="input-icon">
                         <i class="fas fa-user"></i>
                         <input type="text" 
-                               id="username_email"
-                               name="username_email" 
+                               id="username"
+                               name="username" 
                                class="form-input"
-                               placeholder="Enter your username or email" 
+                               placeholder="Choose a username" 
                                required 
-                               value="<?php echo htmlspecialchars($_POST['username_email'] ?? ''); ?>">
+                               value="<?php echo htmlspecialchars($_POST['username'] ?? ''); ?>">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <div class="input-icon">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" 
+                               id="email"
+                               name="email" 
+                               class="form-input"
+                               placeholder="Enter your email address" 
+                               required 
+                               value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
                     </div>
                 </div>
 
@@ -272,18 +321,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                id="password"
                                name="password" 
                                class="form-input"
-                               placeholder="Enter your password" 
+                               placeholder="Create a strong password" 
                                required>
                     </div>
                 </div>
 
-                <button type="submit" class="login-btn">
-                    <i class="fas fa-sign-in-alt"></i> Sign In
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <div class="input-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" 
+                               id="confirm_password"
+                               name="confirm_password" 
+                               class="form-input"
+                               placeholder="Confirm your password" 
+                               required>
+                    </div>
+                </div>
+
+                <button type="submit" class="register-btn">
+                    <i class="fas fa-user-plus"></i> Create Account
                 </button>
             </form>
 
-            <div class="register-link">
-                Don't have an account? <a href="register.php">Create one now</a>
+            <div class="login-link">
+                Already have an account? <a href="login.php">Sign in here</a>
             </div>
         </div>
     </div>

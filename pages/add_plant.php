@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'db.php';
+require_once '../db.php';
 
 if (!isset($_SESSION['userID'])) {
     header('Location: login.php');
@@ -10,37 +10,34 @@ if (!isset($_SESSION['userID'])) {
 $errors = [];
 $success = '';
 
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    $sensorLocation = trim($_POST['sensorLocation'] ?? '');
+    $plantName = trim($_POST['plantName'] ?? '');
+    $plantVariety = trim($_POST['plantVariety'] ?? '');
 
     // Validate
-    if (!$sensorLocation) {
-        $errors[] = 'Sensor location is required.';
+    if (!$plantName) {
+        $errors[] = 'Plant name is required.';
     }
 
     if (!$errors) {
-        // Insert sensor location to farmlocation table
-        $sensorlocstmt= $conn->prepare('INSERT INTO farmlocation (farmName, dateAdded) VALUES (?, NOW())');
-        $sensorlocstmt->bind_param('s', $sensorLocation);
-        if ($sensorlocstmt->execute()) {
-            $sensorLocationID = $conn->insert_id;
-            $success = 'Sensor location added successfully.';
+        $stmt = $conn->prepare('INSERT INTO plantinfo (plantName, plantVariety) VALUES (?, ?)');
+        $stmt->bind_param('ss', $plantName, $plantVariety);
+        if ($stmt->execute()) {
+            $plantID = $conn->insert_id; // Get the auto-generated ID
+            $success = 'Plant added successfully! <a href="add_nutrition.php?plantID=' . $plantID . '">Add nutrition needs</a> or <a href="plants.php">view all plants</a>.';
         } else {
-            $errors[] = 'Failed to add location: ' . $conn->error . ' (Error Code: ' . $conn->errno . ')';
+            $errors[] = 'Failed to add plant. Please try again.';
         }
-        $sensorlocstmt->close();
+        $stmt->close();
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Sensor Location - Smart Farming</title>
+    <title>Add Plant - Smart Farming</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -77,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .page-header .icon {
             width: 80px;
             height: 80px;
-            background: linear-gradient(135deg, #2196F3, #1976D2);
+            background: linear-gradient(135deg, #4CAF50, #45a049);
             border-radius: 20px;
             display: flex;
             align-items: center;
@@ -90,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .page-header h1 {
             font-size: 2.2rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #2196F3, #1976D2);
+            background: linear-gradient(135deg, #4CAF50, #45a049);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -107,7 +104,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 2.5rem;
-            margin-bottom: 2rem;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             position: relative;
@@ -121,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             left: 0;
             right: 0;
             height: 4px;
-            background: linear-gradient(90deg, #2196F3, #1976D2);
+            background: linear-gradient(90deg, #4CAF50, #45a049);
         }
 
         .error-message {
@@ -176,8 +172,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .form-input:focus {
             outline: none;
-            border-color: #2196F3;
-            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
             background: white;
         }
 
@@ -185,32 +181,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #999;
         }
 
-        .form-group select {
-            width: 100%;
-            padding: 1rem 1.25rem;
-            border: 2px solid #e1e5e9;
-            border-radius: 12px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.8);
-        }
-
-        .form-group select:focus {
-            outline: none;
-            border-color: #2196F3;
-            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
-            background: white;
-        }
-
-        .separator {
-            text-align: center;
-            margin-bottom: 1rem;
-            color: #999;
-        }
-
         .submit-btn {
             width: 100%;
-            background: linear-gradient(135deg, #2196F3, #1976D2);
+            background: linear-gradient(135deg, #4CAF50, #45a049);
             color: white;
             border: none;
             padding: 1rem;
@@ -219,13 +192,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
             margin-bottom: 1.5rem;
         }
 
         .submit-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
         }
 
         .nav-links {
@@ -270,12 +243,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="page-container">
         <!-- Page Header -->
-         <div class="page-header">
+        <div class="page-header">
             <div class="icon">
-                <i class="fas fa-map-marker-alt"></i>
+                <i class="fas fa-seedling"></i>
             </div>
-            <h1>Add New Sensor Location</h1>
-            <p>Indicate the location of your new sensor</p>
+            <h1>Add New Plant</h1>
+            <p>Register a new plant in your smart farming system</p>
         </div>
 
         <!-- Form Card -->
@@ -293,32 +266,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
 
-            <form method="post" action="add_sensor_location.php">
+            <form method="post" action="add_plant.php">
                 <div class="form-group">
-                    <label for="sensorLocation">Sensor Location *</label>
+                    <label for="plantName">Plant Name *</label>
                     <input type="text" 
-                           id="sensorLocation"
-                           name="sensorLocation" 
+                           id="plantName"
+                           name="plantName" 
                            class="form-input"
-                           placeholder="Enter sensor location (e.g., Field 1, Plot 1)" 
-                           value="<?php echo htmlspecialchars($_POST['sensorLocation'] ?? ''); ?>">
+                           placeholder="Enter plant name (e.g., Tomato, Corn, Wheat)" 
+                           required 
+                           value="<?php echo htmlspecialchars($_POST['plantName'] ?? ''); ?>">
+                </div>
+
+                <div class="form-group">
+                    <label for="plantVariety">Plant Variety</label>
+                    <input type="text" 
+                           id="plantVariety"
+                           name="plantVariety" 
+                           class="form-input"
+                           placeholder="Enter variety (e.g., Beefsteak, Sweet Corn, Winter Wheat)" 
+                           value="<?php echo htmlspecialchars($_POST['plantVariety'] ?? ''); ?>">
                 </div>
 
                 <button type="submit" class="submit-btn">
-                    <i class="fas fa-plus"></i> Add Sensor Location
+                    <i class="fas fa-plus"></i> Add Plant
                 </button>
             </form>
 
             <div class="nav-links">
-                <a href="manage_sensors.php">
-                    <i class="fas fa-arrow-left"></i> Back to Sensors
-                </a>
-
                 <a href="dashboard.php">
-                    <i class="fas fa-tachometer-alt"></i> Back to Dashboard
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <a href="plants.php">
+                    <i class="fas fa-list"></i> View All Plants
                 </a>
             </div>
         </div>
     </div>
 </body>
-</html>
+</html> 

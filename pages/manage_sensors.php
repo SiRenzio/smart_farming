@@ -1,7 +1,7 @@
 <?php
 session_start();
-require_once 'db.php';
-require_once 'sending.php';
+require_once '../db.php';
+require_once '../api/sending.php';
 
 if (!isset($_SESSION['userID'])) {
     header('Location: login.php');
@@ -698,7 +698,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
         let firstLoadDone = false;
 
         function updateSensors() {
-            fetch('fetch_sensor.php')
+            fetch('../api/fetch_sensor.php')
                 .then(res => res.json())
                 .then(data => {
                     const container = document.querySelector('.sensors-container');
@@ -791,7 +791,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
             btn.disabled = true;
             const selectLocationName = select.options[select.selectedIndex].text;
 
-            fetch('connect_sensor.php', {
+            fetch('../api/connect_sensor.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -801,7 +801,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
             })
             .then(res => res.json())
             .then(data => {
-                if (!data.success) throw new Error(data.message);
+                if (!data.success) {
+                    throw new Error(data.message);
+                }
+                else {
+                    alert(data.message);
+                }
                 if(displayName) displayName.textContent = selectLocationName;
                 box.dataset.userInteracting = '0';
                 renderState(box, UI_STATES.CONFIGURED);
@@ -817,14 +822,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
 
             btn.disabled = true;
 
-            fetch('disconnect_sensor.php', {
+            fetch('../api/disconnect_sensor.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({ sensor_id: btn.dataset.id })
             })
             .then(res => res.json())
             .then(data => {
-                if (!data.success) throw new Error(data.message);
+                if (!data.success) {
+                    throw new Error(data.message);
+                }
+                else {
+                    alert(data.message);
+                }
                 box.dataset.userInteracting = '0';
                 renderState(box, UI_STATES.ONLINE_IDLE);
             })

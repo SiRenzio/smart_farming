@@ -1,7 +1,7 @@
 <?php
 session_start();
-require_once 'db.php';
-require_once 'sending.php';
+require_once '../db.php';
+require_once '../api/sending.php';
 
 header('Content-Type: application/json');
 
