@@ -749,16 +749,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                         if (box.dataset.userInteracting === '1') return;
 
                         // Render correct UI state
-                        if (sensor.sensorStatus == 1 && sensor.isConnected == 1) {
+                        if (sensor.isRegistered == 0) {
+                            renderState(box, UI_STATES.UNREGISTERED);
+                            els.sensorNameLabel.textContent = 'Unknown';
+                        } 
+                        else if (sensor.sensorStatus == 1 && sensor.isConnected == 1) {
                             renderState(box, UI_STATES.CONFIGURED);
                         } 
                         else if (sensor.sensorStatus == 1) {
                             renderState(box, UI_STATES.ONLINE_IDLE);
                             els.sensorNameLabel.textContent = sensor.sensorName || 'Unknown';
-                        } 
-                        else if (sensor.isRegistered == 0) {
-                            renderState(box, UI_STATES.UNREGISTERED);
-                            els.sensorNameLabel.textContent = 'Unknown';
                         } 
                         else {
                             renderState(box, UI_STATES.OFFLINE);
