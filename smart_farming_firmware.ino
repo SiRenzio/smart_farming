@@ -4,17 +4,17 @@
 #include <WebServer.h>
 
 /* ===================== SERVER URLs ===================== */
-const char* verifyDeviceURL = "http://172.18.0.9/smart_farming/check_if_online_offline.php";
-const char* sendDataURL     = "http://172.18.0.9/smart_farming/sensor_api.php";
+const char* webServerIp = "172.18.0.9";
+
+String verifyDeviceURL = "http://" + String(webServerIp) + "/smart_farming/webServer.php";
+String sendDataURL     = "http://" + String(webServerIp) + "/smart_farming/sensor_api.php";
 
 /* ===================== WIFI CREDENTIALS ===================== */
 const char* ssid = "CompDeptWiFiAdmin";
 const char* password = "isatu_6134";
 
 /* ===================== GLOBALS ===================== */
-WebServer server(80); // Initialize WebServer on port 80
-bool wifiConnected = false;
-
+WebServer server(80); // RE-ADDED: Declaring the server object
 bool deviceVerified = false;
 bool sendingEnabled = false;
 
@@ -22,19 +22,17 @@ int SoilSensorID = -1;
 int locationID   = -1;
 
 unsigned long lastSendTime = 0;
-const unsigned long sendInterval = 5000;
+const unsigned long sendInterval = 5000; 
 
-/* ===================== RECEIVE HANDLER (For PHP sending.php) ===================== */
+/* ===================== RECEIVE HANDLER (Debug Only) ===================== */
 void handleReceive() {
-
   if (!server.hasArg("plain")) {
     server.send(400, "application/json", "{\"status\":\"error\",\"message\":\"No request body\"}");
     return;
   }
 
   String body = server.arg("plain");
-
-  Serial.println("\n[ESP32] Data received from PHP:");
+  Serial.println("\n[DEBUG] Manual data received:");
   Serial.println(body);
 
   StaticJsonDocument<200> doc;
@@ -45,51 +43,28 @@ void handleReceive() {
     return;
   }
 
-  // disconnection 
-  if (doc.containsKey("command")) {
-
-    String command = doc["command"];
-
-    if (command == "disconnect") {
-      deviceVerified = false;
-      sendingEnabled = false;
-      SoilSensorID   = -1;
-      locationID     = -1;
-
-      Serial.println("[ESP32] DISCONNECT command received");
-      Serial.println("[ESP32] Data sending paused and IDs cleared");
-
-      server.send(200, "application/json", "{\"status\":\"disconnected\"}");
-      return;
-    }
-  }
-
-  // send sensor and location ID to connect
+  // Update IDs manually via debug if provided
   if (doc.containsKey("SoilSensorID") && doc.containsKey("locationID")) {
-
     SoilSensorID   = doc["SoilSensorID"];
     locationID     = doc["locationID"];
     deviceVerified = true;
     sendingEnabled = true;
-
-    Serial.println("[ESP32] Sensor and Location IDs received");
-    Serial.println("[ESP32] Data sending resumed");
-
-    server.send(200, "application/json", "{\"status\":\"assigned\"}");
+    Serial.println("[DEBUG] IDs Updated Manually");
+    server.send(200, "application/json", "{\"status\":\"debug_assigned\"}");
     return;
   }
 
-  server.send(400, "application/json", "{\"status\":\"error\",\"message\":\"Invalid payload\"}");
+  server.send(200, "application/json", "{\"status\":\"received\"}");
 }
 
-/* ===================== VERIFY DEVICE (Client Mode) ===================== */
+/* ===================== VERIFY & SYNC (The Pull Method) ===================== */
 void verifyDeviceWithServer() {
+  if (WiFi.status() != WL_CONNECTED) return;
 
   HTTPClient http;
-
   StaticJsonDocument<200> doc;
-  doc["ipAddress"]  = WiFi.localIP().toString();
   doc["macAddress"] = WiFi.macAddress();
+  doc["ipAddress"]  = WiFi.localIP().toString();
 
   String payload;
   serializeJson(doc, payload);
@@ -99,29 +74,39 @@ void verifyDeviceWithServer() {
 
   int httpCode = http.POST(payload);
 
-  if (httpCode > 0) {
-
+  if (httpCode == 200) {
     String response = http.getString();
-    Serial.print("[Server Response]: ");
-    Serial.println(response);
+    StaticJsonDocument<300> resDoc;
+    deserializeJson(resDoc, response);
 
-    if (httpCode == 200) {
-      StaticJsonDocument<200> resDoc;
-      deserializeJson(resDoc, response);
+    String status = resDoc["status"];
 
-      if (resDoc.containsKey("SoilSensorID")) {
-        SoilSensorID   = resDoc["SoilSensorID"];
-        locationID     = resDoc["locationID"];
-        deviceVerified = true;
-        sendingEnabled = true;
-      }
+    if (status == "success") {
+      SoilSensorID   = resDoc["SoilSensorID"];
+      locationID     = resDoc["locationID"];
+      deviceVerified = true;
+      sendingEnabled = true;
+      Serial.printf("[SYNC] Active! SensorID: %d, LocID: %d\n", SoilSensorID, locationID);
+    } 
+    else if (status == "disconnected") {
+      deviceVerified = true; 
+      sendingEnabled = false;
+
+      String message = resDoc["message"].as<String>();
+      Serial.print("[SERVER]: ");
+      Serial.println(message);
+      Serial.println("[SYNC] Idle: Administrative Disconnect (isConnected = 0)");
+    }
+    else {
+      deviceVerified = false;
+      sendingEnabled = false;
+      Serial.println("[ESP32] UNREGISTERED: Waiting for registration");
     }
   }
-
   http.end();
 }
 
-/* ===================== SEND SENSOR DATA (Dummy Data) ===================== */
+/* ===================== SEND SENSOR DATA ===================== */
 void sendSensorData() {
 
   if (!deviceVerified || !sendingEnabled) return;
@@ -163,9 +148,7 @@ void sendSensorData() {
   http.end();
 }
 
-/* ===================== SETUP ===================== */
 void setup() {
-
   Serial.begin(115200);
 
   WiFi.begin(ssid, password);
@@ -173,44 +156,26 @@ void setup() {
     delay(500);
     Serial.print(".");
   }
-
-  wifiConnected = true;
-  Serial.println("\n[ESP32] Connected! IP: " + WiFi.localIP().toString());
-
-  // server
+  Serial.println("\n[WiFi] Connected! IP: " + WiFi.localIP().toString());
+  Serial.println("[WiFi] Connected! MAC: " + WiFi.macAddress());
+  // Setup Debug WebServer
   server.on("/receive", HTTP_POST, handleReceive);
   server.begin();
-  Serial.println("[ESP32] Listener server started.");
+  Serial.println("[ESP32]: Sensor is ONLINE . READY TO DEPLOY.");
 
   randomSeed(analogRead(0));
-
-  Serial.print("[ESP32] MAC Address: ");
-  Serial.println(WiFi.macAddress());
-
-  Serial.println("[ESP32] Waiting for sensor and location ID's");
 }
 
-/* ===================== LOOP ===================== */
 void loop() {
+  server.handleClient(); // Added to keep the debug server running
 
-  server.handleClient();
+  unsigned long currentMillis = millis();
 
-  if (wifiConnected) {
-
-    unsigned long currentMillis = millis();
-
-    if (currentMillis - lastSendTime >= sendInterval) {
-      lastSendTime = currentMillis;
-
-      // 
-      verifyDeviceWithServer();
-
-      // send data if connected
-      if (deviceVerified && sendingEnabled) {
-        sendSensorData();
-      }
+  if (currentMillis - lastSendTime >= sendInterval) {
+    lastSendTime = currentMillis;
+    verifyDeviceWithServer();
+    if (deviceVerified && sendingEnabled) {
+      sendSensorData();
     }
   }
-
-  delay(100);
 }
