@@ -1,10 +1,8 @@
 <?php
 require_once 'db.php';
-require_once 'sending.php';
+// Removed duplicate require_once 'sending.php'
 
 session_start();
-require_once 'sending.php';
-
 header('Content-Type: application/json');
 
 $data = json_decode(file_get_contents('php://input'), true);
@@ -20,37 +18,38 @@ if (!$sensorID || !$locationID) {
     exit;
 }
 
-$deployedSensorID = [];
-$sensorStmt = $conn->prepare("SELECT soilSensorID FROM deployment");
-$sensorStmt->execute(); 
-$sensorResult = $sensorStmt->get_result();
+$checkStmt = $conn->prepare("SELECT soilSensorID FROM deployment WHERE soilSensorID = ?");
+$checkStmt->bind_param("i", $sensorID);
+$checkStmt->execute();
+$checkResult = $checkStmt->get_result();
 
-while ($row = $sensorResult->fetch_assoc()) {
-    $deployedSensorID[] = $row['soilSensorID'];
-}
-
-foreach ($deployedSensorID as $deployedID) {
-    if ($deployedID == $sensorID) {
-        $stmt = $conn->prepare("UPDATE deployment SET locationID = ?, isConnected = 1 WHERE soilSensorID = ?");
-        $stmt->bind_param("ii", $locationID, $sensorID);
-        $stmt->execute();
-        $stmt->close();
+if ($checkResult->num_rows > 0) {
+    // Update existing deployment
+    $stmt = $conn->prepare("UPDATE deployment SET locationID = ?, isConnected = 1 WHERE soilSensorID = ?");
+    $stmt->bind_param("ii", $locationID, $sensorID);
+    
+    if ($stmt->execute()) {
         echo json_encode([
             'success' => true,
             'message' => 'Sensor re-deployed successfully.'
         ]);
-        exit;
     }
-    else {
-        $stmt = $conn->prepare("INSERT INTO deployment (soilSensorID, locationID, isConnected) VALUES (?, ?, 1)");
-        $stmt->bind_param("ii", $sensorID, $locationID);
-        $stmt->execute();
-
+    $stmt->close();
+}
+else {
+    // Insert new deployment
+    $stmt = $conn->prepare("INSERT INTO deployment (soilSensorID, locationID, isConnected) VALUES (?, ?, 1)");
+    $stmt->bind_param("ii", $sensorID, $locationID);
+    
+    if ($stmt->execute()) {
         echo json_encode([
             'success' => true,
             'message' => 'Sensor deployed successfully.'
         ]);
-        exit;
     }
+    $stmt->close();
 }
+
+$checkStmt->close();
+$conn->close();
 ?>
