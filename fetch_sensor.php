@@ -6,13 +6,13 @@ $result = $conn->query("
         s.soilSensorID,
         s.sensorName,
         s.sensorStatus,
-        s.isConnected,
+        d.isConnected,
         s.isRegistered,
-        sd.locationID,
+        d.locationID,
         fl.farmName
     FROM sensorinfo s
-    LEFT JOIN sensordata sd ON s.soilSensorID = sd.soilSensorID
-    LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID
+    LEFT JOIN deployment d ON s.soilSensorID = d.soilsensorID
+    LEFT JOIN farmlocation fl ON d.locationID = fl.locationID
 ");
 
 $sensors = [];

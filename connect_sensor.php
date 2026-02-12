@@ -11,9 +11,8 @@ $data = json_decode(file_get_contents('php://input'), true);
 
 $sensorID   = $data['sensor_id']   ?? null;
 $locationID = $data['location_id'] ?? null;
-$sensorIP   = $data['sensor_ip']   ?? null;
 
-if (!$sensorID || !$locationID || !$sensorIP) {
+if (!$sensorID || !$locationID) {
     echo json_encode([
         'success' => false,
         'message' => 'Invalid data'
@@ -21,24 +20,37 @@ if (!$sensorID || !$locationID || !$sensorIP) {
     exit;
 }
 
-$response = sendToESP32($sensorIP, $sensorID, $locationID);
+$deployedSensorID = [];
+$sensorStmt = $conn->prepare("SELECT soilSensorID FROM deployment");
+$sensorStmt->execute(); 
+$sensorResult = $sensorStmt->get_result();
 
-if (stripos($response, 'not reachable') !== false) {
-    echo json_encode([
-        'success' => false,
-        'message' => $response
-    ]);
-    exit;
+while ($row = $sensorResult->fetch_assoc()) {
+    $deployedSensorID[] = $row['soilSensorID'];
 }
 
-$stmt = $conn->prepare(
-    "UPDATE sensorinfo SET isConnected = 1 WHERE soilSensorID = ?"
-);
-$stmt->bind_param("i", $sensorID);
-$stmt->execute();
+foreach ($deployedSensorID as $deployedID) {
+    if ($deployedID == $sensorID) {
+        $stmt = $conn->prepare("UPDATE deployment SET locationID = ?, isConnected = 1 WHERE soilSensorID = ?");
+        $stmt->bind_param("ii", $locationID, $sensorID);
+        $stmt->execute();
+        $stmt->close();
+        echo json_encode([
+            'success' => true,
+            'message' => 'Sensor re-deployed successfully.'
+        ]);
+        exit;
+    }
+    else {
+        $stmt = $conn->prepare("INSERT INTO deployment (soilSensorID, locationID, isConnected) VALUES (?, ?, 1)");
+        $stmt->bind_param("ii", $sensorID, $locationID);
+        $stmt->execute();
 
-echo json_encode([
-    'success' => true,
-    'esp_response' => $response
-]);
+        echo json_encode([
+            'success' => true,
+            'message' => 'Sensor deployed successfully.'
+        ]);
+        exit;
+    }
+}
 ?>

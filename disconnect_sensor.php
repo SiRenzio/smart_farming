@@ -10,24 +10,25 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$sensorIP = $_POST['sensor_ip'] ?? null;
+$sensorID = $_POST['sensor_id'] ?? null;
 $command  = 'disconnect';
 
-if (!$sensorIP) {
-    echo json_encode(['success' => false, 'message' => 'Missing sensor IP']);
+if (!$sensorID) {
+    echo json_encode(['success' => false, 'message' => 'Missing sensor ID']);
     exit;
 }
 
-$response = sendToDisconnect($sensorIP, $command);
+$response = sendToDisconnect($sensorID, $command);
 
 $stmt = $conn->prepare(
-    "UPDATE sensorinfo SET isConnected = 0 WHERE sensorIPAddress = ?"
+    "UPDATE deployment SET isConnected = 0 WHERE soilSensorID = ?"
 );
-$stmt->bind_param("s", $sensorIP);
+$stmt->bind_param("s", $sensorID);
 $stmt->execute();
 
 echo json_encode([
     'success' => true,
-    'response' => $response
+    'message' => 'Sensor disconnected successfully.'
 ]);
+exit;
 ?>

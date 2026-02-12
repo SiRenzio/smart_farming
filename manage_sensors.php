@@ -24,18 +24,6 @@ while ($row = $mapResult->fetch_assoc()) {
     $locations[] = $row;
 }
 
-
-$ipQuery = $conn->query("
-    SELECT soilSensorID, sensorIPAddress
-    FROM sensorinfo
-");
-
-while ($row = $ipQuery->fetch_assoc()) {
-    $sensorIpMap[$row['soilSensorID']] = $row['sensorIPAddress'];
-}
-$locationID = '';
-
-
 // Register Senor Handling
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isset($_POST['modalSensorID'])) {
     $sensorName = trim($_POST['sensorName'] ?? '');
@@ -93,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
             color: #c62828;
             padding: 0.8rem;
             border-radius: 12px;
-            font-size: 0.9rem;
+            font-size: 1rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -109,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
             color: #2e7d32;
             padding: 0.8rem;
             border-radius: 12px;
-            font-size: 0.9rem;
+            font-size: 1rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -479,7 +467,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                 <p>No sensors found. <a href="add_sensor.php">Add your first sensor</a> to get started.</p>
             </div>
             <?php while ($sensor = $sensors->fetch_assoc()): ?>
-                <div class="sensor-box" data-sensor-id="<?= $sensor['soilSensorID'] ?>" data-ip="<?= htmlspecialchars($sensorIpMap[$sensor['soilSensorID']] ?? '') ?>">
+                <div class="sensor-box" data-sensor-id="<?= $sensor['soilSensorID'] ?>">
                     <div class="icon">
                         <i class="fas fa-microchip"></i>
                     </div>
@@ -526,8 +514,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <button type="button" class="send-button" onclick="sendToESP32(this)" disabled>Send to ESP32</button>
-                    <button class="disconnect" style="display: none;" data-ip="<?= htmlspecialchars($sensorIpMap[$sensor['soilSensorID']] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
+                    <button type="button" class="send-button" onclick="connectSensor(this)" disabled>Connect</button>
+                    <button class="disconnect" style="display: none;" data-id="<?= htmlspecialchars($sensor['soilSensorID'] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
                     <button class="register" style="display: none;" onclick="registerSensor(<?= $sensor['soilSensorID'] ?>)">Register</button>
                     <div class="add-sensor-modal" style="display: none;">
                         <div class="modal-header">
@@ -796,7 +784,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
             document.getElementById('modal-backdrop').style.display = 'none';
         }
 
-        function sendToESP32(btn) {
+        function connectSensor  (btn) {
             const box = btn.closest('.sensor-box');
             const { select, displayName } = getBoxEls(box);
 
@@ -809,7 +797,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                 body: JSON.stringify({
                     sensor_id: box.dataset.sensorId,
                     location_id: select.value,
-                    sensor_ip: box.dataset.ip
                 })
             })
             .then(res => res.json())
@@ -833,7 +820,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
             fetch('disconnect_sensor.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ sensor_ip: btn.dataset.ip })
+                body: new URLSearchParams({ sensor_id: btn.dataset.id })
             })
             .then(res => res.json())
             .then(data => {
