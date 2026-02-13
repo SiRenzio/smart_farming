@@ -104,6 +104,6 @@ CREATE TABLE notification (
     userID INT(11),
     message TEXT,
     isRead TINYINT(1) DEFAULT 0,
-    createdAT TIMESTAMP,
+    createdAt TIMESTAMP,
     FOREIGN KEY (userID) REFERENCES users (userID)
 )
