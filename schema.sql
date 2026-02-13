@@ -35,8 +35,9 @@ CREATE TABLE sensorinfo (
     soilSensorID INT(15) AUTO_INCREMENT PRIMARY KEY,
     sensorName VARCHAR(50),
     sensorMacAddress VARCHAR(30),
-    sensorIPAddress VARCHAR(30),
+    isRegistered TINYINT(1),
     sensorStatus TINYINT(1),
+    last_sensor_online DATETIME,
     dateAdded DATETIME
 );
 
@@ -83,5 +84,16 @@ CREATE TABLE tankpumpevent (
     liquidsensorID INT(15),
     wateringstatus TINYINT(1),
     wateringvolume FLOAT,
+    wateringFlag TINYINT(1),
     dateandtime TIMESTAMP
 );
+
+-- Create the 'deployment' table
+CREATE TABLE deployment (
+    deploymentID INT(11) AUTO_INCREMENT PRIMARY KEY,
+    soilSensorID INT(11),
+    locationID INT(11),
+    isConnected TINYINT(1),
+    FOREIGN KEY (locationID) REFERENCES farmlocation (locationID),
+    FOREIGN KEY (soilSensorID) REFERENCES sensorinfo (soilSensorID)
+)
