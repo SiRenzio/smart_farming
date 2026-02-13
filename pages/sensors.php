@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../db.php';
+require_once '../includes/notification.php';
 
 if (!isset($_SESSION['userID'])) {
     header('Location: login.php');
@@ -169,11 +170,11 @@ function getFilterParams($excludePage = true) {
         </div>
 
         <div class="nav-links">
-            <a href="manage_sensors.php">
-                <i class="fas fa-list"></i> Manage Sensors
-            </a>
             <a href="dashboard.php">
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+            <a href="manage_sensors.php">
+                <i class="fas fa-list"></i> Manage Sensors
             </a>
         </div>
         
