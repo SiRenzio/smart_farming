@@ -11,11 +11,44 @@ $tankID = $_GET['tankID'] ?? '';
 
 // Temporary
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $stmt = $conn->prepare("INSERT INTO tankpumpevent (liquidsensorID, dateandtime, wateringstatus, wateringvolume) VALUES (?, NOW(), 1, FLOOR(RAND() * 100 + 1))");
-    $stmt->bind_param("i", $tankID);
-    $stmt->execute();
-    $stmt->close();
+    if(isset($_POST['action_watering'])) {
+        $checkFlag = $conn->prepare("SELECT wateringFlag FROM tankpumpevent WHERE liquidsensorID = ? ORDER BY dateandtime DESC LIMIT 1");
+        $checkFlag->bind_param("i", $tankID);
+        $checkFlag->execute();
+        $fResult = $checkFlag->get_result()->fetch_assoc();
+
+        if(!$fResult || $fResult['wateringFlag'] == 0) {
+            $stmt = $conn->prepare("INSERT INTO tankpumpevent (liquidsensorID, dateandtime, wateringstatus, wateringFlag, wateringvolume) VALUES (?, NOW(), 1, 0, FLOOR(RAND() * 100 + 1))");
+            $stmt->bind_param("i", $tankID);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+    else if(isset($_POST['action_mixing'])) {
+        $stmt = $conn->prepare("INSERT INTO tankpumpevent (liquidsensorID, dateandtime, wateringstatus, wateringFlag, wateringvolume) VALUES (?, NOW(), 0, 1, 0)");
+        $stmt->bind_param("i", $tankID);
+        $stmt->execute();
+        $stmt->close();
+        
+        header("Location: ?tankID=$tankID&mixing=start");
+        exit;
+    }
+    else if(isset($_POST['action_reset_flag'])) {
+        // Reset: Back to "Able to water"
+        $stmt = $conn->prepare("INSERT INTO tankpumpevent (liquidsensorID, dateandtime, wateringstatus, wateringFlag, wateringvolume) VALUES (?, NOW(), null, 0, 0)");
+        $stmt->bind_param("i", $tankID);
+        $stmt->execute();
+        $stmt->close();
+        header("Location: ?tankID=$tankID");
+        exit;
+    }
 }
+// Fetch current state for button disabling
+$latestStmt = $conn->prepare("SELECT wateringFlag FROM tankpumpevent WHERE liquidsensorID = ? ORDER BY dateandtime DESC LIMIT 1");
+$latestStmt->bind_param("i", $tankID);
+$latestStmt->execute();
+$currentState = $latestStmt->get_result()->fetch_assoc();
+$isMixing = ($currentState['wateringFlag'] ?? 0) == 1;
 
 // Pagination
 $limit = 15;
@@ -28,7 +61,7 @@ $filterDateFrom = $_GET['dateFrom'] ?? '';
 $filterDateTo = $_GET['dateTo'] ?? '';
 
 
-$whereSQL = " WHERE liquidsensorID = ? AND wateringstatus = 1";
+$whereSQL = " WHERE liquidsensorID = ?";
 $params = [$tankID];
 $types = "i";
 
@@ -113,10 +146,17 @@ function getFilterParams($excludePage = true) {
             <a href="dashboard.php">
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
             </a>
-            <form method="POST" action="">
-                <button type="submit" class="tempbtn">
-                    <i class="fas fa-upload"> Click Me</i>
+            <form method="POST" action="" style="display: inline;" id="actionForm">
+                <button type="submit" name="action_watering" class="tempbtn" <?php echo $isMixing ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''; ?>>
+                    <i class="fas fa-faucet"></i> Watering
                 </button>
+
+                <button type="submit" name="action_mixing" id="mixingBtn" class="tempbtn" <?php echo $isMixing ? 'disabled' : ''; ?>>
+                    <i class="fas fa-sync-alt"></i> 
+                    <span id="mixingText"><?php echo $isMixing ? 'Mixing Solution...' : 'Mixing Solution'; ?></span>
+                </button>
+                
+                <button type="submit" name="action_reset_flag" id="resetBtn" style="display:none;"></button>
             </form>
         </div>
         
@@ -163,6 +203,7 @@ function getFilterParams($excludePage = true) {
                         <tr>
                             <th><i class="fas fa-calendar"></i> Date & Time</th>
                             <th><i class="fas fa-tint"></i> Watering Status</th>
+                            <th><i class="fas fa-tint"></i> Watering Flag</th>
                             <th><i class="fas fa-water"></i> Watering Level</th>
                         </tr>
                     </thead>
@@ -170,7 +211,8 @@ function getFilterParams($excludePage = true) {
                         <?php foreach ($data as $row): ?>
                             <tr>
                                 <td><?php echo date('M j, Y g:i A', strtotime($row['dateandtime'])); ?></td>
-                                <td class="numeric-value"><?php echo $row['wateringstatus'] !== null ? 'Pumped' : '-'; ?></td>
+                                <td class="numeric-value"><?php echo ($row['wateringstatus'] === 1) ? 'Pumped' : ($row['wateringstatus'] === 0 ? 'Hold Watering' : 'Able Watering'); ?></td>
+                                <td class="numeric-value"><?php echo $row['wateringFlag'] == 1 ? 'Mixing Solution' : 'Off';?></td>
                                 <td class="numeric-value"><?php echo $row['wateringvolume'] !== null ? htmlspecialchars($row['wateringvolume']) : '-'; ?></td>
                             </tr>
                         <?php endforeach; ?>
@@ -214,5 +256,30 @@ function getFilterParams($excludePage = true) {
             <?php endif; ?>
         </div>
     </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Check if mixing just started or if we are currently in mixing state
+        if (urlParams.get('mixing') === 'start' || <?php echo $isMixing ? 'true' : 'false'; ?>) {
+            let timeLeft = 30;
+            const mixingText = document.getElementById('mixingText');
+            const resetBtn = document.getElementById('resetBtn');
+
+            const timer = setInterval(() => {
+                timeLeft--;
+                if (mixingText) {
+                    mixingText.innerText = `Mixing... (${timeLeft}s)`;
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    // Automatically trigger the reset to set flag back to 0
+                    resetBtn.click();
+                }
+            }, 1000);
+        }
+    });
+    </script>
 </body>
 </html>

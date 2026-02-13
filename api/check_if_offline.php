@@ -24,17 +24,19 @@ function checkIF_Offline($conn) {
             $lastOnlineTime = strtotime($lastOnline);
             $timeDiffSeconds = $currentTime - $lastOnlineTime;
 
-            // If unregistered and offline for more than 60 seconds, delete sensor
-            if ($isRegistered === 0 && $status === 0 && $timeDiffSeconds > 30) {
+            // If unregistered and offline for more than 15 seconds, delete sensor
+            if ($isRegistered === 0 && $status === 1 && $timeDiffSeconds > 15) {
                 $deleteSql = "DELETE FROM sensorinfo WHERE soilSensorID = ?";
                 $stmt = $conn->prepare($deleteSql);
                 $stmt->bind_param("i", $soilSensorID);
-                $stmt->execute();
+                if ($stmt->execute()) {
+                    echo "[" . date('Y-m-d H:i:s') . "] Sensor ID {$soilSensorID} (MAC: {$macAddress}) deleted.\n";
+                }
                 $stmt->close();
                 continue; 
             }
 
-            // If inactive for more than 10 seconds, update status
+            // If inactive for more than 15 seconds, update status
             if ($isRegistered === 1 && $status === 1 && $timeDiffSeconds > 15) {
                 // Update sensorinfo
                 $updateInfo = $conn->prepare("UPDATE sensorinfo SET sensorStatus = 0 WHERE soilSensorID = ?");
