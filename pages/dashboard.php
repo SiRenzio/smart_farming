@@ -40,9 +40,14 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
                     <h1>Welcome back, <?php echo $username; ?>! 👋</h1>
                     <p>Manage your smart farming ecosystem with precision and ease</p>
                 </div>
-                <a href="logout.php" class="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
+                <div class="header-actions">
+                    <a href="#" class="notif-btn">
+                        <i class="fas fa-bell"></i>
+                    </a>
+                    <a href="logout.php" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
             </div>
         </div>
         
