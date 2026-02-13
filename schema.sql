@@ -97,3 +97,13 @@ CREATE TABLE deployment (
     FOREIGN KEY (locationID) REFERENCES farmlocation (locationID),
     FOREIGN KEY (soilSensorID) REFERENCES sensorinfo (soilSensorID)
 )
+
+-- Create the 'notification' table
+CREATE TABLE notification (
+    notificationID INT(11) AUTO_INCREMENT PRIMARY KEY,
+    userID INT(11),
+    message TEXT,
+    isRead TINYINT(1) DEFAULT 0,
+    createdAT TIMESTAMP,
+    FOREIGN KEY (userID) REFERENCES users (userID)
+)
