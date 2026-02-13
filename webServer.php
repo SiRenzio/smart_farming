@@ -23,6 +23,9 @@ if ($result && $result->num_rows > 0) {
     $sensor = $result->fetch_assoc();
     $sID = $sensor['soilSensorID'];
 
+    // Update unregistered sensor status and last online time
+    $conn->query("UPDATE sensorinfo SET sensorStatus=1, last_sensor_online='$dateTime' WHERE soilSensorID='$sID'");
+
     // If device is registered, we proceed to check deployment
     if ((int)$sensor['isRegistered'] === 1) {
         

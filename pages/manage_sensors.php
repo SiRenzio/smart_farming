@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
 
         <div class="sensors-container">
             <div class="empty-state" style="display: none;">
-                <p>No sensors found. <a href="add_sensor.php">Add your first sensor</a> to get started.</p>
+                <p>No sensors found.</p>
             </div>
             <?php while ($sensor = $sensors->fetch_assoc()): ?>
                 <div class="sensor-box" data-sensor-id="<?= $sensor['soilSensorID'] ?>">

@@ -231,7 +231,7 @@ function getFilterParams($excludePage = true) {
                 <?php if(!empty($filterSensor) || !empty($filterLocation) || !empty($filterDateFrom)): ?>
                     <p><a href="sensors.php">Clear Filters</a></p>
                 <?php else: ?>
-                    <p><a href="add_sensor_data.php">Add your first sensor reading</a> to get started.</p>
+                    <p><a href="manage_sensors.php">Register or Deploy your first sensor</a> to get started.</p>
                 <?php endif; ?>
             </div>
             <?php else: ?>
