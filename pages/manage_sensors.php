@@ -1,7 +1,6 @@
 <?php
 session_start();
 require_once '../db.php';
-require_once '../api/sending.php';
 require_once '../includes/notification.php';
 
 if (!isset($_SESSION['userID'])) {

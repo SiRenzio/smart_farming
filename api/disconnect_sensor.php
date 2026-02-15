@@ -1,7 +1,6 @@
 <?php
 session_start();
 require_once '../db.php';
-require_once '../api/sending.php';
 
 header('Content-Type: application/json');
 
@@ -31,4 +30,29 @@ echo json_encode([
     'message' => 'Sensor disconnected successfully.'
 ]);
 exit;
+
+function sendToDisconnect($sensorID, $command) {
+    if (empty($sensorIP)) {
+        return "No IP address defined";
+    }
+
+    $esp32_url = "http://{$sensorIP}/receive";
+
+    $data = [
+        "command" => $command
+    ];
+
+    $options = [
+        'http' => [
+            'header'  => "Content-Type: application/json\r\n",
+            'method'  => 'POST',
+            'content' => json_encode($data),
+            'timeout' => 5
+        ]
+    ];
+
+    $context = stream_context_create($options);
+    return @file_get_contents($esp32_url, false, $context) ?: "ESP32 not reachable";
+}
+
 ?>
