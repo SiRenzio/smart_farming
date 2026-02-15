@@ -10,6 +10,19 @@ if (!isset($_SESSION['userID'])) {
 
 $tankID = $_GET['tankID'] ?? '';
 
+$getTanlkSql = "SELECT * FROM liquidsensorinfo WHERE liquidsensorID = ?";
+$stmtTank = $conn->prepare($getTanlkSql);
+$stmtTank->bind_param("i", $tankID);
+$stmtTank->execute();
+$tankResult = $stmtTank->get_result();
+if ($tankResult->num_rows === 0) {
+    echo "Invalid Tank ID.";
+    exit;
+}
+$stmtTank->close();
+
+$tankName = $tankResult->fetch_assoc()['liquidtankname'];
+
 // Temporary
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if(isset($_POST['action_watering'])) {
@@ -26,6 +39,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     else if(isset($_POST['action_mixing'])) {
+        $message = "The liquid tank '{$tankName}' has started mixing solution.";
+        $notifSql = "INSERT INTO notification (userID, message, createdAT) VALUES (?, ?, NOW())";
+        $stmtNotif = $conn->prepare($notifSql);
+        $stmtNotif->bind_param("is", $_SESSION['userID'], $message);
+        $stmtNotif->execute();
+        $stmtNotif->close();
+
         $stmt = $conn->prepare("INSERT INTO tankpumpevent (liquidsensorID, dateandtime, wateringstatus, wateringFlag, wateringvolume) VALUES (?, NOW(), 0, 1, 0)");
         $stmt->bind_param("i", $tankID);
         $stmt->execute();
@@ -36,6 +56,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     else if(isset($_POST['action_reset_flag'])) {
         // Reset: Back to "Able to water"
+
+        $message = "{$tankName}' has completed mixing solution. Back to normal watering operation.";
+        $notifSql = "INSERT INTO notification (userID, message, createdAT) VALUES (?, ?, NOW())";
+        $stmtNotif = $conn->prepare($notifSql);
+        $stmtNotif->bind_param("is", $_SESSION['userID'], $message);
+        $stmtNotif->execute();
+        $stmtNotif->close();
+
         $stmt = $conn->prepare("INSERT INTO tankpumpevent (liquidsensorID, dateandtime, wateringstatus, wateringFlag, wateringvolume) VALUES (?, NOW(), null, 0, 0)");
         $stmt->bind_param("i", $tankID);
         $stmt->execute();
