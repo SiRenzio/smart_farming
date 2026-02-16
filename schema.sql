@@ -77,17 +77,17 @@ CREATE TABLE sensordata (
 -- Create the 'liquidsensorinfo' table
 CREATE TABLE liquidsensorinfo (
     liquidsensorID INT(15) AUTO_INCREMENT PRIMARY KEY,
-    userID INT(11), -- Foreign key to users table
     liquidtankname VARCHAR(50),
-    FOREIGN KEY (userID) REFERENCES users(userID)
 );
 
 -- Create the 'liquidlevelsensor' table
 CREATE TABLE liquidlevelsensor (
     liquidsensorreadID INT(15) AUTO_INCREMENT PRIMARY KEY,
     liquidsensorID INT(15),
+    userID INT(11), -- Foreign key to users table
     currentliquidlevel INT(15),
-    dateandtime TIMESTAMP
+    dateandtime TIMESTAMP,
+    FOREIGN KEY (userID) REFERENCES users(userID)
 );
 
 -- Create the 'tankpumpevent' table

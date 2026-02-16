@@ -11,8 +11,7 @@ $username = htmlspecialchars($_SESSION['username']);
 
 // Fetch name of tanks
 $tanks = [];
-$stmt = $conn->prepare('SELECT liquidsensorID, liquidtankname FROM liquidsensorinfo WHERE userID = ?');
-$stmt->bind_param('i', $_SESSION['userID']);
+$stmt = $conn->prepare('SELECT liquidsensorID, liquidtankname FROM liquidsensorinfo');
 $stmt->execute();
 $result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {
