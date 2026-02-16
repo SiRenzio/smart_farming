@@ -33,7 +33,7 @@ if ($result && $result->num_rows > 0) {
         $conn->query("UPDATE sensorinfo SET sensorStatus=1, last_sensor_online='$dateTime' WHERE soilSensorID='$sID'");
 
         // fetch deployment details
-        $depSql = "SELECT soilSensorID, locationID, isConnected FROM deployment WHERE soilSensorID = '$sID' LIMIT 1";
+        $depSql = "SELECT userID, soilSensorID, locationID, isConnected FROM deployment WHERE soilSensorID = '$sID' LIMIT 1";
         $depRes = $conn->query($depSql);
 
         if ($depRes && $depRes->num_rows > 0) {
@@ -43,6 +43,7 @@ if ($result && $result->num_rows > 0) {
             if ((int)$deploy['isConnected'] === 1) {
                 echo json_encode([
                     "status" => "success",
+                    "userID" => (int)$deploy['userID'],
                     "SoilSensorID" => (int)$deploy['soilSensorID'],
                     "locationID"   => (int)$deploy['locationID']
                 ]);

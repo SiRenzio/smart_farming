@@ -30,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Map ESP32 JSON keys to PHP variables
+    $userID = isset($decoded_data['userID']) ? (int)$decoded_data['userID'] : null;
     $soilSensorID = isset($decoded_data['SoilSensorID']) ? (int)$decoded_data['SoilSensorID'] : null;
     $locationID = isset($decoded_data['locationID']) ? (int)$decoded_data['locationID'] : null;
     $soilN = isset($decoded_data['soilN']) ? (float)$decoded_data['soilN'] : 0;
@@ -42,10 +43,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $liquidVolume = isset($decoded_data['soilLV']) ? (float)$decoded_data['soilLV'] : 0.0;
     
     // Validate required IDs
-    if (!$soilSensorID || !$locationID) {
-        sendResponse(false, 'SoilSensorID and locationID are required');
+    if (!$soilSensorID || !$locationID || !$userID) {
+        sendResponse(false, 'SoilSensorID, locationID, and userID are required');
     }
     
+    // Check if user exists
+    $check_userStmt = $conn->prepare('SELECT userID FROM users WHERE userID = ?');
+    $check_userStmt->bind_param('i', $userID);
+    $check_userStmt->execute();
+    if ($check_userStmt->get_result()->num_rows === 0) {
+        $check_userStmt->close();
+        sendResponse(false, 'User ID ' . $userID . ' does not exist');
+    }
+    $check_userStmt->close();
+
     // Check if sensor exists
     $check_sensorStmt = $conn->prepare('SELECT soilSensorID FROM sensorinfo WHERE soilSensorID = ?');
     $check_sensorStmt->bind_param('i', $soilSensorID);
@@ -79,9 +90,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dateTime = date('Y-m-d H:i:s');
     
     // Insert data into database
-    $stmt = $conn->prepare('INSERT INTO sensordata (SoilSensorID, locationID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
+    $stmt = $conn->prepare('INSERT INTO sensordata (userID, SoilSensorID, locationID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
     
-    $stmt->bind_param('iidddddddd', 
+    $stmt->bind_param('iiidddddddd', 
+        $userID,
         $soilSensorID, 
         $locationID,
         $soilN, 
@@ -98,6 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $insertId = $conn->insert_id;
         sendResponse(true, 'Sensor data received and stored successfully', [
             'id' => $insertId,
+            'user_id' => $userID,
             'sensor_id' => $soilSensorID,
             'location_id' => $locationID,
             'timestamp' => $dateTime,
