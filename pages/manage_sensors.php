@@ -32,8 +32,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
     if (empty($sensorName)) {
         $error = "Sensor name is required.";
     } else {
-        $stmt = $conn->prepare("UPDATE sensorinfo SET sensorName = ?, isRegistered = 1, dateAdded = NOW() WHERE soilSensorID = ?");
-        $stmt->bind_param("si", $sensorName, $sensorID);
+        $stmt = $conn->prepare("UPDATE sensorinfo SET userID = ? sensorName = ?, isRegistered = 1, dateAdded = NOW() WHERE soilSensorID = ?");
+        $stmt->bind_param("isi", $_SESSION['userID'] $sensorName, $sensorID);
 
         if ($stmt->execute()) {
             $success = "Sensor registered successfully.";
