@@ -1,7 +1,8 @@
 <?php
 require_once '../db.php';
+session_start();
 
-$result = $conn->query("
+$stmt = $conn->prepare("
     SELECT 
         s.soilSensorID,
         s.sensorName,
@@ -9,11 +10,17 @@ $result = $conn->query("
         d.isConnected,
         s.isRegistered,
         d.locationID,
-        fl.farmName
+        fl.farmName,
+        u.username
     FROM sensorinfo s
     LEFT JOIN deployment d ON s.soilSensorID = d.soilsensorID
     LEFT JOIN farmlocation fl ON d.locationID = fl.locationID
+    LEFT JOIN users u ON u.userID = d.userID
+    WHERE u.userID = ?
 ");
+$stmt->bind_param("i", $_SESSION['userID']);
+$stmt->execute();
+$result = $stmt->get_result();
 
 $sensors = [];
 while ($row = $result->fetch_assoc()) {

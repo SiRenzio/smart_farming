@@ -21,8 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        $stmt = $conn->prepare('INSERT INTO plantinfo (plantName, plantVariety) VALUES (?, ?)');
-        $stmt->bind_param('ss', $plantName, $plantVariety);
+        $stmt = $conn->prepare('INSERT INTO plantinfo (userID, plantName, plantVariety) VALUES (?, ?, ?)');
+        $stmt->bind_param('iss', $_SESSION['userID'], $plantName, $plantVariety);
         if ($stmt->execute()) {
             $plantID = $conn->insert_id; // Get the auto-generated ID
             $success = 'Plant added successfully! <a href="add_nutrition.php?plantID=' . $plantID . '">Add nutrition needs</a> or <a href="plants.php">view all plants</a>.';

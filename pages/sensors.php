@@ -110,18 +110,24 @@ $stmt->close();
 
 // Fetch sensors for dropdown
 $sensorsList = [];
-$sensorQuery = $conn->query("SELECT * FROM sensorinfo ORDER BY sensorName");
+$sensorQuery = $conn->prepare("SELECT * FROM sensorinfo WHERE userID = ? ORDER BY sensorName");
+$sensorQuery->bind_param("i", $_SESSION['userID']);
+$sensorQuery->execute();
+$sensorQueryResult = $sensorQuery->get_result();
 if($sensorQuery) {
-    while($row = $sensorQuery->fetch_assoc()) {
+    while($row = $sensorQueryResult->fetch_assoc()) {
         $sensorsList[] = $row;
     }
 }
 
 // Fetch locations for dropdown
 $locationsList = [];
-$locQuery = $conn->query("SELECT * FROM farmlocation ORDER BY farmName");
-if($locQuery) {
-    while($row = $locQuery->fetch_assoc()) {
+$locQuery = $conn->prepare("SELECT * FROM farmlocation WHERE userID = ? ORDER BY farmName");
+$locQuery->bind_param("i", $_SESSION['userID']);
+$locQuery->execute();
+$locQueryResult = $locQuery->get_result();
+if($locQueryResult) {
+    while($row = $locQueryResult->fetch_assoc()) {
         $locationsList[] = $row;
     }
 }

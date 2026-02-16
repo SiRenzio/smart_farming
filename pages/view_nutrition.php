@@ -18,8 +18,8 @@ if (!$plantID) {
     exit;
 }
 
-$stmt = $conn->prepare('SELECT plantName FROM plantinfo WHERE plantID = ?');
-$stmt->bind_param('i', $plantID);
+$stmt = $conn->prepare('SELECT plantName FROM plantinfo WHERE plantID = ? AND userID = ?');
+$stmt->bind_param('ii', $plantID, $_SESSION['userID']);
 $stmt->execute();
 $result = $stmt->get_result();
 if ($result->num_rows === 0) {
@@ -31,8 +31,8 @@ $plantName = $plant['plantName'];
 $stmt->close();
 
 // Get nutrition data for this plant
-$stmt = $conn->prepare('SELECT * FROM plantnutrionneed WHERE plantID = ? ORDER BY nutritionSetName');
-$stmt->bind_param('i', $plantID);
+$stmt = $conn->prepare('SELECT * FROM plantnutrionneed WHERE plantID = ? AND userID = ? ORDER BY nutritionSetName');
+$stmt->bind_param('ii', $plantID, $_SESSION['userID']);
 $stmt->execute();
 $result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {

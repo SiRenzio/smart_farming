@@ -19,8 +19,8 @@ if (!$plantID) {
     exit;
 }
 
-$stmt = $conn->prepare('SELECT plantName FROM plantinfo WHERE plantID = ?');
-$stmt->bind_param('i', $plantID);
+$stmt = $conn->prepare('SELECT plantName FROM plantinfo WHERE plantID = ? AND userID = ?');
+$stmt->bind_param('ii', $plantID, $_SESSION['userID']);
 $stmt->execute();
 $result = $stmt->get_result();
 if ($result->num_rows === 0) {
@@ -48,15 +48,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        $stmt = $conn->prepare('INSERT INTO plantnutrionneed (nutritionSetName, plantID, soilN, soilP, soilK, soilEC, soilPH, soilT, soilM, flowRate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $conn->prepare('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, soilN, soilP, soilK, soilEC, soilPH, soilT, soilM, flowRate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         if ($stmt === null) {
             $errors[] = 'Invalid SQL statement. Please try again.';
         } else {
             // Debug: Show the final SQL statement
-            $finalSQL = getFinalSQL('INSERT INTO plantnutrionneed (nutritionSetName, plantID, soilN, soilP, soilK, soilEC, soilPH, soilT, soilM, flowRate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 'siiiiidddd', [$nutritionSetName, $plantID, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate]);
+            $finalSQL = getFinalSQL('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, soilN, soilP, soilK, soilEC, soilPH, soilT, soilM, flowRate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 'siiiiidddd', [$nutritionSetName, $plantID, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate]);
             
             try {
-                $stmt->bind_param('siiiiidddd', $nutritionSetName, $plantID, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate);
+                $stmt->bind_param('isiiiiidddd', $_SESSION['userID'] $nutritionSetName, $plantID, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate);
             } catch (Exception $e) {
                 $errors[] = 'Failed to bind parameters: ' . $e->getMessage();
                 $errors[] = 'Debug SQL: ' . $finalSQL;

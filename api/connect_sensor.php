@@ -25,8 +25,8 @@ $checkResult = $checkStmt->get_result();
 
 if ($checkResult->num_rows > 0) {
     // Update existing deployment
-    $stmt = $conn->prepare("UPDATE deployment SET locationID = ?, isConnected = 1 WHERE soilSensorID = ?");
-    $stmt->bind_param("ii", $locationID, $sensorID);
+    $stmt = $conn->prepare("UPDATE deployment SET userID = ?, locationID = ?, isConnected = 1 WHERE soilSensorID = ?");
+    $stmt->bind_param("iii", $_SESSION['userID'], $locationID, $sensorID);
     
     if ($stmt->execute()) {
         echo json_encode([
@@ -38,8 +38,8 @@ if ($checkResult->num_rows > 0) {
 }
 else {
     // Insert new deployment
-    $stmt = $conn->prepare("INSERT INTO deployment (soilSensorID, locationID, isConnected) VALUES (?, ?, 1)");
-    $stmt->bind_param("ii", $sensorID, $locationID);
+    $stmt = $conn->prepare("INSERT INTO deployment (userID, soilSensorID, locationID, isConnected) VALUES (?, ?, ?, 1)");
+    $stmt->bind_param("iii", $_SESSION['userID'], $sensorID, $locationID);
     
     if ($stmt->execute()) {
         echo json_encode([

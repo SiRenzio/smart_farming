@@ -21,6 +21,7 @@ function getBoxEls(box) {
         onlineText: box.querySelector('.online-text'),
         configuredText: box.querySelector('.configured-text'),
         displayName: box.querySelector('.display-location-name'),
+        displayUser: box.querySelector('.display-user'),
         unregisteredText: box.querySelector('.unregistered-text'),
         registerBtn: box.querySelector('.register'),
         addSensorModal: box.querySelector('.add-sensor-modal'),
@@ -185,13 +186,6 @@ function updateSensors() {
 
                 const els = getBoxEls(box);
 
-                // Update location name if configured
-                if (sensor.sensorStatus == 1 && sensor.isConnected == 1) {
-                    if (els.displayName) {
-                        els.displayName.textContent = sensor.farmName || 'Unknown';
-                    }
-                }
-
                 if (box.dataset.userInteracting === '1') return;
 
                 // Render correct UI state
@@ -208,6 +202,17 @@ function updateSensors() {
                 } 
                 else {
                     renderState(box, UI_STATES.OFFLINE);
+                }
+
+                // Update location name if configured
+                if (sensor.sensorStatus == 1 && sensor.isConnected == 1) {
+                    if (els.displayName) {
+                        els.displayName.textContent = sensor.farmName || 'Unknown';
+                    }
+                    
+                    if (els.displayUser) {
+                        els.displayUser.textContent = sensor.username || 'Unknown';
+                    }
                 }
             });
         })

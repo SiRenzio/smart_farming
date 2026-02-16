@@ -133,8 +133,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                         <span>The sensor is currently offline. Please ensure it is powered on and connected to the network.</span>
                     </div>
                     <div class="configured-text" style="display: none;">
+                        <i class="fas fa-user"></i>
+                        <span> Deployed by: <strong class="display-user"></strong></span><br><br>
                         <i class="fas fa-map-marker-alt"></i>
-                        <span>Location: <strong class="display-location-name"></strong></span>
+                        <span> Location: <strong class="display-location-name"></strong></span>
                     </div>
                     <div class="unregistered-text" style="display: none;">
                         <i class="fas fa-circle-question"></i>

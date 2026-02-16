@@ -10,17 +10,15 @@ if (!isset($_SESSION['userID'])) {
 $username = htmlspecialchars($_SESSION['username']);
 
 // Fetch name of tanks
-$tankName1stmt = $conn->prepare('SELECT liquidtankname FROM liquidsensorinfo WHERE liquidsensorID = 1');
-$tankName1stmt->execute();
-$tankName1result = $tankName1stmt->get_result()->fetch_assoc();
-
-$tankName2stmt = $conn->prepare('SELECT liquidtankname FROM liquidsensorinfo WHERE liquidsensorID = 2');
-$tankName2stmt->execute();
-$tankName2result = $tankName2stmt->get_result()->fetch_assoc();
-
-$tankName3stmt = $conn->prepare('SELECT liquidtankname FROM liquidsensorinfo WHERE liquidsensorID = 3');
-$tankName3stmt->execute();
-$tankName3result = $tankName3stmt->get_result()->fetch_assoc();
+$tanks = [];
+$stmt = $conn->prepare('SELECT liquidsensorID, liquidtankname FROM liquidsensorinfo WHERE userID = ?');
+$stmt->bind_param('i', $_SESSION['userID']);
+$stmt->execute();
+$result = $stmt->get_result();
+while ($row = $result->fetch_assoc()) {
+    $tanks[] = $row;
+}
+$stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -77,89 +75,42 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
                         <p>Monitor current tanks liquid level.</p>
                     </div>
                 </div>
-
-                <div class="tanks-wrapper">
-                    <a href="view_tank_data.php?tankID=1" class="tank-card-btn">
-                        <div class="tank-card">
-                            <div class="tank" data-liquidsensor-id="1">
-                                <div class="glass-glare"></div>
-                                <div class="measurement">
-                                    <div></div><div></div><div></div><div></div><div></div>
-                                    <div></div><div></div><div></div><div></div><div></div>
-                                    <div></div><div></div><div></div>
-                                </div>
-                                <div class="water">
-                                    <div class="wave-container">
-                                        <svg class="waves-svg" viewBox="0 0 288 50" preserveAspectRatio="none">
-                                            <defs>
-                                                <path id="wave" d="M0,25 C48,50 96,0 144,25 C192,50 240,0 288,25 V50 H0 Z" />
-                                            </defs>
-                                            <use xlink:href="#wave" x="0" y="0" class="wave-path wave-back" />
-                                            <use xlink:href="#wave" x="0" y="3" class="wave-path wave-mid" />
-                                            <use xlink:href="#wave" x="0" y="5" class="wave-path wave-front" />
-                                        </svg>
+                <?php if ($tanks): ?>
+                    <div class="tanks-wrapper">
+                    <?php foreach ($tanks as $tank): ?>
+                            <a href="view_tank_data.php?tankID=<?= $tank['liquidsensorID'] ?>" class="tank-card-btn">
+                                <div class="tank-card">
+                                    <div class="tank" data-liquidsensor-id="<?= $tank['liquidsensorID'] ?>">
+                                        <div class="glass-glare"></div>
+                                        <div class="measurement">
+                                            <div></div><div></div><div></div><div></div><div></div>
+                                            <div></div><div></div><div></div><div></div><div></div>
+                                            <div></div><div></div><div></div>
+                                        </div>
+                                        <div class="water">
+                                            <div class="wave-container">
+                                                <svg class="waves-svg" viewBox="0 0 288 50" preserveAspectRatio="none">
+                                                    <defs>
+                                                        <path id="wave" d="M0,25 C48,50 96,0 144,25 C192,50 240,0 288,25 V50 H0 Z" />
+                                                    </defs>
+                                                    <use xlink:href="#wave" x="0" y="0" class="wave-path wave-back" />
+                                                    <use xlink:href="#wave" x="0" y="3" class="wave-path wave-mid" />
+                                                    <use xlink:href="#wave" x="0" y="5" class="wave-path wave-front" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <span class="level-text"></span>
                                     </div>
+                                    <div class="tank-name"><?php echo $tank['liquidtankname']; ?></div>
                                 </div>
-                                <span class="level-text"></span>
-                            </div>
-                            <div class="tank-name"><?php echo $tankName1result['liquidtankname']; ?></div>
-                        </div>
-                    </a>
-                    
-                    <a href="view_tank_data.php?tankID=2" class="tank-card-btn">
-                        <div class="tank-card">
-                            <div class="tank" data-liquidsensor-id="2">
-                                <div class="glass-glare"></div>
-                                <div class="measurement">
-                                    <div></div><div></div><div></div><div></div><div></div>
-                                    <div></div><div></div><div></div><div></div><div></div>
-                                    <div></div><div></div><div></div>
-                                </div>
-                                <div class="water">
-                                    <div class="wave-container">
-                                        <svg class="waves-svg" viewBox="0 0 288 50" preserveAspectRatio="none">
-                                            <defs>
-                                                <path id="wave" d="M0,25 C48,50 96,0 144,25 C192,50 240,0 288,25 V50 H0 Z" />
-                                            </defs>
-                                            <use xlink:href="#wave" x="0" y="0" class="wave-path wave-back" />
-                                            <use xlink:href="#wave" x="0" y="3" class="wave-path wave-mid" />
-                                            <use xlink:href="#wave" x="0" y="5" class="wave-path wave-front" />
-                                        </svg>
-                                    </div>
-                                </div>
-                                <span class="level-text"></span>
-                            </div>
-                            <div class="tank-name"><?php echo $tankName2result['liquidtankname']; ?></div>
-                        </div>
-                    </a>
-                    
-                    <a href="view_tank_data.php?tankID=3" class="tank-card-btn">
-                        <div class="tank-card">
-                            <div class="tank" data-liquidsensor-id="3">
-                                <div class="glass-glare"></div>
-                                <div class="measurement">
-                                    <div></div><div></div><div></div><div></div><div></div>
-                                    <div></div><div></div><div></div><div></div><div></div>
-                                    <div></div><div></div><div></div>
-                                </div>
-                                <div class="water">
-                                    <div class="wave-container">
-                                        <svg class="waves-svg" viewBox="0 0 288 50" preserveAspectRatio="none">
-                                            <defs>
-                                                <path id="wave" d="M0,25 C48,50 96,0 144,25 C192,50 240,0 288,25 V50 H0 Z" />
-                                            </defs>
-                                            <use xlink:href="#wave" x="0" y="0" class="wave-path wave-back" />
-                                            <use xlink:href="#wave" x="0" y="3" class="wave-path wave-mid" />
-                                            <use xlink:href="#wave" x="0" y="5" class="wave-path wave-front" />
-                                        </svg>
-                                    </div>
-                                </div>
-                                <span class="level-text"></span>
-                            </div>
-                            <div class="tank-name"><?php echo $tankName3result['liquidtankname']; ?></div>
-                        </div>
-                    </a>
-                </div> 
+                            </a>
+                    <?php endforeach; ?>
+                    </div> 
+                <?php else: ?>
+                    <div class="empty">
+                        <strong>No Tanks Available.</strong>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <div class="dashboard-card">
@@ -240,3 +191,5 @@ $tankName3result = $tankName3stmt->get_result()->fetch_assoc();
         </div>
     </div>
 <script src="../assets/js/dashboard.js"></script>
+</body>
+</html>

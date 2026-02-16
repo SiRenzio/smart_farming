@@ -75,6 +75,11 @@ body {
     margin-bottom: 2rem;
 }
 
+/* No tanks available */
+.empty {
+    text-align: center;
+}
+
 @media (min-width: 1024px) {
     .dashboard-grid {
         grid-template-columns: repeat(3, 1fr);

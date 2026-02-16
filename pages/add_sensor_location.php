@@ -23,8 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         // Insert sensor location to farmlocation table
-        $sensorlocstmt= $conn->prepare('INSERT INTO farmlocation (farmName, dateAdded) VALUES (?, NOW())');
-        $sensorlocstmt->bind_param('s', $sensorLocation);
+        $sensorlocstmt= $conn->prepare('INSERT INTO farmlocation (userID, farmName, dateAdded) VALUES (?, ?, NOW())');
+        $sensorlocstmt->bind_param('is', $_SESSION['userID'], $sensorLocation);
         if ($sensorlocstmt->execute()) {
             $sensorLocationID = $conn->insert_id;
             $success = 'Sensor location added successfully.';

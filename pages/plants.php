@@ -10,7 +10,8 @@ if (!isset($_SESSION['userID'])) {
 
 // Fetch all plants
 $plants = [];
-$stmt = $conn->prepare('SELECT plantID, plantName, plantVariety FROM plantinfo ORDER BY plantName');
+$stmt = $conn->prepare('SELECT plantID, plantName, plantVariety FROM plantinfo WHERE userID = ? ORDER BY plantName');
+$stmt->bind_param('i', $_SESSION['userID']);
 $stmt->execute();
 $result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {
