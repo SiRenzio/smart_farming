@@ -35,11 +35,11 @@ $totalRows = $countStmt->get_result()->fetch_assoc()['total'];
 $totalPages = ceil($totalRows / $limit);
 
 // Fetch the actual data for the table
-$deployedSql = "SELECT d.soilSensorID, s.sensorName, f.farmName, d.isConnected
+$deployedSql = "SELECT d.soilSensorID, s.sensorName, f.farmName, d.isConnected, d.nutritionID
                 FROM deployment d
                 LEFT JOIN sensorinfo s ON d.soilSensorID = s.soilSensorID
                 LEFT JOIN farmlocation f ON d.locationID = f.locationID
-                WHERE d.userID = ?
+                WHERE s.userID = ?
                 ORDER BY d.deploymentID DESC 
                 LIMIT ? OFFSET ?";
 
@@ -245,7 +245,7 @@ function getFilterParams($excludePage = true) {
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <a href="view_nutrition.php" class="action-btn btn-success">
+                                    <a href="deployed_nutrition.php?nutritionID=<?php echo $deployment['nutritionID']; ?>" class="action-btn btn-success">
                                         <i class="fas fa-eye"></i> View Data
                                     </a>
                                 </td>

@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $finalSQL = getFinalSQL('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, soilN, soilP, soilK, soilEC, soilPH, soilT, soilM, flowRate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 'siiiiidddd', [$nutritionSetName, $plantID, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate]);
             
             try {
-                $stmt->bind_param('isiiiiidddd', $_SESSION['userID'] $nutritionSetName, $plantID, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate);
+                $stmt->bind_param('isiiiiidddd', $_SESSION['userID'], $nutritionSetName, $plantID, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate);
             } catch (Exception $e) {
                 $errors[] = 'Failed to bind parameters: ' . $e->getMessage();
                 $errors[] = 'Debug SQL: ' . $finalSQL;
