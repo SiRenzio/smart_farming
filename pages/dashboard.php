@@ -19,6 +19,47 @@ while ($row = $result->fetch_assoc()) {
     $tanks[] = $row;
 }
 $stmt->close();
+
+// For sensor deployment table
+$limit = 5;
+$page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) $page = 1;
+$offset = ($page - 1) * $limit;
+
+// Get total count for pagination
+$countSql = "SELECT COUNT(*) as total FROM deployment WHERE userID = ?";
+$countStmt = $conn->prepare($countSql);
+$countStmt->bind_param("i", $_SESSION['userID']);
+$countStmt->execute();
+$totalRows = $countStmt->get_result()->fetch_assoc()['total'];
+$totalPages = ceil($totalRows / $limit);
+
+// Fetch the actual data for the table
+$deployedSql = "SELECT d.soilSensorID, s.sensorName, f.farmName, d.isConnected
+                FROM deployment d
+                LEFT JOIN sensorinfo s ON d.soilSensorID = s.soilSensorID
+                LEFT JOIN farmlocation f ON d.locationID = f.locationID
+                WHERE d.userID = ?
+                ORDER BY d.deploymentID DESC 
+                LIMIT ? OFFSET ?";
+
+$stmt = $conn->prepare($deployedSql);
+$stmt->bind_param("iii", $_SESSION['userID'], $limit, $offset);
+$stmt->execute();
+$result = $stmt->get_result();
+$deployedResult = [];
+while ($row = $result->fetch_assoc()) {
+    $deployedResult[] = $row;
+}
+$stmt->close();
+
+
+// Helper to keep filters in URL
+function getFilterParams($excludePage = true) {
+    $params = $_GET;
+    if ($excludePage) unset($params['page']);
+    return http_build_query($params);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -164,6 +205,101 @@ $stmt->close();
                 </div>
             </div>
             
+        </div>
+
+        <div class="sensors-deployment-section">
+            <div class="card-header">
+                <div class="card-icon icon-sensor">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <div class="card-content">
+                    <h3>User Sensor Deployments</h3>
+                    <p>View user(s) current deployed sensors.</p>
+                </div>
+            </div>
+            
+            <?php if (empty($deployedResult)): ?>
+                <div class="empty-state">
+                    <p>No deployed sensor available for this user.</p>
+                </div>
+            <?php else: ?>
+                <table class="deployment-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-microchip"></i> Sensor</th>
+                            <th><i class="fas fa-map-marker-alt"></i> Location</th>
+                            <th><i class="fas fa-info-circle"></i> Status</th>
+                            <th><i class="fas fa-layer-group"></i> Plant Nutrition</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userDeploymentTable">
+                        <?php foreach ($deployedResult as $deployment): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($deployment['sensorName']) ?></td>
+                                <td><?= htmlspecialchars($deployment['farmName']) ?></td>
+                                <td>
+                                    <?php if ((int)$deployment['isConnected'] === 1): ?>
+                                        <span class="status connected"><i class="fas fa-check-circle"></i> Connected</span>
+                                    <?php else: ?>
+                                        <span class="status disconnected" style="color: #e74c3c;"><i class="fas fa-times-circle"></i> Disconnected</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <a href="view_nutrition.php" class="action-btn btn-success">
+                                        <i class="fas fa-eye"></i> View Data
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+
+                    </tbody>
+                </table>
+                <?php if ($totalPages > 1): ?>
+                    <div class="pagination-container">
+                        <?php
+                            $queryParams = getFilterParams(); 
+                            $maxButtons = 5;
+                            $startPage = max(1, $page - 2);
+                            $endPage = min($totalPages, $startPage + $maxButtons - 1);
+                            
+                            // Adjust if we are near the end
+                            if ($endPage - $startPage < $maxButtons - 1) {
+                                $startPage = max(1, $endPage - $maxButtons + 1);
+                            }
+                        ?>
+
+                        <a href="?<?php echo $queryParams; ?>&page=<?php echo max(1, $page - 1); ?>" 
+                            class="pagination-link <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                            <i class="fa fa-chevron-circle-left"></i>
+                        </a>
+
+                        <a href="?<?php echo $queryParams; ?>&page=1"
+                            class="pagination-link <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                            First
+                        </a>
+
+                        <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                            <a href="?<?php echo $queryParams; ?>&page=<?php echo $i; ?>" 
+                                class="pagination-link <?php echo ($i == $page) ? 'active' : ''; ?>">
+                                <?php echo $i; ?>
+                            </a>
+                        <?php endfor; ?>
+
+                        <a href="?<?php echo $queryParams; ?>&page=<?php echo $totalPages; ?>"
+                            class="pagination-link <?php echo ($page >= $totalPages) ? 'disabled' : ''; ?>">
+                            Last
+                        </a>
+
+                        <a href="?<?php echo $queryParams; ?>&page=<?php echo min($totalPages, $page + 1); ?>" 
+                            class="pagination-link <?php echo ($page >= $totalPages) ? 'disabled' : ''; ?>">
+                            <i class="	fa fa-chevron-circle-right"></i>
+                        </a>
+                    </div>
+                    <div class="pagination-info">
+                        Showing page <?php echo $page; ?> of <?php echo $totalPages; ?>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
         </div>
 
         <div class="stats-section">

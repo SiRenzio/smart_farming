@@ -59,7 +59,7 @@ function checkIF_Offline($conn) {
 
 while (true) {
     checkIF_Offline($conn);
-    sleep(3);
+    sleep(5);
 }
 
 $conn->close();

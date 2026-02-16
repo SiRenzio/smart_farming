@@ -45,6 +45,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(fetchLiquidLevel, 1000);
 });
 
+const params = new URLSearchParams(window.location.search);
+const currentPage = parseInt(params.get('page') || '1', 10);
+
+
+
 // function updateTank(sensorID, newLevel) {
 //     const tank = document.querySelector(
 //         `.tank[data-liquidsensor-id="${sensorID}"]`
