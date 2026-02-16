@@ -16,7 +16,7 @@ $stmt = $conn->prepare("
     LEFT JOIN deployment d ON s.soilSensorID = d.soilsensorID
     LEFT JOIN farmlocation fl ON d.locationID = fl.locationID
     LEFT JOIN users u ON u.userID = d.userID
-    WHERE s.userID = ? OR s.sensorStatus = 1
+    WHERE s.userID = ? OR s.isRegistered = 0
 ");
 $stmt->bind_param("i", $_SESSION['userID']);
 $stmt->execute();
