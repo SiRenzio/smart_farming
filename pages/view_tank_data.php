@@ -32,44 +32,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fResult = $checkFlag->get_result()->fetch_assoc();
 
         if(!$fResult || $fResult['wateringFlag'] == 0) {
-            $stmt = $conn->prepare("INSERT INTO tankpumpevent (liquidsensorID, dateandtime, wateringstatus, wateringFlag, wateringvolume) VALUES (?, NOW(), 1, 0, FLOOR(RAND() * 100 + 1))");
+            $stmt = $conn->prepare("INSERT INTO tankpumpevent (liquidsensorID, dateandtime, wateringstatus, wateringFlag, wateringvolume) VALUES (?, NOW(), 1, NULL, FLOOR(RAND() * 100 + 1))");
             $stmt->bind_param("i", $tankID);
             $stmt->execute();
             $stmt->close();
         }
-    }
-    else if(isset($_POST['action_mixing'])) {
-        $message = "The liquid tank '{$tankName}' has started mixing solution.";
-        $notifSql = "INSERT INTO notification (userID, message, createdAT) VALUES (?, ?, NOW())";
-        $stmtNotif = $conn->prepare($notifSql);
-        $stmtNotif->bind_param("is", $_SESSION['userID'], $message);
-        $stmtNotif->execute();
-        $stmtNotif->close();
-
-        $stmt = $conn->prepare("INSERT INTO tankpumpevent (liquidsensorID, dateandtime, wateringstatus, wateringFlag, wateringvolume) VALUES (?, NOW(), 0, 1, 0)");
-        $stmt->bind_param("i", $tankID);
-        $stmt->execute();
-        $stmt->close();
-        
-        header("Location: ?tankID=$tankID&mixing=start");
-        exit;
-    }
-    else if(isset($_POST['action_reset_flag'])) {
-        // Reset: Back to "Able to water"
-
-        $message = "{$tankName}' has completed mixing solution. Back to normal watering operation.";
-        $notifSql = "INSERT INTO notification (userID, message, createdAT) VALUES (?, ?, NOW())";
-        $stmtNotif = $conn->prepare($notifSql);
-        $stmtNotif->bind_param("is", $_SESSION['userID'], $message);
-        $stmtNotif->execute();
-        $stmtNotif->close();
-
-        $stmt = $conn->prepare("INSERT INTO tankpumpevent (liquidsensorID, dateandtime, wateringstatus, wateringFlag, wateringvolume) VALUES (?, NOW(), null, 0, 0)");
-        $stmt->bind_param("i", $tankID);
-        $stmt->execute();
-        $stmt->close();
-        header("Location: ?tankID=$tankID");
-        exit;
     }
 }
 // Fetch current state for button disabling
@@ -179,11 +146,6 @@ function getFilterParams($excludePage = true) {
                 <button type="submit" name="action_watering" class="tempbtn" <?php echo $isMixing ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''; ?>>
                     <i class="fas fa-faucet"></i> Watering
                 </button>
-
-                <button type="submit" name="action_mixing" id="mixingBtn" class="tempbtn" <?php echo $isMixing ? 'disabled' : ''; ?>>
-                    <i class="fas fa-sync-alt"></i> 
-                    <span id="mixingText"><?php echo $isMixing ? 'Mixing Solution...' : 'Mixing Solution'; ?></span>
-                </button>
                 
                 <button type="submit" name="action_reset_flag" id="resetBtn" style="display:none;"></button>
             </form>
@@ -241,7 +203,7 @@ function getFilterParams($excludePage = true) {
                             <tr>
                                 <td><?php echo date('M j, Y g:i A', strtotime($row['dateandtime'])); ?></td>
                                 <td class="numeric-value"><?php echo ($row['wateringstatus'] === 1) ? 'Pumped' : ($row['wateringstatus'] === 0 ? 'Hold Watering' : 'Able Watering'); ?></td>
-                                <td class="numeric-value"><?php echo $row['wateringFlag'] == 1 ? 'Mixing Solution' : 'Off';?></td>
+                                <td class="numeric-value"><?php echo ($row['wateringFlag'] === 1) ? 'Low' : ($row['wateringFlag'] === 0 ? 'Full' : 'Idle'); ?></td>
                                 <td class="numeric-value"><?php echo $row['wateringvolume'] !== null ? htmlspecialchars($row['wateringvolume']) : '-'; ?></td>
                             </tr>
                         <?php endforeach; ?>
@@ -285,30 +247,5 @@ function getFilterParams($excludePage = true) {
             <?php endif; ?>
         </div>
     </div>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        
-        // Check if mixing just started or if we are currently in mixing state
-        if (urlParams.get('mixing') === 'start' || <?php echo $isMixing ? 'true' : 'false'; ?>) {
-            let timeLeft = 30;
-            const mixingText = document.getElementById('mixingText');
-            const resetBtn = document.getElementById('resetBtn');
-
-            const timer = setInterval(() => {
-                timeLeft--;
-                if (mixingText) {
-                    mixingText.innerText = `Mixing... (${timeLeft}s)`;
-                }
-
-                if (timeLeft <= 0) {
-                    clearInterval(timer);
-                    // Automatically trigger the reset to set flag back to 0
-                    resetBtn.click();
-                }
-            }, 1000);
-        }
-    });
-    </script>
 </body>
 </html>

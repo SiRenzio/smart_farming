@@ -213,7 +213,7 @@ function getFilterParams($excludePage = true) {
                 </div>
                 <div class="card-content">
                     <h3>User Sensor Deployments</h3>
-                    <p>View user(s) current deployed sensors.</p>
+                    <p>Summary of your current deployed sensors.</p>
                 </div>
             </div>
             
