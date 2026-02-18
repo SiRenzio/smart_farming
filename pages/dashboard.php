@@ -11,8 +11,7 @@ $username = htmlspecialchars($_SESSION['username']);
 
 // Fetch name of tanks
 $tanks = [];
-$stmt = $conn->prepare('SELECT liquidsensorID, liquidtankname FROM liquidsensorinfo WHERE userID = ?');
-$stmt->bind_param('i', $_SESSION['userID']);
+$stmt = $conn->prepare('SELECT liquidsensorID, liquidtankname FROM liquidsensorinfo');
 $stmt->execute();
 $result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {
@@ -239,7 +238,7 @@ function getFilterParams($excludePage = true) {
                                 <td><?= htmlspecialchars($deployment['farmName']) ?></td>
                                 <td>
                                     <?php if ((int)$deployment['isConnected'] === 1): ?>
-                                        <span class="status connected"><i class="fas fa-check-circle"></i> Connected</span>
+                                        <span class="status connected" style="color: #2e7d32;"><i class="fas fa-check-circle"></i> Connected</span>
                                     <?php else: ?>
                                         <span class="status disconnected" style="color: #e74c3c;"><i class="fas fa-times-circle"></i> Disconnected</span>
                                     <?php endif; ?>

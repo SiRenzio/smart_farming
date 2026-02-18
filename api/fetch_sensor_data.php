@@ -1,15 +1,25 @@
 <?php
+session_start();
 require_once '../db.php';
 
+if (!isset($_SESSION['userID'])) {
+    header('Location: login.php');
+    exit;
+}
+$userID = $_SESSION['userID'];
+
+// Initialize filtering
 $filterSensor = $_GET['sensor'] ?? '';
 $filterLocation = $_GET['location'] ?? '';
 $filterDateFrom = $_GET['dateFrom'] ?? '';
 $filterDateTo = $_GET['dateTo'] ?? '';
 
-$whereSQL = " WHERE 1=1";
-$params = [];
-$types = "";
 
+$whereSQL = " WHERE si.userID = ? ";
+$params = [$userID];
+$types = "i";
+
+// Append optional filters
 if ($filterSensor) {
     $whereSQL .= " AND sd.SoilSensorID = ?";
     $params[] = $filterSensor;
@@ -32,19 +42,17 @@ if ($filterDateTo) {
 }
 
 $sql = "
-SELECT sd.*, si.sensorName, fl.farmName
-FROM sensordata sd
-LEFT JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID
-LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID
-$whereSQL
-ORDER BY sd.DateTime DESC
-LIMIT 15
+    SELECT sd.*, si.sensorName, fl.farmName
+    FROM sensordata sd
+    INNER JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID
+    LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID
+    $whereSQL
+    ORDER BY sd.DateTime DESC
+    LIMIT 15
 ";
 
 $stmt = $conn->prepare($sql);
-if ($params) {
-    $stmt->bind_param($types, ...$params);
-}
+$stmt->bind_param($types, ...$params);
 $stmt->execute();
 $result = $stmt->get_result();
 

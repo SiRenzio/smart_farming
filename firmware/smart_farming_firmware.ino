@@ -18,6 +18,7 @@ WebServer server(80); // RE-ADDED: Declaring the server object
 bool deviceVerified = false;
 bool sendingEnabled = false;
 
+int userID       = -1;
 int SoilSensorID = -1;
 int locationID   = -1;
 
@@ -44,7 +45,8 @@ void handleReceive() {
   }
 
   // Update IDs manually via debug if provided
-  if (doc.containsKey("SoilSensorID") && doc.containsKey("locationID")) {
+  if (doc.containsKey("SoilSensorID") && doc.containsKey("locationID") && doc.containsKey("userID")) {
+    userID         = doc["userID"];
     SoilSensorID   = doc["SoilSensorID"];
     locationID     = doc["locationID"];
     deviceVerified = true;
@@ -82,11 +84,12 @@ void verifyDeviceWithServer() {
     String status = resDoc["status"];
 
     if (status == "success") {
+      userID         = resDoc["userID"];
       SoilSensorID   = resDoc["SoilSensorID"];
       locationID     = resDoc["locationID"];
       deviceVerified = true;
       sendingEnabled = true;
-      Serial.printf("[SYNC] Active! SensorID: %d, LocID: %d\n", SoilSensorID, locationID);
+      Serial.printf("[SYNC] Active! SensorID: %d, SensorID: %d, LocID: %d\n", userID, SoilSensorID, locationID);
     } 
     else if (status == "disconnected") {
       deviceVerified = true; 
@@ -121,6 +124,7 @@ void sendSensorData() {
   float soilLV = random(10, 100)  / 10.0;
 
   StaticJsonDocument<400> doc;
+  doc["userID"] = userID;
   doc["SoilSensorID"] = SoilSensorID;
   doc["locationID"]   = locationID;
   doc["soilN"]  = soilN;

@@ -18,9 +18,12 @@ $sensors = $conn->query("SELECT s.*, sd.*, f.* FROM sensorinfo s
 
 // Fetch all farm locations
 $locations = [];
-$mapResult = $conn->query("SELECT locationID, farmName FROM farmlocation");
+$mapResult = $conn->prepare("SELECT locationID, farmName FROM farmlocation WHERE userID = ?");
+$mapResult->bind_param("i", $_SESSION['userID']);
+$mapResult->execute();
+$result = $mapResult->get_result();
 
-while ($row = $mapResult->fetch_assoc()) {
+while ($row = $result->fetch_assoc()) {
     $locations[] = $row;
 }
 

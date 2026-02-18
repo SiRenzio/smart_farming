@@ -7,138 +7,111 @@ if (!isset($_SESSION['userID'])) {
     header('Location: login.php');
     exit;
 }
+$userID = $_SESSION['userID'];
 
 // Handle data deletion
 if (isset($_POST['delete_data']) && isset($_POST['data_id'])) {
     $dataID = (int)$_POST['data_id'];
-    
-    $deleteStmt = $conn->prepare('DELETE FROM sensordata WHERE SensorDataID = ?');
-    $deleteStmt->bind_param('i', $dataID);
+    $deleteStmt = $conn->prepare('DELETE sd FROM sensordata sd 
+                                 JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID 
+                                 WHERE sd.SensorDataID = ? AND si.userID = ?');
+    $deleteStmt->bind_param('ii', $dataID, $userID);
     if ($deleteStmt->execute()) {
         $success = "Sensor data deleted successfully!";
     } else {
-        $error = "Failed to delete sensor data: " . $conn->error . " (Error Code: " . $conn->errno . ")";
+        $error = "Failed to delete: " . $conn->error;
     }
     $deleteStmt->close();
 }
 
-// Pagination
-
+// Filters & Pagination Setup
 $limit = 15;
-$page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
-if ($page < 1) $page = 1;
-$offset = ($page - 1) * $limit;
+$page = (isset($_GET['page']) && is_numeric($_GET['page'])) ? (int)$_GET['page'] : 1;
+$offset = max(0, ($page - 1) * $limit);
 
-// filters
 $filterSensor = $_GET['sensor'] ?? '';
 $filterLocation = $_GET['location'] ?? '';
 $filterDateFrom = $_GET['dateFrom'] ?? '';
 $filterDateTo = $_GET['dateTo'] ?? '';
 
-$whereSQL = " WHERE 1=1";
-$params = [];
-$types = "";
+// Build the WHERE clause dynamically
+$whereConditions = ["si.userID = ?"];
+$bindParams = [$userID];
+$bindTypes = "i";
 
 if (!empty($filterSensor)) {
-    $whereSQL .= " AND sd.SoilSensorID = ?";
-    $params[] = $filterSensor;
-    $types .= "i";
+    $whereConditions[] = "sd.SoilSensorID = ?";
+    $bindParams[] = $filterSensor;
+    $bindTypes .= "i";
 }
-
 if (!empty($filterLocation)) {
-    $whereSQL .= " AND sd.locationID = ?";
-    $params[] = $filterLocation;
-    $types .= "i";
+    $whereConditions[] = "sd.locationID = ?";
+    $bindParams[] = $filterLocation;
+    $bindTypes .= "i";
 }
-
 if (!empty($filterDateFrom)) {
-    $whereSQL .= " AND sd.DateTime >= ?";
-    $params[] = $filterDateFrom;
-    $types .= "s";
+    $whereConditions[] = "sd.DateTime >= ?";
+    $bindParams[] = $filterDateFrom;
+    $bindTypes .= "s";
 }
-
 if (!empty($filterDateTo)) {
-    $whereSQL .= " AND sd.DateTime <= ?";
-    $params[] = $filterDateTo;
-    $types .= "s";
+    $whereConditions[] = "sd.DateTime <= ?";
+    $bindParams[] = $filterDateTo;
+    $bindTypes .= "s";
 }
 
-// fetch data for pagination
+$whereSQL = " WHERE " . implode(" AND ", $whereConditions);
+
+// Get Total Count for Pagination
 $countSql = "SELECT COUNT(*) as total 
              FROM sensordata sd 
-             LEFT JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID 
-             LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID" 
-             . $whereSQL;
+             INNER JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID 
+             LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID" . $whereSQL;
 
 $stmtCount = $conn->prepare($countSql);
-if (!empty($params)) {
-    $stmtCount->bind_param($types, ...$params);
-}
+$stmtCount->bind_param($bindTypes, ...$bindParams);
 $stmtCount->execute();
-$countResult = $stmtCount->get_result();
-$totalRows = $countResult->fetch_assoc()['total'];
+$totalRows = $stmtCount->get_result()->fetch_assoc()['total'];
 $totalPages = ceil($totalRows / $limit);
 $stmtCount->close();
 
-// fetch data for dropdown
-$sql = "SELECT sd.*, si.sensorName, fl.farmName, fl.locationID 
+// Fetch Actual Data
+$sql = "SELECT sd.*, si.sensorName, fl.farmName 
         FROM sensordata sd 
-        LEFT JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID 
-        LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID"
-        . $whereSQL;
+        INNER JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID 
+        LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID" 
+        . $whereSQL . " ORDER BY sd.DateTime DESC LIMIT ? OFFSET ?";
 
-$sql .= " ORDER BY sd.DateTime DESC LIMIT ? OFFSET ?";
-
-// Add limit and offset to params
-$params[] = $limit;
-$params[] = $offset;
-$types .= "ii";
+// Prepare params for the final query (Adding limit and offset)
+$finalParams = $bindParams;
+$finalParams[] = $limit;
+$finalParams[] = $offset;
+$finalTypes = $bindTypes . "ii";
 
 $stmt = $conn->prepare($sql);
-if (!empty($params)) {
-    $stmt->bind_param($types, ...$params);
-}
-
+$stmt->bind_param($finalTypes, ...$finalParams);
 $stmt->execute();
-$result = $stmt->get_result();
-$data = [];
-while ($row = $result->fetch_assoc()) {
-    $data[] = $row;
-}
+$data = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-
-// Fetch sensors for dropdown
+// Fetch Dropdowns (Helper lists)
 $sensorsList = [];
-$sensorQuery = $conn->prepare("SELECT * FROM sensorinfo WHERE userID = ? ORDER BY sensorName");
-$sensorQuery->bind_param("i", $_SESSION['userID']);
+$sensorQuery = $conn->prepare("SELECT soilSensorID, sensorName FROM sensorinfo WHERE userID = ? ORDER BY sensorName");
+$sensorQuery->bind_param("i", $userID);
 $sensorQuery->execute();
-$sensorQueryResult = $sensorQuery->get_result();
-if($sensorQuery) {
-    while($row = $sensorQueryResult->fetch_assoc()) {
-        $sensorsList[] = $row;
-    }
-}
+$sensorsList = $sensorQuery->get_result()->fetch_all(MYSQLI_ASSOC);
 
-// Fetch locations for dropdown
 $locationsList = [];
-$locQuery = $conn->prepare("SELECT * FROM farmlocation WHERE userID = ? ORDER BY farmName");
-$locQuery->bind_param("i", $_SESSION['userID']);
+$locQuery = $conn->prepare("SELECT locationID, farmName FROM farmlocation WHERE userID = ? ORDER BY farmName");
+$locQuery->bind_param("i", $userID);
 $locQuery->execute();
-$locQueryResult = $locQuery->get_result();
-if($locQueryResult) {
-    while($row = $locQueryResult->fetch_assoc()) {
-        $locationsList[] = $row;
-    }
-}
+$locationsList = $locQuery->get_result()->fetch_all(MYSQLI_ASSOC);
 
-// Helper to keep filters in URL
 function getFilterParams($excludePage = true) {
     $params = $_GET;
     if ($excludePage) unset($params['page']);
     return http_build_query($params);
 }
-
 ?>
 
 <!DOCTYPE html>
