@@ -12,7 +12,6 @@
 
 /* ===================== SERVER URLs ===================== */
 const char* webServerIp = "172.18.0.9";
-
 String verifyDeviceURL = "http://" + String(webServerIp) + "/smart_farming/webServer.php";
 String sendDataURL     = "http://" + String(webServerIp) + "/smart_farming/api/sensor_api.php";
 String sendWateringURL = "http://" + String(webServerIp) + "/smart_farming/api/watering_api.php";
@@ -36,15 +35,18 @@ const unsigned long sendInterval = 5000;
 unsigned long lastPingTime = 0;
 const unsigned long pingInterval = 100; 
 
+unsigned long lastLevelSendTime = 0;
+const unsigned long levelSendInterval = 5000; // Send every 5 seconds
+
 /* ===================== SENSOR VARIABLES ===================== */
 long duration1;
 int distance1;
 int finaldistance1;
 
 int wateringstatus = -1;
-int wateringflag = -1;  // 0: Full/Stop, 1: Low/Start, -1: Idle (Null)
-int mixingflag = 0;     // 0: Idle, 1: Ready to mix, 2: Mixing
-int mixingstatus = 0;   // 0: Ready, 1: Busy
+int wateringflag = -1;  
+int mixingflag = 0;     
+int mixingstatus = 0;   
 unsigned long mixStartTime = 0;
 int liquidsensorID = 1; 
 
@@ -54,18 +56,9 @@ void handleReceive() {
     server.send(400, "application/json", "{\"status\":\"error\",\"message\":\"No request body\"}");
     return;
   }
-
   String body = server.arg("plain");
-  Serial.println("\n[DEBUG] Manual data received:");
-  Serial.println(body);
-
   StaticJsonDocument<200> doc;
-  DeserializationError error = deserializeJson(doc, body);
-
-  if (error) {
-    server.send(400, "application/json", "{\"status\":\"error\",\"message\":\"Invalid JSON\"}");
-    return;
-  }
+  deserializeJson(doc, body);
 
   if (doc.containsKey("SoilSensorID") && doc.containsKey("locationID") && doc.containsKey("userID")) {
     userID       = doc["userID"];
@@ -73,11 +66,8 @@ void handleReceive() {
     locationID   = doc["locationID"];
     deviceVerified = true;
     sendingEnabled = true;
-    Serial.println("[DEBUG] IDs Updated Manually");
     server.send(200, "application/json", "{\"status\":\"debug_assigned\"}");
-    return;
   }
-  server.send(200, "application/json", "{\"status\":\"received\"}");
 }
 
 /* ===================== VERIFY & SYNC ===================== */
@@ -127,29 +117,23 @@ void verifyDeviceWithServer() {
 }
 
 /* ===================== SEND WATERING DATA ===================== */
-void sendWateringData() {
+// Added parameter "type" to differentiate updates
+void sendWateringData(String updateType) {
   if (!deviceVerified) return;
 
   HTTPClient http;
-  StaticJsonDocument<200> doc;
+  StaticJsonDocument<300> doc;
   
   doc["userID"] = userID;
   doc["liquidsensorID"] = liquidsensorID;
   doc["currentliquidlevel"] = finaldistance1;
+  doc["updateType"] = updateType; // Tells PHP whether to log event or log to liquidlevel
   
-  // --- CHANGED: Handle the -1 to NULL conversion here ---
-  if (wateringstatus == -1) {
-     doc["wateringstatus"] = (char*)0; // Sends JSON null
-  } else {
-     doc["wateringstatus"] = wateringstatus;
-  }
+  if (wateringstatus == -1) doc["wateringstatus"] = (char*)0;
+  else doc["wateringstatus"] = wateringstatus;
 
-  if (wateringflag == -1) {
-    doc["wateringFlag"] = (char*)0;
-  }
-  else {
-    doc["wateringFlag"] = wateringflag;
-  }
+  if (wateringflag == -1) doc["wateringFlag"] = (char*)0;
+  else doc["wateringFlag"] = wateringflag;
 
   String payload;
   serializeJson(doc, payload);
@@ -201,7 +185,6 @@ void sendSensorData() {
 
 void setup() {
   Serial.begin(115200);
-
   pinMode(trigPin1, OUTPUT);
   pinMode(echoPin1, INPUT);
   pinMode(switch1, INPUT_PULLUP);
@@ -211,90 +194,74 @@ void setup() {
   digitalWrite(pumpmotor1, LOW);
 
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("\n[WiFi] Connected! IP: " + WiFi.localIP().toString());
-  Serial.println("[WiFi] Connected! MAC: " + WiFi.macAddress());
+  while (WiFi.status() != WL_CONNECTED) delay(500);
   
   server.on("/receive", HTTP_POST, handleReceive);
   server.begin();
-  Serial.println("[ESP32]: Sensor is ONLINE . READY TO DEPLOY.");
-  
-  randomSeed(analogRead(0));
 }
 
 void loop() {
   server.handleClient();
   unsigned long currentMillis = millis();
 
-    // --- SERVER SYNC ---
+  // --- SERVER SYNC ---
   if (currentMillis - lastSendTime >= sendInterval) {
     lastSendTime = currentMillis;
     verifyDeviceWithServer();
-    if (deviceVerified && sendingEnabled) {
-      sendSensorData();
-    }
+    if (deviceVerified && sendingEnabled) sendSensorData();
   }
 
   // --- ULTRASONIC READING ---
   if (currentMillis - lastPingTime >= pingInterval) {
     lastPingTime = currentMillis;
-
+    digitalWrite(trigPin1, LOW); delayMicroseconds(2);
+    digitalWrite(trigPin1, HIGH); delayMicroseconds(10);
     digitalWrite(trigPin1, LOW);
-    delayMicroseconds(2);
-    digitalWrite(trigPin1, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(trigPin1, LOW);
-
     duration1 = pulseIn(echoPin1, HIGH, 25000); 
-    
     if (duration1 > 0) {
-      distance1 = duration1 * 0.036 / 2; // Fixed constant to 0.034 for air
-      if (distance1 > 0 && distance1 < 400) {
-         finaldistance1 = distance1;
-      }
+      distance1 = duration1 * 0.034 / 2;
+      if (distance1 > 0 && distance1 < 400) finaldistance1 = distance1;
     }
   }
 
-  // --- PUMP LOGIC ---
-  // Start Pump if Empty
+  // --- CONTINUOUS LEVEL UPDATE (Every 5s) ---
+  if (currentMillis - lastLevelSendTime >= levelSendInterval) {
+    lastLevelSendTime = currentMillis;
+    sendWateringData("continuous"); 
+  }
+
+  // --- PUMP LOGIC (Event Driven) ---
+  // Pump On
   if (finaldistance1 > 70 && wateringflag != 1) {
     wateringflag = 1;
     wateringstatus = 0;
     digitalWrite(pumpmotor1, HIGH);
-    sendWateringData(); 
+    sendWateringData("event"); // Immediate event trigger
   }
   
-  // Stop Pump if Full
+  // Pump Off
   if (finaldistance1 <= 30 && wateringflag == 1) {
     wateringflag = 0;
     wateringstatus = 0;
     digitalWrite(pumpmotor1, LOW);
-    mixingflag = 1; // Ready to mix
-    sendWateringData(); 
+    mixingflag = 1; 
+    sendWateringData("event"); // Immediate event trigger
   }
 
   // --- MIXER LOGIC ---
   if (mixingflag == 1 && digitalRead(switch1) == LOW) {
     wateringstatus = -1;
-    mixingflag = 2; // Busy
+    mixingflag = 2;
     mixingstatus = 1;
     mixStartTime = currentMillis;
     digitalWrite(mixermotor1, HIGH);
-    Serial.println("Mixing Started...");
   }
 
   if (mixingflag == 2 && mixingstatus == 1) {
     if (currentMillis - mixStartTime >= 5000) {
       digitalWrite(mixermotor1, LOW);
-      mixingflag = 0;   // Idle
-      mixingstatus = 0;
-      wateringflag = -1; 
-      
-      sendWateringData();
-      Serial.println("Mixing Finished.");
+      mixingflag = 0; mixingstatus = 0; wateringflag = -1; 
+      sendWateringData("event"); // End of mixing event
     }
   }
 }
