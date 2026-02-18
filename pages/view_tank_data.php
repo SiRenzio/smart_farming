@@ -198,7 +198,7 @@ function getFilterParams($excludePage = true) {
                             <th><i class="fas fa-water"></i> Watering Level</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tank-data-body">
                         <?php foreach ($data as $row): ?>
                             <tr>
                                 <td><?php echo date('M j, Y g:i A', strtotime($row['dateandtime'])); ?></td>
@@ -247,5 +247,6 @@ function getFilterParams($excludePage = true) {
             <?php endif; ?>
         </div>
     </div>
+    <script src="../assets/js/view_tank_data.js" defer></script>
 </body>
 </html>
