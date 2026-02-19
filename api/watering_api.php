@@ -36,21 +36,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         sendResponse(false, 'liquidsensorID is required');
     }
 
-    // userID
-    $getUserStmt = $conn->prepare('SELECT userID FROM liquidsensorinfo WHERE liquidsensorID = ?');
-    $getUserStmt->bind_param('i', $liquidsensorID);
-    $getUserStmt->execute();
-    $result = $getUserStmt->get_result();
-
-    if ($result->num_rows === 0) {
-        $getUserStmt->close();
-        sendResponse(false, 'Invalid liquidsensorID. No owner found.');
-    }
-
-    $row = $result->fetch_assoc();
-    $userID = (int)$row['userID'];
-    $getUserStmt->close();
-
     $dateTime = date('Y-m-d H:i:s');
 
     // Currentliquid level
@@ -58,10 +43,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $stmtLevel = $conn->prepare(
             'INSERT INTO liquidlevelsensor 
-            (userID, liquidsensorID, currentliquidlevel, dateandtime) 
-            VALUES (?, ?, ?, NOW())'
+            (liquidsensorID, currentliquidlevel, dateandtime) 
+            VALUES (?, ?, NOW())'
         );
-        $stmtLevel->bind_param('iii', $userID, $liquidsensorID, $currentliquidlevel);
+        $stmtLevel->bind_param('ii', $liquidsensorID, $currentliquidlevel);
         $stmtLevel->execute();
         $stmtLevel->close();
 
@@ -73,13 +58,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $stmt = $conn->prepare(
             'INSERT INTO tankpumpevent 
-            (userID, liquidsensorID, wateringstatus, wateringFlag, wateringvolume, dateandtime) 
-            VALUES (?, ?, ?, ?, ?, NOW())'
+            (liquidsensorID, wateringstatus, wateringFlag, wateringvolume, dateandtime) 
+            VALUES (?, ?, ?, ?, NOW())'
         );
 
         $stmt->bind_param(
-            'iiiii',
-            $userID,
+            'iiii',
             $liquidsensorID,
             $wateringstatus,
             $wateringFlag,
@@ -102,16 +86,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (!empty($notifMessage)) {
-                $notifSql = "INSERT INTO notification (userID, message, createdAT) VALUES (?, ?, NOW())";
+                $notifSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
                 $notifStmt = $conn->prepare($notifSql);
-                $notifStmt->bind_param("is", $userID, $notifMessage);
+                $notifStmt->bind_param("s", $notifMessage);
                 $notifStmt->execute();
                 $notifStmt->close();
             }
 
             sendResponse(true, 'Sensor data received and stored successfully', [
                 'id' => $insertId,
-                'user'=> $userID,
                 'tank'=> $liquidsensorID,
                 'timestamp'=> $dateTime,
                 'values'=> [
@@ -128,15 +111,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     }
 
-    /* =====================================================
-       HANDSHAKE (New Logic Added Here)
-    ====================================================== */
     if ($updateType === 'handshake') {
-        // Since we already validated the userID at the top,
-        // reaching this point means the sensor ID is valid.
         sendResponse(true, 'Handshake successful', [
-            'liquidsensorID' => $liquidsensorID,
-            'userID' => $userID
+            'liquidsensorID' => $liquidsensorID
         ]);
     }
 
