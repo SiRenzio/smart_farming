@@ -49,6 +49,7 @@ int mixingflag2 = 0;
 unsigned long mixStartTime2 = 0;
 
 bool apiReady = false;
+bool dataValid = false;   // 
 
 String serialBuffer = "";
 
@@ -64,34 +65,23 @@ bool initialHandshake(int id) {
   String payload;
   serializeJson(doc, payload);
 
-  Serial.println("===== HANDSHAKE REQUEST =====");
-  Serial.println(payload);
-
   http.begin(sendWateringURL);
   http.addHeader("Content-Type", "application/json");
   http.setTimeout(1500);
 
   int httpCode = http.POST(payload);
 
-  Serial.print("HTTP Code: ");
-  Serial.println(httpCode);
-
   if (httpCode > 0) {
     String response = http.getString();
-    Serial.println("Response:");
-    Serial.println(response);
-
     StaticJsonDocument<200> resDoc;
     if (deserializeJson(resDoc, response) == DeserializationError::Ok) {
       if (resDoc["success"] == true) {
-        Serial.println("Handshake SUCCESS");
         http.end();
         return true;
       }
     }
   }
 
-  Serial.println("Handshake FAILED");
   http.end();
   return false;
 }
@@ -101,6 +91,7 @@ bool initialHandshake(int id) {
 void sendWateringData(String updateType, int sensorID, int currentLevel, int wStatus, int wFlag) {
 
   if (!apiReady || WiFi.status() != WL_CONNECTED) return;
+  if (!dataValid) return;  // dont send if data is null
 
   HTTPClient http;
   StaticJsonDocument<300> doc;
@@ -118,26 +109,11 @@ void sendWateringData(String updateType, int sensorID, int currentLevel, int wSt
   String payload;
   serializeJson(doc, payload);
 
-  Serial.println("===== API REQUEST =====");
-  Serial.println(payload);
-
   http.begin(sendWateringURL);
   http.addHeader("Content-Type", "application/json");
   http.setTimeout(1500);
 
-  int httpCode = http.POST(payload);
-
-  Serial.print("HTTP Code: ");
-  Serial.println(httpCode);
-
-  if (httpCode > 0) {
-    String response = http.getString();
-    Serial.println("Response:");
-    Serial.println(response);
-  } else {
-    Serial.println("HTTP POST FAILED");
-  }
-
+  http.POST(payload);
   http.end();
 }
 
@@ -156,16 +132,10 @@ void setup() {
   pinMode(switch2, INPUT_PULLUP);
 
   WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi");
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(300);
-    Serial.print(".");
   }
-
-  Serial.println("\nWiFi Connected");
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());
 }
 
 /* ===================== LOOP ===================== */
@@ -179,29 +149,31 @@ void loop() {
 
     if (initialHandshake(liquidsensorID1) && initialHandshake(liquidsensorID2)) {
       apiReady = true;
-      Serial.println("API READY");
     }
   }
 
-  /* ================= RECEIVE DATA (NON BLOCKING) ================= */
+  /* ================= RECEIVE DATA ================= */
   while (Serial2.available()) {
     char c = Serial2.read();
 
     if (c == '\n') {
       StaticJsonDocument<200> doc;
       if (deserializeJson(doc, serialBuffer) == DeserializationError::Ok) {
-        currentliquidlevel1 = doc["distance1"];
-        currentliquidlevel2 = doc["distance2"];
 
-        if(currentliquidlevel1 != 0 && currentliquidlevel2 != 0){
-            Serial.print("Level1: ");
-            Serial.print(currentliquidlevel1);
-            Serial.print(" | Level2: ");
-            Serial.println(currentliquidlevel2);
+        currentliquidlevel1 = doc["distance1"] | 0;
+        currentliquidlevel2 = doc["distance2"] | 0;
+
+        // if NULL stop send data to server
+        if (currentliquidlevel1 == 0 && currentliquidlevel2 == 0) {
+          dataValid = false;
+          Serial.println("Data is NULL");
         } else {
-            Serial.println("No transimitter connected");
+          dataValid = true;
+          Serial.print("Level1: ");
+          Serial.print(currentliquidlevel1);
+          Serial.print(" | Level2: ");
+          Serial.println(currentliquidlevel2);
         }
-        
       }
       serialBuffer = "";
     } else {
@@ -210,7 +182,7 @@ void loop() {
   }
 
   /* ================= CONTINUOUS UPDATE ================= */
-  if (apiReady && currentMillis - lastLevelSendTime >= levelSendInterval) {
+  if (apiReady && dataValid && currentMillis - lastLevelSendTime >= levelSendInterval) {
     lastLevelSendTime = currentMillis;
 
     sendWateringData("continuous", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1);
@@ -218,21 +190,20 @@ void loop() {
   }
 
   /* ================= TANK 1 LOGIC ================= */
-  if (apiReady && currentliquidlevel1 > 70 && wateringflag1 != 1) {
+  if (apiReady && dataValid && currentliquidlevel1 > 70 && wateringflag1 != 1) {
     wateringflag1 = 1; wateringstatus1 = 0;
     digitalWrite(pumpmotor1, HIGH);
     sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1);
   }
 
-  if (apiReady && currentliquidlevel1 <= 30 && wateringflag1 == 1) {
+  if (apiReady && dataValid && currentliquidlevel1 <= 30 && wateringflag1 == 1) {
     wateringflag1 = 0; wateringstatus1 = 0;
     digitalWrite(pumpmotor1, LOW);
     mixingflag1 = 1;
     sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1);
   }
 
-  /* ===================== MIXING ===================== */
-
+  /* ================= MIXING 1 ================= */
   if (mixingflag1 == 1 && digitalRead(switch1) == LOW) {
     wateringstatus1 = -1;
     mixingflag1 = 2;
@@ -247,21 +218,20 @@ void loop() {
   }
 
   /* ================= TANK 2 LOGIC ================= */
-  if (apiReady && currentliquidlevel2 > 70 && wateringflag2 != 1) {
+  if (apiReady && dataValid && currentliquidlevel2 > 70 && wateringflag2 != 1) {
     wateringflag2 = 1; wateringstatus2 = 0;
     digitalWrite(pumpmotor2, HIGH);
     sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2);
   }
 
-  if (apiReady && currentliquidlevel2 <= 30 && wateringflag2 == 1) {
+  if (apiReady && dataValid && currentliquidlevel2 <= 30 && wateringflag2 == 1) {
     wateringflag2 = 0; wateringstatus2 = 0;
     digitalWrite(pumpmotor2, LOW);
     mixingflag2 = 1;
     sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2);
   }
 
-  /* ===================== MIXING ===================== */
-
+  /* ================= MIXING 2 ================= */
   if (mixingflag2 == 1 && digitalRead(switch2) == LOW) {
     wateringstatus2 = -1;
     mixingflag2 = 2;
