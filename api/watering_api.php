@@ -73,25 +73,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->execute()) {
 
             $insertId = $conn->insert_id;
-            $notifMessage = "";
-
-            if ($wateringFlag === 1 && $wateringstatus === 0) {
-                $notifMessage = "LOW water tank level, system HOLD WATERING";
-            }
-            else if ($wateringFlag === 0 && $wateringstatus === 0) {
-                $notifMessage = "Water tank is now FULL, system HOLD WATERING waiting to mix the solution";
-            }
-            else {
-                $notifMessage = "Mixing process finished and watering is Abled. System READY!";
-            }
-
-            if (!empty($notifMessage)) {
-                $notifSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
-                $notifStmt = $conn->prepare($notifSql);
-                $notifStmt->bind_param("s", $notifMessage);
-                $notifStmt->execute();
-                $notifStmt->close();
-            }
 
             sendResponse(true, 'Sensor data received and stored successfully', [
                 'id' => $insertId,
