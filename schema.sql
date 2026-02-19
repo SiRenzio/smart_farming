@@ -84,22 +84,18 @@ CREATE TABLE liquidsensorinfo (
 CREATE TABLE liquidlevelsensor (
     liquidsensorreadID INT(15) AUTO_INCREMENT PRIMARY KEY,
     liquidsensorID INT(15),
-    userID INT(11), -- Foreign key to users table
     currentliquidlevel INT(15),
-    dateandtime TIMESTAMP,
-    FOREIGN KEY (userID) REFERENCES users(userID)
+    dateandtime TIMESTAMP
 );
 
 -- Create the 'tankpumpevent' table
 CREATE TABLE tankpumpevent (
     tankpumpventID INT(15) AUTO_INCREMENT PRIMARY KEY,
-    userID INT(11), -- Foreign key to users table
     liquidsensorID INT(15),
     wateringstatus TINYINT(1),
     wateringvolume FLOAT,
     wateringFlag TINYINT(1),
-    dateandtime TIMESTAMP,
-    FOREIGN KEY (userID) REFERENCES users(userID)
+    dateandtime TIMESTAMP
 );
 
 -- Create the 'deployment' table
@@ -117,9 +113,7 @@ CREATE TABLE deployment (
 -- Create the 'notification' table
 CREATE TABLE notification (
     notificationID INT(11) AUTO_INCREMENT PRIMARY KEY,
-    userID INT(11), -- Foreign key to users table
     message TEXT,
     isRead TINYINT(1) DEFAULT 0,
-    createdAt TIMESTAMP,
-    FOREIGN KEY (userID) REFERENCES users (userID)
+    createdAt TIMESTAMP
 )

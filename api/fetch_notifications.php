@@ -14,12 +14,9 @@ if (!$userID) {
 $stmt = $conn->prepare("
     SELECT notificationID, message, isRead, createdAt
     FROM notification
-    WHERE userID = ?
     ORDER BY createdAt DESC
     LIMIT 10
 ");
-
-$stmt->bind_param("i", $userID);
 $stmt->execute();
 $result = $stmt->get_result();
 

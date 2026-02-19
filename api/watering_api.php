@@ -86,9 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (!empty($notifMessage)) {
-                $notifSql = "INSERT INTO notification (userID, message, createdAT) VALUES (?, ?, NOW())";
+                $notifSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
                 $notifStmt = $conn->prepare($notifSql);
-                $notifStmt->bind_param("is", $_SESSION['userID'], $notifMessage);
+                $notifStmt->bind_param("s", $notifMessage);
                 $notifStmt->execute();
                 $notifStmt->close();
             }
