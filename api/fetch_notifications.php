@@ -15,7 +15,7 @@ $stmt = $conn->prepare("
     SELECT notificationID, message, isRead, createdAt
     FROM notification
     ORDER BY createdAt DESC
-    LIMIT 10
+    LIMIT 99
 ");
 $stmt->execute();
 $result = $stmt->get_result();

@@ -3,10 +3,14 @@ const dropdown = document.getElementById("notificationDropdown");
 
 bell.addEventListener("click", function (e) {
     e.stopPropagation();
-    dropdown.style.display =
-        dropdown.style.display === "block" ? "none" : "block";
+    const isOpening = dropdown.style.display !== "block";
 
-    markAsRead();
+    dropdown.style.display = isOpening ? "block" : "none";
+
+    if (isOpening) {
+        loadNotifications();
+        setTimeout(markAsRead, 500); // small delay after rendering
+    }
 });
 
 // Close when clicking outside
@@ -61,9 +65,6 @@ function markAsRead() {
         // Hide badge visually
         const count = document.getElementById('notification-count');
         if (count) count.style.display = 'none';
-
-        // Refresh notifications
-        loadNotifications();
     });
 }
 
