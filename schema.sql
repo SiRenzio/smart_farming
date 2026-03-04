@@ -117,3 +117,12 @@ CREATE TABLE notification (
     isRead TINYINT(1) DEFAULT 0,
     createdAt TIMESTAMP
 )
+
+-- Create the 'fertilizer' table
+CREATE TABLE fertilizer (
+    fertilizerID INT(11) AUTO_INCREMENT PRIMARY KEY,
+    nutritionID INT(11), -- Foreign key to plantnutrionneed table
+    fertilizerName VARCHAR(50),
+    fertilizerAmount FLOAT,
+    FOREIGN KEY (nutritionID) REFERENCES plantnutrionneed(nutritionID)
+);
