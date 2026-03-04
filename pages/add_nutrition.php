@@ -55,7 +55,7 @@ $lateVegetativeDefaults = [
     'soilM' => 65.0,
     'flowRate' => 1.5,
     'fertilizer' => 'Nitrabor',
-    'fertilizerAmount' => 3.5
+    'fertilizerAmount' => 4.5
 ];
 
 $flowringToFruitingDefaults = [
@@ -68,7 +68,7 @@ $flowringToFruitingDefaults = [
     'soilM' => 70.0,
     'flowRate' => 2.0,
     'fertilizer' => 'Nitrabor',
-    'fertilizerAmount' => 3.5
+    'fertilizerAmount' => 5.5
 ];
 
 $harvestingDefaults = [
@@ -188,10 +188,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i class="fas fa-layer-group"></i> Growth Stages *
                 </label>
                 <select name="nutritionSetName" id="plant-stages">
-                    <option value="Vegetative">Vegetative (3-15 Days)</option>
-                    <option value="Late Vegetative">Late Vegetative (16-45 Days)</option>
-                    <option value="Flowering To Fruiting">Flowering to Fruiting (46-55 Days)</option>
-                    <option value="Harvesting">Harvesting (56+ Days)</option>
+                    <option value="vegetative">Vegetative (3-15 Days)</option>
+                    <option value="lateVegetative">Late Vegetative (16-45 Days)</option>
+                    <option value="floweringToFruiting">Flowering to Fruiting (46-55 Days)</option>
+                    <option value="harvesting">Harvesting (56+ Days)</option>
                 </select>
             </div>
             
