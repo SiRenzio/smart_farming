@@ -48,10 +48,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             VALUES (?, ?, NOW())'
         );
         $stmtLevel->bind_param('ii', $liquidsensorID, $currentliquidlevel);
-        $stmtLevel->execute();
+        if ($stmtLevel->execute()) {
+            $insertId = $conn->insert_id;
+            sendResponse(true, 'Level updated successfully', [
+                'id' => $insertId,
+                'tank'=> $liquidsensorID,
+                'data'=> $currentliquidlevel,
+                'timestamp'=> $dateTime
+            ]);
+        } 
+        else {
+            sendResponse(false, 'Failed to store data: ' . $conn->error);
+        }
         $stmtLevel->close();
-
-        sendResponse(true, 'Level updated successfully');
     }
 
     // event
