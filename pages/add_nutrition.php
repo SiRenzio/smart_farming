@@ -129,12 +129,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     for ($i = 0; $i < count($fertilizers); $i++) {
         $fertilizer = trim($fertilizers[$i]);
+        $fertToLower = strtolower($fertilizer);
         $amount = trim($fertilizerAmounts[$i]);
         if ($fertilizer && $amount) {
-            $stmt = $conn->prepare('INSERT INTO fertilizer (nutritionID, fertilizerName, fertilizerAmount) VALUES (?, ?, ?)');
-            $stmt->bind_param('isd', $nutritionID, $fertilizer, $amount);
-            $stmt->execute();
-            $stmt->close();
+            if ($fertToLower === 'nitrabor') {
+                $stmt = $conn->prepare('INSERT INTO fertilizer (liquidsensorID, nutritionID, fertilizerName, fertilizerAmount) VALUES (2, ?, ?, ?)');
+                $stmt->bind_param('isd', $nutritionID, $fertilizer, $amount);
+                $stmt->execute();
+                $stmt->close();
+            }
+            else if ($fertToLower === 'unik16' || $fertToLower === '16-16-16' || $fertToLower === 'winner') {
+                $stmt = $conn->prepare('INSERT INTO fertilizer (liquidsensorID, nutritionID, fertilizerName, fertilizerAmount) VALUES (3, ?, ?, ?)');
+                $stmt->bind_param('isd', $nutritionID, $fertilizer, $amount);
+                $stmt->execute();
+                $stmt->close();
+            }
+            else {
+                $errors[] = 'Unknown fertilizer: ' . htmlspecialchars($fertilizer) . '. Please use "Nitrabor", "Unik16", "16-16-16", or "Winner".';
+            }
         }
     }
 }
