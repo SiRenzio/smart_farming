@@ -121,8 +121,10 @@ CREATE TABLE notification (
 -- Create the 'fertilizer' table
 CREATE TABLE fertilizer (
     fertilizerID INT(11) AUTO_INCREMENT PRIMARY KEY,
+    liquidsensorID INT(15), -- Foreign key to liquidsensorinfo table
     nutritionID INT(11), -- Foreign key to plantnutrionneed table
     fertilizerName VARCHAR(50),
     fertilizerAmount FLOAT,
+    FOREIGN KEY (liquidsensorID) REFERENCES liquidsensorinfo(liquidsensorID),
     FOREIGN KEY (nutritionID) REFERENCES plantnutrionneed(nutritionID)
 );
