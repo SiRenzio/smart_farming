@@ -95,14 +95,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $res = $lowStmt->get_result();
 
                 if($row = $res->fetch_assoc()){
-                    $lowValue = $row['wateringvolume'];
-                    $highValue = $currentliquidlevel;
+                    $lowValue = $row['wateringvolume'] / 100 ;
+                    $highValue = $currentliquidlevel / 100 ;
                     $heightDiff = abs($highValue - $lowValue);
 
-                    $tankDiameter = 48; // in cm
-                    $radius = $tankDiameter / 2; // in cm
+                    $tankDiameter = 0.48; // in meters
+                    $radius = $tankDiameter / 2; // in meters
                     $volume = pi() * pow($radius, 2) * $heightDiff;
-                    $liters = round($volume / 1000);
+                    $liters = round($volume * 1000, 2);
+
+                    // get the fertilizer based on the liquidsensorID
 
 
 
