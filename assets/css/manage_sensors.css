@@ -31,7 +31,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
 
 .online-text {
     position: absolute;
-    bottom: 7rem;
+    bottom: 6rem;
     left: 1.5rem;
     right: 1.5rem;
     background: #e8f5e9;

@@ -129,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                     </div>
                     <div class="online-text" style="display: none;">
                         <i class="fas fa-circle-check"></i>
-                        <span>The sensor is online and ready for configuration.</span>
+                        <span>The sensor is online and ready for configuration. Click the checkbox to get started.</span>
                     </div>
                     <div class="offline-text" style="display: none;">
                         <i class="fas fa-circle-exclamation"></i>
