@@ -32,7 +32,7 @@ int readUltrasonic(int trigPin, int echoPin) {
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
 
-  long duration = pulseIn(echoPin, HIGH, 5000);
+  long duration = pulseIn(echoPin, HIGH, 25000);
 
   if (duration == 0) return -1;
 

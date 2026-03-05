@@ -57,7 +57,8 @@ function checkIF_Offline($conn) {
     }
 }
 
-while (true) {
+
+while(true) {
     checkIF_Offline($conn);
     sleep(5);
 }
