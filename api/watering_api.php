@@ -105,16 +105,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $liters = round($volume * 1000, 2);
 
                     // get the fertilizer based on the liquidsensorID
+                    $getFertQuery = "SELECT fertilizerName, fertilizerAmount FROM fertilizer WHERE liquidsensorID = ? LIMIT 1";
+                    $getFertStmt = $conn->prepare($getFertQuery);
+                    $getFertStmt->bind_param("i", $liquidsensorID);
+                    $getFertStmt->execute();
+                    $fertResult = $getFertStmt->get_result();
 
+                    if($row = $fertResult->fetch_assoc()){
+                        $fertilizerName = $row['fertilizerName'];
+                        $fertilizerAmount = $row['fertilizerAmount'];
 
+                        $fertInGrams = $liters * $fertilizerAmount;
+                        $fertInCup = round($fertInGrams / 150, 2);
 
-                    $fertALert = "[Tank $liquidsensorID]:Water is filled $liters liters of water";
-                    $fertSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
-                    $alertStmt = $conn->prepare($fertSql);
-                    $alertStmt->bind_param("s", $fertALert);
-                    $alertStmt->execute();
-                    $alertStmt->close();
-
+                        $fertALert = "[Tank $liquidsensorID]: Tank is filled $liters liters of water. Mix in $fertInCup sardine-can scoops of $fertilizerName. [150grams sardine-can]";
+                        $fertSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
+                        $alertStmt = $conn->prepare($fertSql);
+                        $alertStmt->bind_param("s", $fertALert);
+                        $alertStmt->execute();
+                        $alertStmt->close();
+                    }
                 }
             }
             else if ($wateringFlag === 1 && $wateringstatus === 0) {

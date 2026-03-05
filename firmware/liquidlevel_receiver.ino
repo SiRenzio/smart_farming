@@ -268,7 +268,7 @@ void loop() {
 
   /* ================= TANK LOGIC ================= */
   // Tank 1
-  if (apiReady && dataValid && currentliquidlevel1 > 70 && wateringflag1 != 1) {
+  if (apiReady && dataValid && currentliquidlevel1 > 60 && wateringflag1 != 1) {
     wateringflag1 = 1; 
     wateringstatus1 = 0;
     digitalWrite(pumpmotor1, HIGH);
@@ -296,7 +296,7 @@ void loop() {
   }
 
   // Tank 2
-  if (apiReady && dataValid && currentliquidlevel2 > 70 && wateringflag2 != 1) {
+  if (apiReady && dataValid && currentliquidlevel2 > 60 && wateringflag2 != 1) {
     wateringflag2 = 1; 
     wateringstatus2 = 0;
     digitalWrite(pumpmotor2, HIGH);
@@ -324,7 +324,7 @@ void loop() {
   }
 
   // Tank 3
-  if (apiReady && dataValid && currentliquidlevel3 > 70 && wateringflag3 != 1) {
+  if (apiReady && dataValid && currentliquidlevel3 > 60 && wateringflag3 != 1) {
     wateringflag3 = 1; 
     wateringstatus3 = 0;
     digitalWrite(pumpmotor3, HIGH);
