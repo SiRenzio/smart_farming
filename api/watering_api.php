@@ -84,14 +84,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $notifMessage = "";
 
-            if ($wateringFlag === 1 && $wateringstatus === 0) {
-                $notifMessage = "LOW water tank level, system HOLD WATERING";
+            
+            if ($wateringFlag === 0 && $wateringstatus === 0) {
+                $notifMessage = "[Tank $liquidsensorID]: Water tank is now FULL, system HOLD WATERING waiting to mix the solution";
+                
+                $getlowquery = "SELECT wateringvolume FROM tankpumpevent WHERE liquidsensorID = ? AND wateringFlag =1 ORDER BY dateandtime DESC LIMIT 1";
+                $lowStmt = $conn->prepare($getlowquery);
+                $lowStmt->bind_param("i", $liquidsensorID);
+                $lowStmt->execute();
+                $res = $lowStmt->get_result();
+
+                if($row = $res->fetch_assoc()){
+                    $lowValue = $row['wateringvolume'];
+                    $highValue = $currentliquidlevel;
+                    $heightDiff = abs($highValue - $lowValue);
+
+                    $tankDiameter = 48; // in cm
+                    $radius = $tankDiameter / 2; // in cm
+                    $volume = pi() * pow($radius, 2) * $heightDiff;
+                    $liters = round($volume / 1000);
+
+
+
+                    $fertALert = "[Tank $liquidsensorID]:Water is filled $liters liters of water";
+                    $fertSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
+                    $alertStmt = $conn->prepare($fertSql);
+                    $alertStmt->bind_param("s", $fertALert);
+                    $alertStmt->execute();
+                    $alertStmt->close();
+
+                }
             }
-            else if ($wateringFlag === 0 && $wateringstatus === 0) {
-                $notifMessage = "Water tank is now FULL, system HOLD WATERING waiting to mix the solution";
+            else if ($wateringFlag === 1 && $wateringstatus === 0) {
+                $notifMessage = "[Tank $liquidsensorID]: LOW water tank level, system HOLD WATERING";
             }
             else {
-                $notifMessage = "Mixing process finished and watering is Abled. System READY!";
+                $notifMessage = "[Tank $liquidsensorID]:Mixing process finished and watering is Abled. System READY!";
             }
 
             if (!empty($notifMessage)) {
