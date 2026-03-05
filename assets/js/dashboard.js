@@ -19,21 +19,21 @@ function fetchLiquidLevel() {
         .then(data => {
             data.forEach(sensor => {
 
-                // Barrel tank - calculation in CM
-                const diameter = 48;
-                const totalHeight = 90;
+                // Barrel tank dimensions in Meters
+                const diameter = 0.48;
+                const totalHeight = 0.90;
                 const radius = diameter / 2;
 
-                // compute max capacity in liters
-                const maxCapacity = (Math.PI * Math.pow(radius, 2) * totalHeight) / 1000;
-
-                const sensorReadingCM = sensor.currentliquidlevel;
+                // Max capacity in Liters 
+                const maxCapacity = (Math.PI * Math.pow(radius, 2) * totalHeight) * 1000;
+                const sensorReadingM = sensor.currentliquidlevel / 100; // Convert cm to m
+                let liquidHeightM = totalHeight - sensorReadingM; // Calculate liquid height in meters
                 
-                let liquidHeightCM = totalHeight - sensorReadingCM; 
-                liquidHeightCM = Math.max(0, Math.min(totalHeight, liquidHeightCM));
+                // Clamp values between 0 and totalHeight
+                liquidHeightM = Math.max(0, Math.min(totalHeight, liquidHeightM));
 
                 // Current liquid volume in Liters
-                let liquidLiters = (Math.PI * Math.pow(radius, 2) * liquidHeightCM) / 1000;
+                let liquidLiters = (Math.PI * Math.pow(radius, 2) * liquidHeightM) * 1000;
                 
                 // Calculate percentage
                 const percentage = (liquidLiters / maxCapacity) * 100;
