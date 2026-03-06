@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $liters = round($volume * 1000, 2);
 
                     // get the fertilizer based on the liquidsensorID
-                    $getFertQuery = "SELECT fertilizerName, fertilizerAmount FROM fertilizer WHERE liquidsensorID = ? LIMIT 1";
+                    $getFertQuery = "SELECT fertilizerName, fertilizerAmount FROM fertilizer WHERE liquidsensorID = ? ORDER BY fertilizerID DESC LIMIT 1";
                     $getFertStmt = $conn->prepare($getFertQuery);
                     $getFertStmt->bind_param("i", $liquidsensorID);
                     $getFertStmt->execute();
@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $fertInGrams = $liters * $fertilizerAmount;
                         $fertInCup = round($fertInGrams / 150, 2);
 
-                        $fertALert = "[Tank $liquidsensorID]: Tank is filled $liters liters of water. Mix in $fertInCup sardine-can scoops of $fertilizerName. [150grams sardine-can]";
+                        $fertALert = "[Tank $liquidsensorID]: Tank is filled $liters liters of water. Mix in $fertInCup sardine-can scoops of $fertilizerName [$fertilizerAmount g/L]. [150grams sardine-can]";
                         $fertSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
                         $alertStmt = $conn->prepare($fertSql);
                         $alertStmt->bind_param("s", $fertALert);

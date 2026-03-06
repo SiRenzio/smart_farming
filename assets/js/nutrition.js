@@ -2,7 +2,6 @@ window.addEventListener("DOMContentLoaded", () => {
     const form = document.querySelector("form");
     const select = document.getElementById("saved-nutrition-set");
 
-    // Change default values based on selected growth stage
     select.addEventListener("change", function () {
         const setName = this.value;
 
@@ -137,4 +136,8 @@ function addFertilizer() {
     inputs.forEach(input => input.value = "");
 
     container.appendChild(newGroup);
+}
+
+function removeFertilizer(button) {
+    button.parentElement.remove();
 }

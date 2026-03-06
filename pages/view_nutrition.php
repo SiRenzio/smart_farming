@@ -31,7 +31,7 @@ $plantName = $plant['plantName'];
 $stmt->close();
 
 // Get nutrition data for this plant
-$stmt = $conn->prepare('SELECT * FROM plantnutrionneed WHERE plantID = ? AND userID = ? ORDER BY nutritionSetName');
+$stmt = $conn->prepare('SELECT * FROM plantnutrionneed WHERE plantID = ? AND userID = ? ORDER BY nutritionSetName ASC, nutritionID ASC');
 $stmt->bind_param('ii', $plantID, $_SESSION['userID']);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -108,12 +108,18 @@ $stmt->close();
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($nutritionData as $nutrition): ?>
+                        <?php 
+                        $nutritionSetStages = '';
+                        foreach ($nutritionData as $nutrition): 
+                            if ($nutritionSetStages !== $nutrition['nutritionSetName']):
+                                $nutritionSetStages = $nutrition['nutritionSetName'];
+                        ?>
                             <tr class="nutrition-set-name">
                                 <td colspan="9">
                                     <i class="fas fa-layer-group"></i> <?php echo htmlspecialchars($nutrition['nutritionSetName']); ?>
                                 </td>
                             </tr>
+                            <?php endif; ?>
                             <tr class="nutrition-values">
                                 <td><strong>Values</strong></td>
                                 <td><?php echo $nutrition['soilN'] !== null ? htmlspecialchars($nutrition['soilN']) : '-'; ?></td>

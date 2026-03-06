@@ -282,10 +282,10 @@ void loop() {
     sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1);
   }
   if (mixingflag1 == 1 && digitalRead(switch1) == LOW) {
+    digitalWrite(mixermotor1, HIGH);
     wateringstatus1 = -1; 
     mixingflag1 = 2; 
     mixStartTime1 = currentMillis;
-    digitalWrite(mixermotor1, HIGH);
   }
   if (mixingflag1 == 2 && currentMillis - mixStartTime1 >= mixingDuration) {
     digitalWrite(mixermotor1, LOW);
@@ -310,10 +310,10 @@ void loop() {
     sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2);
   }
   if (mixingflag2 == 1 && digitalRead(switch2) == LOW) {
+    digitalWrite(mixermotor2, HIGH);
     wateringstatus2 = -1; 
     mixingflag2 = 2; 
     mixStartTime2 = currentMillis;
-    digitalWrite(mixermotor2, HIGH);
   }
   if (mixingflag2 == 2 && currentMillis - mixStartTime2 >= mixingDuration) {
     digitalWrite(mixermotor2, LOW);
@@ -338,10 +338,10 @@ void loop() {
     sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3);
   }
   if (mixingflag3 == 1 && digitalRead(switch3) == LOW) {
+    digitalWrite(mixermotor3, HIGH);
     wateringstatus3 = -1; 
     mixingflag3 = 2; 
     mixStartTime3 = currentMillis;
-    digitalWrite(mixermotor3, HIGH);
   }
   if (mixingflag3 == 2 && currentMillis - mixStartTime3 >= mixingDuration) {
     digitalWrite(mixermotor3, LOW);
