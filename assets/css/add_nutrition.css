@@ -144,7 +144,7 @@ body {
     font-size: 0.9rem;
 }
 
-.form-group input {
+.form-group input, .form-group select {
     width: 100%;
     padding: 1rem;
     border: 2px solid rgba(0, 0, 0, 0.1);
@@ -155,7 +155,7 @@ body {
     background: rgba(255, 255, 255, 0.8);
 }
 
-.form-group input:focus {
+.form-group input:focus, .form-group select:focus {
     outline: none;
     border-color: #4CAF50;
     box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
