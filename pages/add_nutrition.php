@@ -210,31 +210,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="form-grid">
                 <h2>Fertilizer Information</h2>
                 <div id="fertilizerContainer">
-                    <div class="fertilizer-group">
-                        <div class="form-group">
-                            <label>
-                                <i class="fas fa-poo-storm"></i> Fertilizer
-                            </label>
-                            <input 
-                                type="text" 
-                                name="fertilizer[]" 
-                                placeholder="Enter fertilizer name"
-                                value="<?php echo htmlspecialchars($vegetativeDefaults['fertilizer']); ?>"
-                            >
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <i class="fas fa-weight-hanging"></i> Fertilizer Amount (g/L)
-                            </label>
-                            <input 
-                                type="number" 
-                                name="fertilizerAmount[]" 
-                                placeholder="Enter fertilizer amount"
-                                value="<?php echo htmlspecialchars($vegetativeDefaults['fertilizerAmount']); ?>"
-                            >
-                        </div>
-                    </div>
                 </div>
 
                 <button class="add-fert-btn" type="button" onclick="addFertilizer()">
