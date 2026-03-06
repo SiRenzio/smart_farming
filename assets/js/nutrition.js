@@ -116,10 +116,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
     // Handle fetching saved nutrition sets
     savedSetSelect.addEventListener("change", function () {
-        const setName = this.value;
-        if (!setName) return;
+        const setID = this.value;
+        if (!setID) return;
 
-        fetch(`../api/fetch_nutrition_set.php?setName=${setName}`)
+        fetch(`../api/fetch_nutrition_set.php?setID=${setID}`)
         .then(res => res.json())
         .then(data => {
             if (!data.nutrition) return;

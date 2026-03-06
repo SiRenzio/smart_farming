@@ -1,15 +1,15 @@
 <?php
 require_once '../db.php';
 
-$setName = $_GET['setName'] ?? '';
+$setID = $_GET['setID'] ?? '';
 
 // Fetch nutrition set
 $stmt = $conn->prepare("
     SELECT nutritionID, growthStage, soilN, soilP, soilK, soilEC, soilPH, soilT, soilM, flowRate
     FROM plantnutrionneed
-    WHERE nutritionSetName = ?
+    WHERE nutritionID = ?
 ");
-$stmt->bind_param("s", $setName);
+$stmt->bind_param("i", $setID);
 $stmt->execute();
 
 $result = $stmt->get_result()->fetch_assoc();

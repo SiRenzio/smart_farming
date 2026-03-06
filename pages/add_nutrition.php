@@ -33,7 +33,7 @@ $stmt->close();
 
 // Fetch Nutrition Sets for dropdown
 $nutritionSets = [];
-$savedSetsStmt = $conn->prepare('SELECT nutritionSetName, plantnutrionneed.plantID, plantName FROM plantnutrionneed LEFT JOIN plantinfo ON plantnutrionneed.plantID = plantinfo.plantID');
+$savedSetsStmt = $conn->prepare('SELECT nutritionID, nutritionSetName, plantnutrionneed.plantID, plantName FROM plantnutrionneed LEFT JOIN plantinfo ON plantnutrionneed.plantID = plantinfo.plantID');
 $savedSetsStmt->execute();
 $savedSets = $savedSetsStmt->get_result();
 while ($row = $savedSets->fetch_assoc()) {
@@ -41,7 +41,7 @@ while ($row = $savedSets->fetch_assoc()) {
 }
 $savedSets->close();
 
-//Default values for form fields
+//Default values for fertilizer fields
 $vegetativeDefaults = [
     'fertilizer' => ['Nitrabor', 'Unik16', 'WINNER'],
     'fertilizerAmount' => [1.5, 1.4, 1.6]
@@ -100,6 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->execute()) {
             $nutritionID = $conn->insert_id; // Get the auto-generated ID
             $success = 'Nutrition needs added successfully! <a href="view_nutrition.php?plantID=' . $plantID . '">View nutrition details</a> or <a href="plants.php">view all plants</a>.';
+            $_SESSION['success'] = $success;
             header('Location: add_nutrition.php?plantID=' . $plantID);
         } else {
             $errors[] = 'Failed to add nutrition needs. Please try again.';
@@ -166,10 +167,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
             
-            <?php if ($success): ?>
+            <?php if (isset($_SESSION['success'])): ?>
                 <div class="success-message">
-                    <i class="fas fa-check-circle"></i> <?php echo $success; ?>
+                    <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($_SESSION['success']) ?>
                 </div>
+                <?php unset($_SESSION['success']); ?>
             <?php endif; ?>
         </div>
 
@@ -181,9 +183,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </label>
                 <select name="savedNutritionSetName" id="saved-nutrition-set" class="dropdown" onchange="applySavedNutrition()">
                     <?php if (!empty($nutritionSets)): ?>
-                        <option value="">Select a saved nutrition set</option>
+                        <option value="">Select a saved nutrition set (optional)</option>
                         <?php foreach ($nutritionSets as $set): ?>
-                            <option value="<?php echo htmlspecialchars($set['nutritionSetName']); ?>">
+                            <option value="<?php echo htmlspecialchars($set['nutritionID']); ?>">
                                 <?php echo htmlspecialchars($set['nutritionSetName']); ?> - <?php echo htmlspecialchars($set['plantName']); ?>
                             </option>
                         <?php endforeach; ?>
