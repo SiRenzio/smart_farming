@@ -1,6 +1,9 @@
 window.addEventListener("DOMContentLoaded", () => {
+    addFertilizer();
     const form = document.querySelector("form");
     const select = document.getElementById("saved-nutrition-set");
+    const container = document.getElementById("fertilizerContainer");
+    const template = document.getElementById("fertilizerTemplate");
 
     select.addEventListener("change", function () {
         const setName = this.value;
@@ -8,8 +11,10 @@ window.addEventListener("DOMContentLoaded", () => {
         fetch(`../api/fetch_nutrition_set.php?setName=${setName}`)
         .then(res => res.json())
         .then(data => {
+
             if (!data.nutrition) return;
 
+            // Fill nutrition fields
             document.getElementById("plant-stage").value = data.nutrition.growthStage;
             document.getElementById("soilN").value = data.nutrition.soilN;
             document.getElementById("soilP").value = data.nutrition.soilP;
@@ -20,73 +25,22 @@ window.addEventListener("DOMContentLoaded", () => {
             document.getElementById("soilM").value = data.nutrition.soilM;
             document.getElementById("flowRate").value = data.nutrition.flowRate;
 
-            const container = document.getElementById("fertilizerContainer");
             container.innerHTML = "";
 
-            if (data.fertilizers.length === 0) {
-                const div = document.createElement("div");
-                div.classList.add("fertilizer-group");
-
-                div.innerHTML = `
-                    <div class="form-group">
-                        <label><i class="fas fa-poo-storm"></i> Fertilizer</label>
-                        <input 
-                            type="text" 
-                            name="fertilizer[]"
-                            placeholder="Enter fertilizer name"
-                        >
-                    </div>
-                    <div class="form-group">
-                        <label><i class="fas fa-weight-hanging"></i> Fertilizer Amount (g/L)</label>
-                        <input 
-                            type="number" 
-                            name="fertilizerAmount[]" 
-                            step="any"
-                            min="0"
-                            placeholder="Enter fertilizer amount"
-                        >
-                    </div>
-                `;
-                container.appendChild(div);
-            } 
-            else {
+            if (!data.fertilizers || data.fertilizers.length === 0) {
+                addFertilizer();
+            } else {
                 data.fertilizers.forEach(f => {
-                    const div = document.createElement("div");
-                    div.classList.add("fertilizer-group");
-
-                    div.innerHTML = `
-                        <div class="form-group">
-                            <label><i class="fas fa-poo-storm"></i> Fertilizer</label>
-                            <input 
-                                type="text" 
-                                name="fertilizer[]"
-                                placeholder="Enter fertilizer name"
-                                value="${f.fertilizerName}"
-                            >
-                        </div>
-                        <div class="form-group">
-                            <label><i class="fas fa-weight-hanging"></i> Fertilizer Amount (g/L)</label>
-                            <input 
-                                type="number" 
-                                name="fertilizerAmount[]" 
-                                step="any"
-                                min="0"
-                                placeholder="Enter fertilizer amount"
-                                value="${f.fertilizerAmount}"
-                            >
-                        </div>
-                    `;
-
-                    container.appendChild(div);
+                    addFertilizer(f.fertilizerName, f.fertilizerAmount);
                 });
             }
+
+            fixFirstFertilizer();
         });
     });
 
-    // Reset form to default values when reset button is clicked
-    form.addEventListener("reset", function () {
+    form.addEventListener("reset", () => {
         setTimeout(() => {
-            // Trigger stage change again
             select.dispatchEvent(new Event("change"));
         }, 0);
     });
@@ -94,50 +48,46 @@ window.addEventListener("DOMContentLoaded", () => {
     select.dispatchEvent(new Event("change"));
 });
 
-function addFertilizer() {
+
+function addFertilizer(name = "", amount = "") {
     const container = document.getElementById("fertilizerContainer");
+    const template = document.getElementById("fertilizerTemplate");
 
-    let firstGroup = container.querySelector(".fertilizer-group");
+    const clone = template.content.cloneNode(true);
 
-    // If no fertilizer group exists, create one
-    if (!firstGroup) {
+    clone.querySelector('input[name="fertilizer[]"]').value = name;
+    clone.querySelector('input[name="fertilizerAmount[]"]').value = amount;
 
-        const div = document.createElement("div");
-        div.classList.add("fertilizer-group");
+    container.appendChild(clone);
 
-        div.innerHTML = `
-            <div class="form-group">
-                <label><i class="fas fa-poo-storm"></i> Fertilizer</label>
-                <input 
-                    type="text" 
-                    name="fertilizer[]"
-                    placeholder="Enter fertilizer name"
-                >
-            </div>
-            <div class="form-group">
-                <label><i class="fas fa-weight-hanging"></i> Fertilizer Amount (g/L)</label>
-                <input 
-                    type="number" 
-                    name="fertilizerAmount[]" 
-                    step="any"
-                    min="0"
-                    placeholder="Enter fertilizer amount"
-                >
-            </div>
-        `;
-
-        container.appendChild(div);
-        return;
-    }
-
-    const newGroup = firstGroup.cloneNode(true);
-
-    const inputs = newGroup.querySelectorAll("input");
-    inputs.forEach(input => input.value = "");
-
-    container.appendChild(newGroup);
+    fixFirstFertilizer();
 }
 
+
 function removeFertilizer(button) {
-    button.parentElement.remove();
+    const container = document.getElementById("fertilizerContainer");
+
+    if (container.children.length > 1) {
+        button.closest(".fertilizer-group").remove();
+    }
+
+    fixFirstFertilizer();
+}
+
+
+function fixFirstFertilizer() {
+    const container = document.getElementById("fertilizerContainer");
+    const groups = container.querySelectorAll(".fertilizer-group");
+
+    groups.forEach((group, index) => {
+        const btn = group.querySelector(".remove-fert-btn");
+
+        if (!btn) return;
+
+        if (index === 0) {
+            btn.style.display = "none";
+        } else {
+            btn.style.display = "inline-block";
+        }
+    });
 }

@@ -252,35 +252,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div class="form-grid">
                 <h2>Fertilizer Information</h2>
-                <div id="fertilizerContainer">
+                <div id="fertilizerContainer"></div>
+                <template id="fertilizerTemplate">
                     <div class="fertilizer-group">
-                        <div class="form-group">
-                            <label>
-                                <i class="fas fa-poo-storm"></i> Fertilizer
-                            </label>
-                            <input 
-                                type="text" 
-                                name="fertilizer[]" 
-                                placeholder="Enter fertilizer name"
-                                value="<?php echo htmlspecialchars($_POST['fertilizer'][0] ?? ''); ?>"
-                            >
+                        <div class="fert-input-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-poo-storm"></i> Fertilizer</label>
+                                <input type="text" name="fertilizer[]" placeholder="Enter fertilizer name">
+                            </div>
+
+                            <div class="form-group">
+                                <label><i class="fas fa-weight-hanging"></i> Amount (g/L)</label>
+                                <input type="number" name="fertilizerAmount[]" step="0.1" min="0" placeholder="0.0">
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label>
-                                <i class="fas fa-weight-hanging"></i> Fertilizer Amount (g/L)
-                            </label>
-                            <input 
-                                type="number" 
-                                name="fertilizerAmount[]"
-                                step="0.1"
-                                min="0"
-                                placeholder="Enter fertilizer amount"
-                                value="<?php echo htmlspecialchars($_POST['fertilizerAmount'][0] ?? ''); ?>"
-                            >
-                        </div>
+                        <button type="button" class="remove-fert-btn" onclick="removeFertilizer(this)">
+                            <i class="fas fa-minus"></i> Remove
+                        </button>
                     </div>
-                </div>
+                </template>
 
                 <button class="add-fert-btn" type="button" onclick="addFertilizer()">
                     <i class="fas fa-plus"></i>Add Fertilizer
@@ -419,6 +410,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </a>
         </div>
     </div>
+    <script>
+    window.nutritionDefaults = {
+        vegetative: <?php echo json_encode($vegetativeDefaults); ?>,
+        lateVegetative: <?php echo json_encode($lateVegetativeDefaults); ?>,
+        floweringToFruiting: <?php echo json_encode($flowringToFruitingDefaults); ?>,
+        harvesting: <?php echo json_encode($harvestingDefaults); ?>
+    };
+    </script>
     <script src="../assets/js/nutrition.js"></script>
 </body>
 </html> 
