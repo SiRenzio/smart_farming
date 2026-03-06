@@ -33,55 +33,55 @@ $stmt->close();
 
 // Default values for form fields
 $vegetativeDefaults = [
-    'soilN' => 200,
-    'soilP' => 60,
-    'soilK' => 150,
-    'soilEC' => 2.0,
-    'soilPH' => 5.8,
-    'soilT' => 21.0,
-    'soilM' => 70.0,
+    'soilN' => 50,
+    'soilP' => 30,
+    'soilK' => 20,
+    'soilEC' => 1.5,
+    'soilPH' => 6.0,
+    'soilT' => 22.0,
+    'soilM' => 60.0,
     'flowRate' => 1.0,
-    'fertilizer' => ['Nitrabor', 'Unik16', 'WINNER'],
-    'fertilizerAmount' => [1.5, 1.4, 1.6]
+    'fertilizer' => 'Nitrabor',
+    'fertilizerAmount' => 3.5
 ];
 
 $lateVegetativeDefaults = [
-    'soilN' => 150,
-    'soilP' => 50,
-    'soilK' => 200,
+    'soilN' => 70,
+    'soilP' => 40,
+    'soilK' => 30,
     'soilEC' => 2.0,
     'soilPH' => 6.5,
-    'soilT' => 21.0,
+    'soilT' => 24.0,
     'soilM' => 65.0,
-    'flowRate' => 2.0,
-    'fertilizer' => ['Nitrabor', 'Unik16', 'WINNER'],
-    'fertilizerAmount' => [0.3, 0.5, 0.5]
+    'flowRate' => 1.5,
+    'fertilizer' => 'Nitrabor',
+    'fertilizerAmount' => 4.5
 ];
 
 $flowringToFruitingDefaults = [
-    'soilN' => 100,
-    'soilP' => 100,
-    'soilK' => 250,
-    'soilEC' => 2.2,
+    'soilN' => 60,
+    'soilP' => 50,
+    'soilK' => 40,
+    'soilEC' => 2.5,
     'soilPH' => 6.8,
     'soilT' => 26.0,
-    'soilM' => 60.0,
+    'soilM' => 70.0,
     'flowRate' => 2.0,
-    'fertilizer' => ['Nitrabor', 'Unik16', 'WINNER'],
-    'fertilizerAmount' => [0.5, 0.2, 1.0]
+    'fertilizer' => 'Nitrabor',
+    'fertilizerAmount' => 5.5
 ];
 
 $harvestingDefaults = [
-    'soilN' => 25,
-    'soilP' => 20,
-    'soilK' => 100,
-    'soilEC' => 1.2,
-    'soilPH' => 5.5,
-    'soilT' => 21.0,
-    'soilM' => 55.0,
-    'flowRate' => 1.5,
-    'fertilizer' => ['Nitrabor', 'Unik16', 'WINNER'],
-    'fertilizerAmount' => [0.1, 0.1, 0.3]
+    'soilN' => 40,
+    'soilP' => 30,
+    'soilK' => 50,
+    'soilEC' => 3.0,
+    'soilPH' => 7.0,
+    'soilT' => 28.0,
+    'soilM' => 75.0,
+    'flowRate' => 2.5,
+    'fertilizer' => 'Nitrabor',
+    'fertilizerAmount' => 7.0
 ];
 
 
@@ -210,6 +210,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="form-grid">
                 <h2>Fertilizer Information</h2>
                 <div id="fertilizerContainer">
+                    <div class="fertilizer-group">
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-poo-storm"></i> Fertilizer
+                            </label>
+                            <input 
+                                type="text" 
+                                name="fertilizer[]" 
+                                placeholder="Enter fertilizer name"
+                                value="<?php echo htmlspecialchars($vegetativeDefaults['fertilizer']); ?>"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-weight-hanging"></i> Fertilizer Amount (g/L)
+                            </label>
+                            <input 
+                                type="number" 
+                                name="fertilizerAmount[]" 
+                                placeholder="Enter fertilizer amount"
+                                value="<?php echo htmlspecialchars($vegetativeDefaults['fertilizerAmount']); ?>"
+                            >
+                        </div>
+                    </div>
                 </div>
 
                 <button class="add-fert-btn" type="button" onclick="addFertilizer()">
