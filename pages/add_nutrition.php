@@ -86,7 +86,7 @@ $harvestingDefaults = [
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nutritionSetName = trim($_POST['nutritionSetName'] ?? '');
+    $nutritionSetName = $_POST['nutritionSetName'] ?? '';
     $soilN = $_POST['soilN'] ?? '';
     $soilP = $_POST['soilP'] ?? '';
     $soilK = $_POST['soilK'] ?? '';
@@ -200,10 +200,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i class="fas fa-layer-group"></i> Growth Stages *
                 </label>
                 <select name="nutritionSetName" id="plant-stages">
-                    <option value="vegetative">Vegetative (3-15 Days)</option>
-                    <option value="lateVegetative">Late Vegetative (16-45 Days)</option>
-                    <option value="floweringToFruiting">Flowering to Fruiting (46-55 Days)</option>
-                    <option value="harvesting">Harvesting (56+ Days)</option>
+                    <option value="Vegetative">Vegetative (3-15 Days)</option>
+                    <option value="Late Vegetative">Late Vegetative (16-45 Days)</option>
+                    <option value="Flowering To Fruiting">Flowering to Fruiting (46-55 Days)</option>
+                    <option value="Harvesting">Harvesting (56+ Days)</option>
                 </select>
             </div>
             
