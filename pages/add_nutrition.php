@@ -33,66 +33,34 @@ $stmt->close();
 
 // Fetch Nutrition Sets for dropdown
 $nutritionSets = [];
-$savedSetsStmt = $conn->prepare('SELECT nutritionSetName FROM plantnutrionneed');
+$savedSetsStmt = $conn->prepare('SELECT nutritionSetName, plantnutrionneed.plantID, plantName FROM plantnutrionneed LEFT JOIN plantinfo ON plantnutrionneed.plantID = plantinfo.plantID');
 $savedSetsStmt->execute();
 $savedSets = $savedSetsStmt->get_result();
 while ($row = $savedSets->fetch_assoc()) {
-    $nutritionSets[] = $row['nutritionSetName'];
+    $nutritionSets[] = $row;
 }
 $savedSets->close();
 
-// Default values for form fields
-// $vegetativeDefaults = [
-//     'soilN' => 50,
-//     'soilP' => 30,
-//     'soilK' => 20,
-//     'soilEC' => 1.5,
-//     'soilPH' => 6.0,
-//     'soilT' => 22.0,
-//     'soilM' => 60.0,
-//     'flowRate' => 1.0,
-//     'fertilizer' => 'Nitrabor',
-//     'fertilizerAmount' => 3.5
-// ];
+//Default values for form fields
+$vegetativeDefaults = [
+    'fertilizer' => ['Nitrabor', 'Unik16', 'WINNER'],
+    'fertilizerAmount' => [1.5, 1.4, 1.6]
+];
 
-// $lateVegetativeDefaults = [
-//     'soilN' => 70,
-//     'soilP' => 40,
-//     'soilK' => 30,
-//     'soilEC' => 2.0,
-//     'soilPH' => 6.5,
-//     'soilT' => 24.0,
-//     'soilM' => 65.0,
-//     'flowRate' => 1.5,
-//     'fertilizer' => 'Nitrabor',
-//     'fertilizerAmount' => 4.5
-// ];
+$lateVegetativeDefaults = [
+    'fertilizer' => ['Nitrabor', 'Unik16', 'WINNER'],
+    'fertilizerAmount' => [0.3, 0.5, 0.5]
+];
 
-// $flowringToFruitingDefaults = [
-//     'soilN' => 60,
-//     'soilP' => 50,
-//     'soilK' => 40,
-//     'soilEC' => 2.5,
-//     'soilPH' => 6.8,
-//     'soilT' => 26.0,
-//     'soilM' => 70.0,
-//     'flowRate' => 2.0,
-//     'fertilizer' => 'Nitrabor',
-//     'fertilizerAmount' => 5.5
-// ];
+$flowringToFruitingDefaults = [
+    'fertilizer' => ['Nitrabor', 'Unik16', 'WINNER'],
+    'fertilizerAmount' => [0.5, 0.2, 1.0]
+];
 
-// $harvestingDefaults = [
-//     'soilN' => 40,
-//     'soilP' => 30,
-//     'soilK' => 50,
-//     'soilEC' => 3.0,
-//     'soilPH' => 7.0,
-//     'soilT' => 28.0,
-//     'soilM' => 75.0,
-//     'flowRate' => 2.5,
-//     'fertilizer' => 'Nitrabor',
-//     'fertilizerAmount' => 7.0
-// ];
+$harvestingDefaults = [
+    'fertilizer' => ['Nitrabor', 'Unik16', 'WINNER'],
+    'fertilizerAmount' => [0.1, 0.1, 0.3]
+];
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -215,8 +183,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php if (!empty($nutritionSets)): ?>
                         <option value="">Select a saved nutrition set</option>
                         <?php foreach ($nutritionSets as $set): ?>
-                            <option value="<?php echo htmlspecialchars($set); ?>">
-                                <?php echo htmlspecialchars($set); ?>
+                            <option value="<?php echo htmlspecialchars($set['nutritionSetName']); ?>">
+                                <?php echo htmlspecialchars($set['nutritionSetName']); ?> - <?php echo htmlspecialchars($set['plantName']); ?>
                             </option>
                         <?php endforeach; ?>
                     <?php else: ?>
@@ -253,25 +221,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="form-grid">
                 <h2>Fertilizer Information</h2>
                 <div id="fertilizerContainer"></div>
-                <template id="fertilizerTemplate">
-                    <div class="fertilizer-group">
-                        <div class="fert-input-row">
-                            <div class="form-group">
-                                <label><i class="fas fa-poo-storm"></i> Fertilizer</label>
-                                <input type="text" name="fertilizer[]" placeholder="Enter fertilizer name">
-                            </div>
-
-                            <div class="form-group">
-                                <label><i class="fas fa-weight-hanging"></i> Amount (g/L)</label>
-                                <input type="number" name="fertilizerAmount[]" step="0.1" min="0" placeholder="0.0">
-                            </div>
-                        </div>
-
-                        <button type="button" class="remove-fert-btn" onclick="removeFertilizer(this)">
-                            <i class="fas fa-minus"></i> Remove
-                        </button>
-                    </div>
-                </template>
 
                 <button class="add-fert-btn" type="button" onclick="addFertilizer()">
                     <i class="fas fa-plus"></i>Add Fertilizer
@@ -411,12 +360,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
     <script>
-    window.nutritionDefaults = {
-        vegetative: <?php echo json_encode($vegetativeDefaults); ?>,
-        lateVegetative: <?php echo json_encode($lateVegetativeDefaults); ?>,
-        floweringToFruiting: <?php echo json_encode($flowringToFruitingDefaults); ?>,
-        harvesting: <?php echo json_encode($harvestingDefaults); ?>
-    };
+        const fertilizerDefaults = {
+            vegetative: <?php echo json_encode($vegetativeDefaults); ?>,
+            lateVegetative: <?php echo json_encode($lateVegetativeDefaults); ?>,
+            floweringToFruiting: <?php echo json_encode($flowringToFruitingDefaults); ?>,
+            harvesting: <?php echo json_encode($harvestingDefaults); ?>
+        };
     </script>
     <script src="../assets/js/nutrition.js"></script>
 </body>

@@ -1,21 +1,131 @@
 window.addEventListener("DOMContentLoaded", () => {
-    addFertilizer();
     const form = document.querySelector("form");
-    const select = document.getElementById("saved-nutrition-set");
+    const stageSelect = document.getElementById("plant-stage");
+    const savedSetSelect = document.getElementById("saved-nutrition-set");
     const container = document.getElementById("fertilizerContainer");
-    const template = document.getElementById("fertilizerTemplate");
 
-    select.addEventListener("change", function () {
+    function updateFertilizerOptions() {
+        const selected = [];
+
+        // Collect all currently selected fertilizers
+        document.querySelectorAll('select[name="fertilizer[]"]').forEach(sel => {
+            if (sel.value) selected.push(sel.value);
+        });
+
+        // Rebuild options for each select element
+        document.querySelectorAll('select[name="fertilizer[]"]').forEach(sel => {
+            const current = sel.value;
+            const stage = stageSelect.value;
+            
+            sel.innerHTML = '<option value="">Select a Fertilizer</option>';
+
+            if (stage && fertilizerDefaults[stage]) {
+                const fertilizers = fertilizerDefaults[stage].fertilizer;
+
+                fertilizers.forEach((fert) => {
+                    // Only add the option if it's not selected elsewhere, OR if it's the current input's value
+                    if (!selected.includes(fert) || fert === current) {
+                        const opt = document.createElement("option");
+                        opt.value = fert;
+                        opt.textContent = fert;
+                        if (fert === current) opt.selected = true;
+                        sel.appendChild(opt);
+                    }
+                });
+            }
+        });
+    }
+
+    // Creates the HTML structure for a fertilizer row
+    function createFertilizerGroup(fertName = "", amount = "", isRemovable = true) {
+        const group = document.createElement("div");
+        group.classList.add("fertilizer-group");
+
+        const removeButtonHTML = isRemovable 
+            ? `<button type="button" class="remove-fert-btn"><i class="fas fa-minus"></i> Remove</button>` 
+            : ``;
+
+        group.innerHTML = `
+            <div class="fert-input-row">
+                <div class="form-group">
+                    <label><i class="fas fa-poo-storm"></i> Fertilizer</label>
+                    <select name="fertilizer[]" class="dropdown fertilizer-select"></select>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-weight-hanging"></i> Amount (g/L)</label>
+                    <input 
+                        type="number" 
+                        name="fertilizerAmount[]" 
+                        step="0.1" 
+                        min="0" 
+                        placeholder="0.0"
+                        value="${amount}"
+                    >
+                </div>
+            </div>
+            ${removeButtonHTML}
+        `;
+
+        const selectEl = group.querySelector(".fertilizer-select");
+        const amountInput = group.querySelector('input[name="fertilizerAmount[]"]');
+
+        const stage = stageSelect.value;
+
+        // Populate initial options
+        selectEl.innerHTML = '<option value="">Select a Fertilizer</option>';
+        if (stage && fertilizerDefaults[stage]) {
+            const ferts = fertilizerDefaults[stage].fertilizer;
+            ferts.forEach((fert) => {
+                const opt = document.createElement("option");
+                opt.value = fert;
+                opt.textContent = fert;
+                if (fert === fertName) {
+                    opt.selected = true;
+                }
+                selectEl.appendChild(opt);
+            });
+        }
+
+        // Update amounts when a new fertilizer is chosen
+        selectEl.addEventListener("change", function () {
+            const currentStage = stageSelect.value;
+            if (currentStage && fertilizerDefaults[currentStage]) {
+                const ferts = fertilizerDefaults[currentStage].fertilizer;
+                const amounts = fertilizerDefaults[currentStage].fertilizerAmount;
+                const fertIndex = ferts.indexOf(this.value);
+                
+                if (fertIndex !== -1) {
+                    amountInput.value = amounts[fertIndex];
+                } else {
+                    amountInput.value = "";
+                }
+            }
+            updateFertilizerOptions();
+        });
+
+        // Only attach the remove event listener if the button exists
+        if (isRemovable) {
+            group.querySelector(".remove-fert-btn").addEventListener("click", () => {
+                group.remove();
+                updateFertilizerOptions();
+            });
+        }
+
+        return group;
+    }
+
+    // Handle fetching saved nutrition sets
+    savedSetSelect.addEventListener("change", function () {
         const setName = this.value;
+        if (!setName) return;
 
         fetch(`../api/fetch_nutrition_set.php?setName=${setName}`)
         .then(res => res.json())
         .then(data => {
-
             if (!data.nutrition) return;
 
             // Fill nutrition fields
-            document.getElementById("plant-stage").value = data.nutrition.growthStage;
+            stageSelect.value = data.nutrition.growthStage;
             document.getElementById("soilN").value = data.nutrition.soilN;
             document.getElementById("soilP").value = data.nutrition.soilP;
             document.getElementById("soilK").value = data.nutrition.soilK;
@@ -25,69 +135,75 @@ window.addEventListener("DOMContentLoaded", () => {
             document.getElementById("soilM").value = data.nutrition.soilM;
             document.getElementById("flowRate").value = data.nutrition.flowRate;
 
-            container.innerHTML = "";
+            container.innerHTML = ""; // Clear existing fertilizers
 
             if (!data.fertilizers || data.fertilizers.length === 0) {
-                addFertilizer();
+                // Add one blank row if no fertilizers are saved
+                container.appendChild(createFertilizerGroup("", "", false));
             } else {
-                data.fertilizers.forEach(f => {
-                    addFertilizer(f.fertilizerName, f.fertilizerAmount);
+                // Loop through and add saved fertilizers
+                data.fertilizers.forEach((f, index) => {
+                    const isRemovable = index !== 0; // First row cannot be removed
+                    const group = createFertilizerGroup(f.fertilizerName, f.fertilizerAmount, isRemovable);
+                    container.appendChild(group);
                 });
             }
 
-            fixFirstFertilizer();
+            updateFertilizerOptions();
         });
     });
 
-    form.addEventListener("reset", () => {
+    // When the Growth Stage changes, refresh the dropdowns and amounts
+    stageSelect.addEventListener("change", function () {
+        updateFertilizerOptions();
+        // Trigger change on all existing fertilizer selects so they grab the new amounts for that stage
+        document.querySelectorAll('select[name="fertilizer[]"]').forEach(sel => {
+            if(sel.value) sel.dispatchEvent(new Event("change"));
+        });
+    });
+
+    form.addEventListener("reset", function () {
         setTimeout(() => {
-            select.dispatchEvent(new Event("change"));
+            container.innerHTML = "";
+            container.appendChild(createFertilizerGroup("", "", false));
+            updateFertilizerOptions();
         }, 0);
     });
 
-    select.dispatchEvent(new Event("change"));
-});
-
-
-function addFertilizer(name = "", amount = "") {
-    const container = document.getElementById("fertilizerContainer");
-    const template = document.getElementById("fertilizerTemplate");
-
-    const clone = template.content.cloneNode(true);
-
-    clone.querySelector('input[name="fertilizer[]"]').value = name;
-    clone.querySelector('input[name="fertilizerAmount[]"]').value = amount;
-
-    container.appendChild(clone);
-
-    fixFirstFertilizer();
-}
-
-
-function removeFertilizer(button) {
-    const container = document.getElementById("fertilizerContainer");
-
-    if (container.children.length > 1) {
-        button.closest(".fertilizer-group").remove();
-    }
-
-    fixFirstFertilizer();
-}
-
-
-function fixFirstFertilizer() {
-    const container = document.getElementById("fertilizerContainer");
-    const groups = container.querySelectorAll(".fertilizer-group");
-
-    groups.forEach((group, index) => {
-        const btn = group.querySelector(".remove-fert-btn");
-
-        if (!btn) return;
-
-        if (index === 0) {
-            btn.style.display = "none";
-        } else {
-            btn.style.display = "inline-block";
+    // Function attached to the "Add Fertilizer" button
+    window.addFertilizer = function () {
+        const stage = stageSelect.value;
+        if (!stage) {
+            alert("Please select a Growth Stage first.");
+            return;
         }
-    });
-}
+
+        const values = fertilizerDefaults[stage];
+
+        // Find which fertilizers are already selected
+        const selectedFerts = Array.from(document.querySelectorAll('select[name="fertilizer[]"]')).map(sel => sel.value);
+        
+        // Filter out selected ones to find the next available fertilizer
+        const availableFerts = values.fertilizer.filter(f => !selectedFerts.includes(f));
+
+        // If all options are used, prevent adding an empty/duplicate row
+        if (availableFerts.length === 0) {
+            alert("All available fertilizers for this stage have been added.");
+            return; 
+        }
+
+        const nextFertName = availableFerts[0];
+        const nextFertIndex = values.fertilizer.indexOf(nextFertName);
+        const nextAmount = values.fertilizerAmount[nextFertIndex];
+
+        // add an input dropdown 
+        const group = createFertilizerGroup(nextFertName, nextAmount, true);
+        container.appendChild(group);
+
+        updateFertilizerOptions();
+    };
+
+    // default fertilizer input
+    container.appendChild(createFertilizerGroup("", "", false));
+    updateFertilizerOptions();
+});
