@@ -285,6 +285,51 @@ body {
     background: rgba(255, 255, 255, 0.8);
 }
 
+/* remove fert */
+
+.fertilizer-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 0;
+}
+
+/* Row for the two inputs */
+.fert-input-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
+
+.fert-input-row .form-group {
+    flex: 1;
+    margin: 0;
+}
+
+/* Remove button styling - now at the bottom */
+.remove-fert-btn {
+    align-self: flex-end;
+    background: #fff5f5;
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.remove-fert-btn:hover {
+    background: #e74c3c;
+    color: #ffffff;
+}
+
+.remove-fert-btn i {
+    margin-right: 5px;
+}
+
 @media (max-width: 768px) {
     body {
         padding: 1rem;

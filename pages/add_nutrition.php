@@ -372,10 +372,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     <script>
     window.nutritionDefaults = {
-        vegetative: <?php echo json_encode($vegetativeDefaults); ?>,
-        lateVegetative: <?php echo json_encode($lateVegetativeDefaults); ?>,
-        floweringToFruiting: <?php echo json_encode($flowringToFruitingDefaults); ?>,
-        harvesting: <?php echo json_encode($harvestingDefaults); ?>
+        "Vegetative": <?php echo json_encode($vegetativeDefaults); ?>,
+        "Late Vegetative": <?php echo json_encode($lateVegetativeDefaults); ?>,
+        "Flowering To Fruiting": <?php echo json_encode($flowringToFruitingDefaults); ?>,
+        "Harvesting": <?php echo json_encode($harvestingDefaults); ?>
     };
     </script>
     <script src="../assets/js/nutrition.js"></script>
