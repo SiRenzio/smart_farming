@@ -31,62 +31,73 @@ $plant = $result->fetch_assoc();
 $plantName = $plant['plantName'];
 $stmt->close();
 
+// Fetch Nutrition Sets for dropdown
+$nutritionSets = [];
+$savedSetsStmt = $conn->prepare('SELECT nutritionSetName FROM plantnutrionneed');
+$savedSetsStmt->execute();
+$savedSets = $savedSetsStmt->get_result();
+while ($row = $savedSets->fetch_assoc()) {
+    $nutritionSets[] = $row['nutritionSetName'];
+}
+$savedSets->close();
+
 // Default values for form fields
-$vegetativeDefaults = [
-    'soilN' => 50,
-    'soilP' => 30,
-    'soilK' => 20,
-    'soilEC' => 1.5,
-    'soilPH' => 6.0,
-    'soilT' => 22.0,
-    'soilM' => 60.0,
-    'flowRate' => 1.0,
-    'fertilizer' => 'Nitrabor',
-    'fertilizerAmount' => 3.5
-];
+// $vegetativeDefaults = [
+//     'soilN' => 50,
+//     'soilP' => 30,
+//     'soilK' => 20,
+//     'soilEC' => 1.5,
+//     'soilPH' => 6.0,
+//     'soilT' => 22.0,
+//     'soilM' => 60.0,
+//     'flowRate' => 1.0,
+//     'fertilizer' => 'Nitrabor',
+//     'fertilizerAmount' => 3.5
+// ];
 
-$lateVegetativeDefaults = [
-    'soilN' => 70,
-    'soilP' => 40,
-    'soilK' => 30,
-    'soilEC' => 2.0,
-    'soilPH' => 6.5,
-    'soilT' => 24.0,
-    'soilM' => 65.0,
-    'flowRate' => 1.5,
-    'fertilizer' => 'Nitrabor',
-    'fertilizerAmount' => 4.5
-];
+// $lateVegetativeDefaults = [
+//     'soilN' => 70,
+//     'soilP' => 40,
+//     'soilK' => 30,
+//     'soilEC' => 2.0,
+//     'soilPH' => 6.5,
+//     'soilT' => 24.0,
+//     'soilM' => 65.0,
+//     'flowRate' => 1.5,
+//     'fertilizer' => 'Nitrabor',
+//     'fertilizerAmount' => 4.5
+// ];
 
-$flowringToFruitingDefaults = [
-    'soilN' => 60,
-    'soilP' => 50,
-    'soilK' => 40,
-    'soilEC' => 2.5,
-    'soilPH' => 6.8,
-    'soilT' => 26.0,
-    'soilM' => 70.0,
-    'flowRate' => 2.0,
-    'fertilizer' => 'Nitrabor',
-    'fertilizerAmount' => 5.5
-];
+// $flowringToFruitingDefaults = [
+//     'soilN' => 60,
+//     'soilP' => 50,
+//     'soilK' => 40,
+//     'soilEC' => 2.5,
+//     'soilPH' => 6.8,
+//     'soilT' => 26.0,
+//     'soilM' => 70.0,
+//     'flowRate' => 2.0,
+//     'fertilizer' => 'Nitrabor',
+//     'fertilizerAmount' => 5.5
+// ];
 
-$harvestingDefaults = [
-    'soilN' => 40,
-    'soilP' => 30,
-    'soilK' => 50,
-    'soilEC' => 3.0,
-    'soilPH' => 7.0,
-    'soilT' => 28.0,
-    'soilM' => 75.0,
-    'flowRate' => 2.5,
-    'fertilizer' => 'Nitrabor',
-    'fertilizerAmount' => 7.0
-];
+// $harvestingDefaults = [
+//     'soilN' => 40,
+//     'soilP' => 30,
+//     'soilK' => 50,
+//     'soilEC' => 3.0,
+//     'soilPH' => 7.0,
+//     'soilT' => 28.0,
+//     'soilM' => 75.0,
+//     'flowRate' => 2.5,
+//     'fertilizer' => 'Nitrabor',
+//     'fertilizerAmount' => 7.0
+// ];
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nutritionSetName = trim($_POST['nutritionSetName'] ?? '');
+    $growthStage = $_POST['growthStage'] ?? '';
     $soilN = $_POST['soilN'] ?? '';
     $soilP = $_POST['soilP'] ?? '';
     $soilK = $_POST['soilK'] ?? '';
@@ -104,15 +115,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        $stmt = $conn->prepare('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, soilN, soilP, soilK, soilEC, soilPH, soilT, soilM, flowRate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $conn->prepare('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, growthStage, soilN, soilP, soilK, soilEC, soilPH, soilT, soilM, flowRate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         if ($stmt === null) {
             $errors[] = 'Invalid SQL statement. Please try again.';
         } else {
             // Debug: Show the final SQL statement
-            $finalSQL = getFinalSQL('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, soilN, soilP, soilK, soilEC, soilPH, soilT, soilM, flowRate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 'siiiiidddd', [$nutritionSetName, $plantID, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate]);
+            $finalSQL = getFinalSQL('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, growthStage, soilN, soilP, soilK, soilEC, soilPH, soilT, soilM, flowRate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 'isisiiiidddd', [$nutritionSetName, $plantID, $growthStage, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate]);
             
             try {
-                $stmt->bind_param('isiiiiidddd', $_SESSION['userID'], $nutritionSetName, $plantID, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate);
+                $stmt->bind_param('isisiiiidddd', $_SESSION['userID'], $nutritionSetName, $plantID, $growthStage, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate);
             } catch (Exception $e) {
                 $errors[] = 'Failed to bind parameters: ' . $e->getMessage();
                 $errors[] = 'Debug SQL: ' . $finalSQL;
@@ -121,6 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->execute()) {
             $nutritionID = $conn->insert_id; // Get the auto-generated ID
             $success = 'Nutrition needs added successfully! <a href="view_nutrition.php?plantID=' . $plantID . '">View nutrition details</a> or <a href="plants.php">view all plants</a>.';
+            header('Location: add_nutrition.php?plantID=' . $plantID);
         } else {
             $errors[] = 'Failed to add nutrition needs. Please try again.';
         }
@@ -196,10 +208,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Nutrition Form -->
         <form method="post" action="add_nutrition.php?plantID=<?php echo $plantID; ?>">
             <div class="form-group full-width">
+                <label for="savedNutritionSetName">
+                    <i class="fas fa-floppy-disk"></i> Saved Nutrition Set Name
+                </label>
+                <select name="savedNutritionSetName" id="saved-nutrition-set" class="dropdown" onchange="applySavedNutrition()">
+                    <?php if (!empty($nutritionSets)): ?>
+                        <option value="">Select a saved nutrition set</option>
+                        <?php foreach ($nutritionSets as $set): ?>
+                            <option value="<?php echo htmlspecialchars($set); ?>">
+                                <?php echo htmlspecialchars($set); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <option value="">No saved nutrition sets available</option>
+                    <?php endif; ?>
+                </select>
+            </div>
+
+            <div class="form-group full-width">
                 <label for="nutritionSetName">
+                    <i class="fas fa-pen"></i> Custom Nutrition Set Name *
+                </label>
+                <input 
+                    type="text" 
+                    id="nutritionSetName" 
+                    name="nutritionSetName" 
+                    placeholder="Enter a name for this nutrition set"
+                >
+            </div>
+
+            <div class="form-group full-width">
+                <label for="growthStage">
                     <i class="fas fa-layer-group"></i> Growth Stages *
                 </label>
-                <select name="nutritionSetName" id="plant-stages">
+                <select name="growthStage" class="dropdown" id="plant-stage">
+                    <option value="">Select growth stage</option>
                     <option value="vegetative">Vegetative (3-15 Days)</option>
                     <option value="lateVegetative">Late Vegetative (16-45 Days)</option>
                     <option value="floweringToFruiting">Flowering to Fruiting (46-55 Days)</option>
@@ -219,7 +262,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 type="text" 
                                 name="fertilizer[]" 
                                 placeholder="Enter fertilizer name"
-                                value="<?php echo htmlspecialchars($vegetativeDefaults['fertilizer']); ?>"
+                                value="<?php echo htmlspecialchars($_POST['fertilizer'][0] ?? ''); ?>"
                             >
                         </div>
 
@@ -229,9 +272,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </label>
                             <input 
                                 type="number" 
-                                name="fertilizerAmount[]" 
+                                name="fertilizerAmount[]"
+                                step="0.1"
+                                min="0"
                                 placeholder="Enter fertilizer amount"
-                                value="<?php echo htmlspecialchars($vegetativeDefaults['fertilizerAmount']); ?>"
+                                value="<?php echo htmlspecialchars($_POST['fertilizerAmount'][0] ?? ''); ?>"
                             >
                         </div>
                     </div>
@@ -251,8 +296,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         type="number" 
                         id="soilN" 
                         name="soilN" 
+                        step="any"
                         placeholder="Enter N value"
-                        value="<?php echo htmlspecialchars($vegetativeDefaults['soilN']); ?>"
+                        value="<?php echo htmlspecialchars($_POST['soilN'] ?? ''); ?>"
                     >
                 </div>
                 
@@ -264,8 +310,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         type="number" 
                         id="soilP" 
                         name="soilP" 
+                        step="any"
                         placeholder="Enter P value"
-                        value="<?php echo htmlspecialchars($vegetativeDefaults['soilP']); ?>"
+                        value="<?php echo htmlspecialchars($_POST['soilP'] ?? ''); ?>"
                     >
                 </div>
                 
@@ -277,8 +324,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         type="number" 
                         id="soilK" 
                         name="soilK" 
+                        step="any"
                         placeholder="Enter K value"
-                        value="<?php echo htmlspecialchars($vegetativeDefaults['soilK']); ?>"
+                        value="<?php echo htmlspecialchars($_POST['soilK'] ?? ''); ?>"
                     >
                 </div>
                 
@@ -290,8 +338,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         type="number" 
                         id="soilEC" 
                         name="soilEC" 
+                        step="any"
                         placeholder="Enter EC value"
-                        value="<?php echo htmlspecialchars($vegetativeDefaults['soilEC']); ?>"
+                        value="<?php echo htmlspecialchars($_POST['soilEC'] ?? ''); ?>"
                     >
                 </div>
                 
@@ -303,9 +352,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         type="number" 
                         id="soilPH" 
                         name="soilPH" 
-                        step="0.1" 
+                        step="any"
                         placeholder="0.0 - 14.0"
-                        value="<?php echo htmlspecialchars($vegetativeDefaults['soilPH']); ?>"
+                        value="<?php echo htmlspecialchars($_POST['soilPH'] ?? ''); ?>"
                     >
                 </div>
                 
@@ -317,9 +366,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         type="number" 
                         id="soilT" 
                         name="soilT" 
-                        step="0.1" 
+                        step="any"
                         placeholder="Enter temperature"
-                        value="<?php echo htmlspecialchars($vegetativeDefaults['soilT']); ?>"
+                        value="<?php echo htmlspecialchars($_POST['soilT'] ?? ''); ?>"
                     >
                 </div>
                 
@@ -331,9 +380,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         type="number" 
                         id="soilM" 
                         name="soilM" 
-                        step="0.1" 
+                        step="any"
                         placeholder="0.0 - 100.0"
-                        value="<?php echo htmlspecialchars($vegetativeDefaults['soilM']); ?>"
+                        value="<?php echo htmlspecialchars($_POST['soilM'] ?? ''); ?>"
                     >
                 </div>
                 
@@ -345,9 +394,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         type="number" 
                         id="flowRate" 
                         name="flowRate" 
-                        step="0.1" 
+                        step="any"
                         placeholder="Enter flow rate"
-                        value="<?php echo htmlspecialchars($vegetativeDefaults['flowRate']); ?>"
+                        value="<?php echo htmlspecialchars($_POST['flowRate'] ?? ''); ?>"
                     >
                 </div>
             </div>
@@ -370,14 +419,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </a>
         </div>
     </div>
-    <script>
-    window.nutritionDefaults = {
-        vegetative: <?php echo json_encode($vegetativeDefaults); ?>,
-        lateVegetative: <?php echo json_encode($lateVegetativeDefaults); ?>,
-        floweringToFruiting: <?php echo json_encode($flowringToFruitingDefaults); ?>,
-        harvesting: <?php echo json_encode($harvestingDefaults); ?>
-    };
-    </script>
     <script src="../assets/js/nutrition.js"></script>
 </body>
 </html> 

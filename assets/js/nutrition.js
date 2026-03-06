@@ -1,64 +1,87 @@
 window.addEventListener("DOMContentLoaded", () => {
     const form = document.querySelector("form");
-    const select = document.getElementById("plant-stages");
+    const select = document.getElementById("saved-nutrition-set");
 
     // Change default values based on selected growth stage
     select.addEventListener("change", function () {
-        const selectedStage = this.value;
-        const values = window.nutritionDefaults[selectedStage];
+        const setName = this.value;
 
-        if (!values) return;
+        fetch(`../api/fetch_nutrition_set.php?setName=${setName}`)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.nutrition) return;
 
-        document.getElementById("soilN").value = values.soilN;
-        document.getElementById("soilP").value = values.soilP;
-        document.getElementById("soilK").value = values.soilK;
-        document.getElementById("soilEC").value = values.soilEC;
-        document.getElementById("soilPH").value = values.soilPH;
-        document.getElementById("soilT").value = values.soilT;
-        document.getElementById("soilM").value = values.soilM;
-        document.getElementById("flowRate").value = values.flowRate;
+            document.getElementById("plant-stage").value = data.nutrition.growthStage;
+            document.getElementById("soilN").value = data.nutrition.soilN;
+            document.getElementById("soilP").value = data.nutrition.soilP;
+            document.getElementById("soilK").value = data.nutrition.soilK;
+            document.getElementById("soilEC").value = data.nutrition.soilEC;
+            document.getElementById("soilPH").value = data.nutrition.soilPH;
+            document.getElementById("soilT").value = data.nutrition.soilT;
+            document.getElementById("soilM").value = data.nutrition.soilM;
+            document.getElementById("flowRate").value = data.nutrition.flowRate;
 
-        const firstFertilizer = document.querySelector('input[name="fertilizer[]"]');
-        const firstAmount = document.querySelector('input[name="fertilizerAmount[]"]');
+            const container = document.getElementById("fertilizerContainer");
+            container.innerHTML = "";
 
-        if (firstFertilizer) {
-            firstFertilizer.value = values.fertilizer;
-        }
+            if (data.fertilizers.length === 0) {
+                const div = document.createElement("div");
+                div.classList.add("fertilizer-group");
 
-        if (firstAmount) {
-            firstAmount.value = values.fertilizerAmount;
-        }
+                div.innerHTML = `
+                    <div class="form-group">
+                        <label><i class="fas fa-poo-storm"></i> Fertilizer</label>
+                        <input 
+                            type="text" 
+                            name="fertilizer[]"
+                            placeholder="Enter fertilizer name"
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-weight-hanging"></i> Fertilizer Amount (g/L)</label>
+                        <input 
+                            type="number" 
+                            name="fertilizerAmount[]" 
+                            step="any"
+                            min="0"
+                            placeholder="Enter fertilizer amount"
+                        >
+                    </div>
+                `;
+                container.appendChild(div);
+            } 
+            else {
+                data.fertilizers.forEach(f => {
+                    const div = document.createElement("div");
+                    div.classList.add("fertilizer-group");
 
-        const container = document.getElementById("fertilizerContainer");
+                    div.innerHTML = `
+                        <div class="form-group">
+                            <label><i class="fas fa-poo-storm"></i> Fertilizer</label>
+                            <input 
+                                type="text" 
+                                name="fertilizer[]"
+                                placeholder="Enter fertilizer name"
+                                value="${f.fertilizerName}"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-weight-hanging"></i> Fertilizer Amount (g/L)</label>
+                            <input 
+                                type="number" 
+                                name="fertilizerAmount[]" 
+                                step="any"
+                                min="0"
+                                placeholder="Enter fertilizer amount"
+                                value="${f.fertilizerAmount}"
+                            >
+                        </div>
+                    `;
 
-        // Remove all fertilizer groups except first
-        container.innerHTML = '';
-
-        const newGroup = document.createElement("div");
-        newGroup.classList.add("fertilizer-group");
-
-        newGroup.innerHTML = `
-            <div class="form-group">
-                <label><i class="fas fa-poo-storm"></i> Fertilizer</label>
-                <input 
-                    type="text" 
-                    name="fertilizer[]"
-                    placeholder="Enter fertilizer name"
-                    value="${values.fertilizer}"
-                >
-            </div>
-            <div class="form-group">
-                <label><i class="fas fa-weight-hanging"></i> Fertilizer Amount (g/L)</label>
-                <input 
-                    type="number" 
-                    name="fertilizerAmount[]" 
-                    placeholder="Enter fertilizer amount"
-                    value="${values.fertilizerAmount}"
-                >
-            </div>
-        `;
-
-        container.appendChild(newGroup);
+                    container.appendChild(div);
+                });
+            }
+        });
     });
 
     // Reset form to default values when reset button is clicked
@@ -74,12 +97,42 @@ window.addEventListener("DOMContentLoaded", () => {
 
 function addFertilizer() {
     const container = document.getElementById("fertilizerContainer");
-    const firstGroup = container.querySelector(".fertilizer-group");
 
-    // Clone the first group
+    let firstGroup = container.querySelector(".fertilizer-group");
+
+    // If no fertilizer group exists, create one
+    if (!firstGroup) {
+
+        const div = document.createElement("div");
+        div.classList.add("fertilizer-group");
+
+        div.innerHTML = `
+            <div class="form-group">
+                <label><i class="fas fa-poo-storm"></i> Fertilizer</label>
+                <input 
+                    type="text" 
+                    name="fertilizer[]"
+                    placeholder="Enter fertilizer name"
+                >
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-weight-hanging"></i> Fertilizer Amount (g/L)</label>
+                <input 
+                    type="number" 
+                    name="fertilizerAmount[]" 
+                    step="any"
+                    min="0"
+                    placeholder="Enter fertilizer amount"
+                >
+            </div>
+        `;
+
+        container.appendChild(div);
+        return;
+    }
+
     const newGroup = firstGroup.cloneNode(true);
 
-    // Clear values inside cloned inputs
     const inputs = newGroup.querySelectorAll("input");
     inputs.forEach(input => input.value = "");
 
