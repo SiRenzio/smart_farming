@@ -274,7 +274,7 @@ body {
     text-decoration: none;
 }
 
-#plant-stages {
+.dropdown {
     width: 100%;
     padding: 1rem;
     border: 2px solid rgba(0, 0, 0, 0.1);
