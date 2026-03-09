@@ -76,22 +76,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $flowRate = $_POST['flowRate'] ?? '';
     $fertilizers = $_POST['fertilizer'] ?? [];
     $fertilizerAmounts = $_POST['fertilizerAmount'] ?? [];
+    $soilType = $_POST['soilType'] ?? '';
 
     // Validate required fields
-    if (!$nutritionSetName) {
-        $errors[] = 'Nutrition set name is required.';
+    if (!$nutritionSetName || !$growthStage || !$soilType) {
+        $errors[] = 'All fields with asterisk are required.';
+    }
+
+
+    $moistureThreshold = 0;
+    switch ($soilType) {
+        case 'sandyClayLoam':
+            $moistureThreshold = 26;
+            break;
+        case 'loam':
+            $moistureThreshold = 21;
+            break;
+        case 'sandyClay':
+            $moistureThreshold  = 33;
+            break;
+        case 'siltLoam':
+            $moistureThreshold = 20;
+            break;
+        case 'silt':
+            $moistureThreshold  = 17;
+            break;
+        case 'clayLoam':
+            $moistureThreshold = 30;
+            break;
+        case 'siltyClayLoam':
+            $moistureThreshold = 29;
+            break;
+        default:
+            $errors[] = 'Invalid soil type selected.';
     }
 
     if (!$errors) {
-        $stmt = $conn->prepare('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, growthStage, soilN, soilP, soilK, soilEC, soilPH, soilT, soilM, flowRate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $conn->prepare('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, soilType, meanMoistureThreshold, growthStage, soilN, soilP, soilK, soilEC, soilPH, soilT, soilM, flowRate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         if ($stmt === null) {
             $errors[] = 'Invalid SQL statement. Please try again.';
         } else {
             // Debug: Show the final SQL statement
-            $finalSQL = getFinalSQL('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, growthStage, soilN, soilP, soilK, soilEC, soilPH, soilT, soilM, flowRate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 'isisiiiidddd', [$nutritionSetName, $plantID, $growthStage, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate]);
+            $finalSQL = getFinalSQL('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, soilType, meanMoistureThreshold, growthStage, soilN, soilP, soilK, soilEC, soilPH, soilT, soilM, flowRate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 'isisiiiidddd', [$nutritionSetName, $plantID, $soilType, $moistureThreshold, $growthStage, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate]);
             
             try {
-                $stmt->bind_param('isisiiiidddd', $_SESSION['userID'], $nutritionSetName, $plantID, $growthStage, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate);
+                $stmt->bind_param('isisisiiiidddd', $_SESSION['userID'], $nutritionSetName, $plantID, $soilType, $moistureThreshold, $growthStage, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate);
             } catch (Exception $e) {
                 $errors[] = 'Failed to bind parameters: ' . $e->getMessage();
                 $errors[] = 'Debug SQL: ' . $finalSQL;
@@ -102,6 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $success = 'Nutrition needs added successfully! <a href="view_nutrition.php?plantID=' . $plantID . '">View nutrition details</a> or <a href="plants.php">view all plants</a>.';
             $_SESSION['success'] = $success;
             header('Location: add_nutrition.php?plantID=' . $plantID);
+            exit;
         } else {
             $errors[] = 'Failed to add nutrition needs. Please try again.';
         }
@@ -140,6 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Add Nutrition Needs - Smart Farming</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
     <link href="../assets/css/add_nutrition.css" rel="stylesheet">
 </head>
 <body>
@@ -169,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <?php if (isset($_SESSION['success'])): ?>
                 <div class="success-message">
-                    <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($_SESSION['success']) ?>
+                    <i class="fas fa-check-circle"></i> <?php echo $_SESSION['success'] ?>
                 </div>
                 <?php unset($_SESSION['success']); ?>
             <?php endif; ?>
@@ -177,6 +208,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Nutrition Form -->
         <form method="post" action="add_nutrition.php?plantID=<?php echo $plantID; ?>">
+            <div class="form-group full-width">
+                <label for="nutritionSetName">
+                    <i class="fas fa-pen"></i> Custom Nutrition Set Name *
+                </label>
+                <input 
+                    type="text" 
+                    id="nutritionSetName" 
+                    name="nutritionSetName" 
+                    placeholder="Enter a name for this nutrition set"
+                >
+            </div>
+
             <div class="form-group full-width">
                 <label for="savedNutritionSetName">
                     <i class="fas fa-floppy-disk"></i> Saved Nutrition Set Name
@@ -196,20 +239,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="form-group full-width">
-                <label for="nutritionSetName">
-                    <i class="fas fa-pen"></i> Custom Nutrition Set Name *
+                <label for="soilType">
+                    <i class="fas fa-layer-group"></i> Soil Type *
                 </label>
-                <input 
-                    type="text" 
-                    id="nutritionSetName" 
-                    name="nutritionSetName" 
-                    placeholder="Enter a name for this nutrition set"
-                >
+                <select name="soilType" class="dropdown" id="soil-type">
+                    <option value="">Select soil type</option>
+                    <option value="sandyClayLoam">Sandy clay loam</option>
+                    <option value="loam">Loam</option>
+                    <option value="sandyClay">Sandy clay</option>
+                    <option value="siltLoam">Silt loam</option>
+                    <option value="silt">Silt</option>
+                    <option value="clayLoam">Clay loam</option>
+                    <option value="siltyClayLoam">Silty clay loam</option>
+                </select>
             </div>
 
             <div class="form-group full-width">
                 <label for="growthStage">
-                    <i class="fas fa-layer-group"></i> Growth Stages *
+                    <i class="fas fa-tree"></i> Growth Stages *
                 </label>
                 <select name="growthStage" class="dropdown" id="plant-stage">
                     <option value="">Select growth stage</option>
