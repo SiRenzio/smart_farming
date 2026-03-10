@@ -25,6 +25,7 @@
 /* ===================== SERVER & WIFI ===================== */
 const char* webServerIp = "172.18.0.9";
 String sendWateringURL = "http://" + String(webServerIp) + "/smart_farming/api/watering_api.php";
+String sendIntelURL = "http://" + String(webServerIp) + "/smart_farming/api/intel_api.php";
 const char* ssid = "CompDeptWiFiAdmin";
 const char* password = "isatu_6134";
 
