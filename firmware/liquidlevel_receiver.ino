@@ -62,6 +62,8 @@ const unsigned long mixingDuration = 5000;
 unsigned long lastSerialReceiveTime = 0;
 const unsigned long serialTimeout = 6000;
 
+// 1 - READY, 0 - HOLD, 2 - MIXING, -1 - IDLE/ERROR
+
 // Tank 1 State
 int wateringflag1 = -1;  
 int wateringstatus1 = -1;
@@ -92,6 +94,14 @@ float targetVolumeML = 0;
 
 bool wateringActive = false;
 int activeTank = 0;
+
+// Pre-watering mixing flags (from Intel command)
+int premixBefore1 = 0;
+int premixBefore2 = 0;
+int premixBefore3 = 0;
+unsigned long premixStartTime1 = 0;
+unsigned long premixStartTime2 = 0;
+unsigned long premixStartTime3 = 0;
 
 bool apiReady = false;
 bool dataValid = false;
@@ -189,25 +199,31 @@ void checkIntelConnection() {
           Serial.println(" mL");
 
           if(command == "trig_tsl1") {
+            // Start mixer first, solenoid will open after mixing is complete
+
             activeTank = 1;
-            trig_tsl1 = 1;
-            wateringActive = true;
-            digitalWrite(slIndicator1, HIGH);
-            Serial.println("[SOLENOID] Tank 1 watering. NORMAL WATER");
+            premixBefore1 = 1;
+            premixStartTime1 = millis();
+            digitalWrite(mixermotor1, HIGH);
+            Serial.println("[INTEL] Tank 1: Starting pre-watering mix (NORMAL WATER)");
           }
           else if(command == "trig_tsl2") {
+            // Start mixer first, solenoid will open after mixing is complete
+
             activeTank = 2;
-            trig_tsl2 = 1;
-            wateringActive = true;
-            digitalWrite(slIndicator2, HIGH);
-            Serial.println("[SOLENOID] Tank 2 watering. CALCIUM BASED (NITRABOR)");
+            premixBefore2 = 1;
+            premixStartTime2 = millis();
+            digitalWrite(mixermotor2, HIGH);
+            Serial.println("[INTEL] Tank 2: Starting pre-watering mix (CALCIUM BASED)");
           }
           else if(command == "trig_tsl3") {
+            // Start mixer first, solenoid will open after mixing is complete
+
             activeTank = 3;
-            trig_tsl3 = 1;
-            wateringActive = true;
-            digitalWrite(slIndicator3, HIGH);
-            Serial.println("[SOLENOID] Tank 3 watering. POTASSIUM BASED (UNIK16/WINNER)");
+            premixBefore3 = 1;
+            premixStartTime3 = millis();
+            digitalWrite(mixermotor3, HIGH);
+            Serial.println("[INTEL] Tank 3: Starting pre-watering mix (POTASSIUM BASED)");
           }
         }
       }
@@ -310,9 +326,7 @@ void loop() {
   /* ================= WIFI WATCHDOG ================= */
 
   if (WiFi.status() != WL_CONNECTED) {
-
     Serial.println("[WIFI] Reconnecting...");
-
     WiFi.disconnect();
     WiFi.begin(ssid, password);
 
@@ -337,22 +351,17 @@ void loop() {
   /* ================= INTEL API HEARTBEAT ================= */
 
   if (apiReady && currentMillis - lastIntelCheck >= intelInterval) {
-
     lastIntelCheck = currentMillis;
-
     checkIntelConnection();
   }
 
   /* ================= RECEIVE DATA ================= */
 
   while (Serial2.available()) {
-
     char c = Serial2.read();
 
     if (c == '\n') {
-
       StaticJsonDocument<200> doc;
-
       DeserializationError error = deserializeJson(doc, serialBuffer);
 
       if (error) {
@@ -379,7 +388,6 @@ void loop() {
           dataValid = true;
 
           lastSerialReceiveTime = currentMillis;
-
         } 
         else {
 
@@ -387,31 +395,22 @@ void loop() {
           Serial.println("[REJECTED] Out of range");
 
         }
-
       } 
       else {
-
         dataValid = false;
         Serial.println("[REJECTED] Invalid JSON");
-
       }
-
       serialBuffer = "";
-
     } 
     else {
-
       serialBuffer += c;
-
     }
   }
 
   /* ================= SERIAL TIMEOUT WATCHDOG ================= */
 
   if (dataValid && millis() - lastSerialReceiveTime > serialTimeout) {
-
     Serial.println("[TIMEOUT] Transmitter disconnected");
-
     dataValid = false;
 
     digitalWrite(pumpmotor1, LOW);
@@ -424,7 +423,6 @@ void loop() {
 
     wateringflag1 = wateringflag2 = wateringflag3 = -1;
     wateringstatus1 = wateringstatus2 = wateringstatus3 = -1;
-
     mixingflag1 = mixingflag2 = mixingflag3 = 0;
   }
 
@@ -447,137 +445,129 @@ void loop() {
 
     wateringflag1 = 1;
     wateringstatus1 = 0;
-
     digitalWrite(pumpmotor1, HIGH);
-
     sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1);
   }
 
   if (apiReady && dataValid && currentliquidlevel1 <= 25 && wateringflag1 == 1) {
-
     wateringflag1 = 0;
     wateringstatus1 = 0;
-
     digitalWrite(pumpmotor1, LOW);
-
     mixingflag1 = 1;
-
     sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1);
   }
 
   if (mixingflag1 == 1 && digitalRead(switch1) == LOW) {
-
     digitalWrite(mixermotor1, HIGH);
-
     wateringstatus1 = -1;
-
     mixingflag1 = 2;
-
     mixStartTime1 = currentMillis;
   }
 
   if (mixingflag1 == 2 && currentMillis - mixStartTime1 >= mixingDuration) {
-
     digitalWrite(mixermotor1, LOW);
-
     mixingflag1 = 0;
-
     wateringflag1 = -1;
     wateringstatus1 = -1;
-
     sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1);
   }
 
   // Tank 2
   if (apiReady && dataValid && currentliquidlevel2 > 60 && wateringflag2 != 1) {
-
     wateringflag2 = 1;
     wateringstatus2 = 0;
-
     digitalWrite(pumpmotor2, HIGH);
-
     sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2);
   }
 
   if (apiReady && dataValid && currentliquidlevel2 <= 25 && wateringflag2 == 1) {
-
     wateringflag2 = 0;
     wateringstatus2 = 0;
-
     digitalWrite(pumpmotor2, LOW);
-
     mixingflag2 = 1;
-
     sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2);
   }
 
   if (mixingflag2 == 1 && digitalRead(switch2) == LOW) {
-
     digitalWrite(mixermotor2, HIGH);
-
     wateringstatus2 = -1;
-
     mixingflag2 = 2;
-
     mixStartTime2 = currentMillis;
   }
 
   if (mixingflag2 == 2 && currentMillis - mixStartTime2 >= mixingDuration) {
-
     digitalWrite(mixermotor2, LOW);
-
     mixingflag2 = 0;
-
     wateringflag2 = -1;
     wateringstatus2 = -1;
-
     sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2);
   }
 
   // Tank 3
   if (apiReady && dataValid && currentliquidlevel3 > 60 && wateringflag3 != 1) {
-
     wateringflag3 = 1;
     wateringstatus3 = 0;
-
     digitalWrite(pumpmotor3, HIGH);
-
     sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3);
   }
 
   if (apiReady && dataValid && currentliquidlevel3 <= 25 && wateringflag3 == 1) {
-
     wateringflag3 = 0;
     wateringstatus3 = 0;
-
     digitalWrite(pumpmotor3, LOW);
-
     mixingflag3 = 1;
-
     sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3);
   }
 
   if (mixingflag3 == 1 && digitalRead(switch3) == LOW) {
-
     digitalWrite(mixermotor3, HIGH);
-
     wateringstatus3 = -1;
-
     mixingflag3 = 2;
-
     mixStartTime3 = currentMillis;
   }
 
   if (mixingflag3 == 2 && currentMillis - mixStartTime3 >= mixingDuration) {
-
     digitalWrite(mixermotor3, LOW);
-
     mixingflag3 = 0;
-
     wateringflag3 = -1;
     wateringstatus3 = -1;
-
     sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3);
+  }
+
+
+  /* ================= PRE-WATERING MIX SEQUENCE (FROM INTEL) ================= */
+  
+  // Tank 1 Pre-watering Mix
+  if (premixBefore1 == 1 && currentMillis - premixStartTime1 >= mixingDuration) {
+    digitalWrite(mixermotor1, LOW);
+    premixBefore1 = 0;
+    trig_tsl1 = 1;
+    wateringActive = true;
+    flowPulseCount = 0;
+    digitalWrite(slIndicator1, HIGH);
+    Serial.println("[INTEL SEQUENCE] Tank 1: Pre-mix complete, opening solenoid and starting flow count");
+  }
+
+  // Tank 2 Pre-watering Mix
+  if (premixBefore2 == 1 && currentMillis - premixStartTime2 >= mixingDuration) {
+    digitalWrite(mixermotor2, LOW);
+    premixBefore2 = 0;
+    trig_tsl2 = 1;
+    wateringActive = true;
+    flowPulseCount = 0;
+    digitalWrite(slIndicator2, HIGH);
+    Serial.println("[INTEL SEQUENCE] Tank 2: Pre-mix complete, opening solenoid and starting flow count");
+  }
+
+  // Tank 3 Pre-watering Mix
+  if (premixBefore3 == 1 && currentMillis - premixStartTime3 >= mixingDuration) {
+    digitalWrite(mixermotor3, LOW);
+    premixBefore3 = 0;
+    trig_tsl3 = 1;
+    wateringActive = true;
+    flowPulseCount = 0;
+    digitalWrite(slIndicator3, HIGH);
+    Serial.println("[INTEL SEQUENCE] Tank 3: Pre-mix complete, opening solenoid and starting flow count");
   }
 
 

@@ -52,19 +52,47 @@ if ($row = $result->fetch_assoc()) {
     // Process the sensor data and determine actions
     if ($row['SoilT'] < 30) {
         if ($row['SoilMois'] < $plantParams['meanMoistureThreshold']) {
-            if ($row['soilN'] < 30) {
-                if ($row['soilEC'] > 1000) {
-                    // Check if motor is on condition here
+            if ($row['SoilN'] < $plantParams['soilN']) {
+                if ($row['SoilEC'] > $plantParams['soilEC']) {
+                    // Check if motor is on condition here (Tank 1)
+                    $checkPumEvent = $conn->query("SELECT waterstatus, wateringFlag FROM tankpumpevent WHERE tankID = 1 ORDER BY tankPumpEventID DESC LIMIT 1")->fetch_assoc();
+                    if ($checkPumEvent['wateringstatus'] === NULL || $checkPumEvent['wateringFlag'] === NULL) {
+                        // Send command to turn on the pump
+                        $command = "trig_tsl1";
+                        $liquidVolume = $plantParams['liquidVolume'];
+                        sendResponse(true, 'Pump turned on', $command, $liquidVolume);
+                    } else {
+                        return;
+                    }
+                    
+
                 }
-                // Check if one type of fertiliizer is needed contition here
+                // Check if one type of fertiliizer is needed contition here (identify which type of fertilizer is needed based on the soil parameters)
+                // tank 2 | nitrabor | trig_tsl2 ========== tank 3 | UNIK16/WINNER | trig_tsl3
+
+
             }
+            //Check if motor is on condition here (Tank 1)
+            else {
+                $checkPumEvent = $conn->query("SELECT waterstatus, wateringFlag FROM tankpumpevent WHERE tankID = 1 ORDER BY tankPumpEventID DESC LIMIT 1")->fetch_assoc();
+                if ($checkPumEvent['wateringstatus'] === NULL || $checkPumEvent['wateringFlag'] === NULL) {
+                    // Send command to turn on the pump
+                    $command = "trig_tsl1";
+                    $liquidVolume = $plantParams['liquidVolume'];
+                    sendResponse(true, 'Pump turned on', $command, $liquidVolume);
+                } else {
+                    return;
+                }
+            }
+
+
         }
         // else continue monitoring soil temperature
     }
     else if ($row['SoilT'] >= 31 && $row['SoilT'] <= 34) {
         if ($row['SoilMois'] < ($plantParams['meanMoistureThreshold'] + 5)) {
-            if ($row['soilN'] < 30) {
-                if ($row['soilEC'] > 1000) {
+            if ($row['SoilN'] < $plantParams['soilN']) {
+                if ($row['SoilEC'] > $plantParams['soilEC']) {
                     // Check if motor is on condition here
                 }
                 // Check if one type of fertiliizer is needed contition here
@@ -74,8 +102,8 @@ if ($row = $result->fetch_assoc()) {
     }
     else if ($row['SoilT'] > 34) {
         if ($row['SoilMois'] < ($plantParams['meanMoistureThreshold'] + 10)) {
-            if ($row['soilN'] < 30) {
-                if ($row['soilEC'] > 1000) {
+            if ($row['SoilN'] < $plantParams['soilN']) {
+                if ($row['SoilEC'] > $plantParams['soilEC']) {
                     // Check if motor is on condition here
                 }
                 // Check if one type of fertiliizer is needed contition here
