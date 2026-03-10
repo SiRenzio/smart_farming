@@ -2,6 +2,7 @@
 session_start();
 require_once '../db.php';
 require_once '../includes/notification.php';
+require_once '../includes/sensor_data_includes.php';
 
 if (!isset($_SESSION['userID'])) {
     header('Location: login.php');
