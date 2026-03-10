@@ -46,6 +46,7 @@ int liquidsensorID1 = 1;
 int liquidsensorID2 = 2;
 int liquidsensorID3 = 3;
 
+
 unsigned long lastLevelSendTime = 0;
 const unsigned long levelSendInterval = 1100;
 
@@ -82,10 +83,24 @@ int mixingflag3 = 0;
 int trig_tsl3 = 0;     
 unsigned long mixStartTime3 = 0;
 
+
+// Flow Sensor State
+volatile unsigned long flowPulseCount = 0;
+float calibrationFactor = 7.5; // typical YF-S201
+float currentVolumeML = 0;
+float targetVolumeML = 0;
+
+bool wateringActive = false;
+int activeTank = 0;
+
 bool apiReady = false;
 bool dataValid = false;
 
 String serialBuffer = "";
+
+void IRAM_ATTR flowPulseCounter() {
+  flowPulseCount++;
+}
 
 /* ===================== API FUNCTIONS ===================== */
 
@@ -154,6 +169,48 @@ void checkIntelConnection() {
 
       Serial.print("[INTEL CONNECTED]: ");
       Serial.println(response);
+
+      StaticJsonDocument<200> resDoc;
+      DeserializationError error = deserializeJson(resDoc, response);
+
+      if(!error) {
+        if(resDoc.containsKey("command") && resDoc.containsKey("liquidVolume")) {
+          String command = resDoc["command"];
+          targetVolumeML = resDoc["liquidVolume"];
+
+          flowPulseCount = 0;
+          wateringActive = true;
+          
+          Serial.print("[INTEL COMMAND]: ");
+          Serial.print(command);
+
+          Serial.print(" | [TARGET VOLUME]: ");
+          Serial.print(targetVolumeML);
+          Serial.println(" mL");
+
+          if(command == "trig_tsl1") {
+            activeTank = 1;
+            trig_tsl1 = 1;
+            wateringActive = true;
+            digitalWrite(slIndicator1, HIGH);
+            Serial.println("[SOLENOID] Tank 1 watering. NORMAL WATER");
+          }
+          else if(command == "trig_tsl2") {
+            activeTank = 2;
+            trig_tsl2 = 1;
+            wateringActive = true;
+            digitalWrite(slIndicator2, HIGH);
+            Serial.println("[SOLENOID] Tank 2 watering. CALCIUM BASED (NITRABOR)");
+          }
+          else if(command == "trig_tsl3") {
+            activeTank = 3;
+            trig_tsl3 = 1;
+            wateringActive = true;
+            digitalWrite(slIndicator3, HIGH);
+            Serial.println("[SOLENOID] Tank 3 watering. POTASSIUM BASED (UNIK16/WINNER)");
+          }
+        }
+      }
 
       success = true;
       http.end();
@@ -225,6 +282,13 @@ void setup() {
   pinMode(mixermotor3, OUTPUT);
   pinMode(pumpmotor3, OUTPUT);
   pinMode(switch3, INPUT_PULLUP);
+
+  pinMode(slIndicator1, OUTPUT);
+  pinMode(slIndicator2, OUTPUT);
+  pinMode(slIndicator3, OUTPUT);
+
+  pinMode(flowSensor, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(flowSensor), flowPulseCounter, FALLING);
 
   WiFi.begin(ssid, password);
 
@@ -516,7 +580,35 @@ void loop() {
     sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3);
   }
 
-  // solenoid and flow sensor logics
 
-  
+  /* ================= SOLENOID FLOW CONTROL ================= */
+
+  if (wateringActive) {
+    currentVolumeML = (flowPulseCount / calibrationFactor) * 1000;
+
+    if (currentVolumeML >= targetVolumeML) {
+
+      if (activeTank == 1) {
+        digitalWrite(slIndicator1, LOW);
+        trig_tsl1 = 0;
+      }
+
+      if (activeTank == 2) {
+        digitalWrite(slIndicator2, LOW);
+        trig_tsl2 = 0;
+      }
+
+      if (activeTank == 3) {
+        digitalWrite(slIndicator3, LOW);
+        trig_tsl3 = 0;
+      }
+      wateringActive = false;
+      activeTank = 0;
+
+      flowPulseCount = 0;
+      currentVolumeML = 0;
+
+      Serial.println("[FLOW] Target volume reached. Valve closed.");
+    }
+  }
 }

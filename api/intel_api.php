@@ -8,11 +8,12 @@ header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
 
-function sendResponse($success, $message, $data = null) {
+function sendResponse($success, $message, $command, $liquidVolume) {
     echo json_encode([
         'success' => $success,
         'message' => $message,
-        'data' => $data,
+        'command' => $command,
+        'liquidVolume' => $liquidVolume,
         'timestamp' => date('Y-m-d H:i:s')
     ]);
     exit;
