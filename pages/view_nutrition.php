@@ -103,9 +103,7 @@ $stmt->close();
                             <th><i class="fas fa-tree"></i> Potassium (K)</th>
                             <th><i class="fas fa-bolt"></i> Electrical Conductivity</th>
                             <th><i class="fas fa-tint"></i> pH</th>
-                            <th><i class="fas fa-thermometer-half"></i> Temperature (°C)</th>
-                            <th><i class="fas fa-tint"></i> Moisture (%)</th>
-                            <th><i class="fas fa-water"></i> Flow Rate (L/min)</th>
+                            <th><i class="fas fa-water"></i> Liquid Volume (ml)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -128,9 +126,7 @@ $stmt->close();
                                 <td><?php echo $nutrition['soilK'] !== null ? htmlspecialchars($nutrition['soilK']) : '-'; ?></td>
                                 <td><?php echo $nutrition['soilEC'] !== null ? htmlspecialchars($nutrition['soilEC']) : '-'; ?></td>
                                 <td><?php echo $nutrition['soilPH'] !== null ? htmlspecialchars($nutrition['soilPH']) : '-'; ?></td>
-                                <td><?php echo $nutrition['soilT'] !== null ? htmlspecialchars($nutrition['soilT']) : '-'; ?></td>
-                                <td><?php echo $nutrition['soilM'] !== null ? htmlspecialchars($nutrition['soilM']) : '-'; ?></td>
-                                <td><?php echo $nutrition['flowRate'] !== null ? htmlspecialchars($nutrition['flowRate']) : '-'; ?></td>
+                                <td><?php echo $nutrition['liquidVolume'] !== null ? htmlspecialchars($nutrition['liquidVolume']) : '-'; ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
