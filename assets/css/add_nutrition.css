@@ -330,6 +330,16 @@ body {
     margin-right: 5px;
 }
 
+.empty-moisture-warning {
+    padding-top: 1rem;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.temp {
+    padding-top: 1rem;
+}
+
 @media (max-width: 768px) {
     body {
         padding: 1rem;

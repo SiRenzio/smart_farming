@@ -203,6 +203,33 @@ window.addEventListener("DOMContentLoaded", () => {
         updateFertilizerOptions();
     };
 
+    const soilTypeSelect = document.getElementById("soil-type");
+    const moistureDisplay = document.getElementById("soil-moisture-display");
+    const hiddenInput = document.getElementById("soilM");
+
+    soilTypeSelect.addEventListener("change", function () {
+
+        const soilType = this.value;
+
+        if (!soilType || !moistureThresholdValues[soilType]) {
+            moistureDisplay.textContent = "Please Select a Soil Type";
+            if(hiddenInput) hiddenInput.value = "";
+            return;
+        }
+
+        const values = moistureThresholdValues[soilType];
+
+        moistureDisplay.textContent = values;
+
+        // optional: store the first threshold as the base value
+        const firstValue = values.split(" - ")[0].replace("%","");
+
+        if(hiddenInput){
+            hiddenInput.value = firstValue;
+        }
+
+    });
+
     // default fertilizer input
     container.appendChild(createFertilizerGroup("", "", false));
     updateFertilizerOptions();

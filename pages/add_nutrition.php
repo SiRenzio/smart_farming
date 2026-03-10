@@ -63,6 +63,16 @@ $harvestingDefaults = [
     'fertilizerAmount' => [0.1, 0.1, 0.3]
 ];
 
+$moistureThresholdValues = [
+    'sandyClayLoam' => '26% | 31% | 36%',
+    'loam' => '21% | 26% | 31%',
+    'sandyClay' => '33% | 38% | 43%',
+    'siltLoam' => '20% | 25% | 30%',
+    'silt' => '17% | 22% | 27%',
+    'clayLoam' => '30% | 35% | 40%',
+    'siltyClayLoam' => '29% | 34% | 39%'
+];
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nutritionSetName = trim($_POST['nutritionSetName'] ?? '');
@@ -72,9 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $soilK = $_POST['soilK'] ?? '';
     $soilEC = $_POST['soilEC'] ?? '';
     $soilPH = $_POST['soilPH'] ?? '';
-    $soilT = $_POST['soilT'] ?? '';
-    $soilM = $_POST['soilM'] ?? '';
-    $flowRate = $_POST['flowRate'] ?? '';
+    $liquidVolume = $_POST['liquidVolume'] ?? '';
     $fertilizers = $_POST['fertilizer'] ?? [];
     $fertilizerAmounts = $_POST['fertilizerAmount'] ?? [];
     $soilType = $_POST['soilType'] ?? '';
@@ -113,15 +121,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        $stmt = $conn->prepare('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, soilType, meanMoistureThreshold, growthStage, soilN, soilP, soilK, soilEC, soilPH, soilT, soilM, flowRate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $conn->prepare('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, soilType, meanMoistureThreshold, growthStage, soilN, soilP, soilK, soilEC, soilPH, liquidVolume) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         if ($stmt === null) {
             $errors[] = 'Invalid SQL statement. Please try again.';
         } else {
             // Debug: Show the final SQL statement
-            $finalSQL = getFinalSQL('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, soilType, meanMoistureThreshold, growthStage, soilN, soilP, soilK, soilEC, soilPH, soilT, soilM, flowRate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 'isisiiiidddd', [$nutritionSetName, $plantID, $soilType, $moistureThreshold, $growthStage, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate]);
+            $finalSQL = getFinalSQL('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, soilType, meanMoistureThreshold, growthStage, soilN, soilP, soilK, soilEC, soilPH, liquidVolume) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 'isisiiiidddd', [$nutritionSetName, $plantID, $soilType, $moistureThreshold, $growthStage, $soilN, $soilP, $soilK, $soilEC, $soilPH, $liquidVolume]);
             
             try {
-                $stmt->bind_param('isisisiiiidddd', $_SESSION['userID'], $nutritionSetName, $plantID, $soilType, $moistureThreshold, $growthStage, $soilN, $soilP, $soilK, $soilEC, $soilPH, $soilT, $soilM, $flowRate);
+                $stmt->bind_param('isisisiiiidd', $_SESSION['userID'], $nutritionSetName, $plantID, $soilType, $moistureThreshold, $growthStage, $soilN, $soilP, $soilK, $soilEC, $soilPH, $liquidVolume);
             } catch (Exception $e) {
                 $errors[] = 'Failed to bind parameters: ' . $e->getMessage();
                 $errors[] = 'Debug SQL: ' . $finalSQL;
@@ -347,47 +355,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         value="<?php echo htmlspecialchars($_POST['soilPH'] ?? ''); ?>"
                     >
                 </div>
+
+                <div class="form-group">
+                    <label for="liquidVolume">
+                        <i class="fas fa-water"></i> Liquid Volume (mL)
+                    </label>
+                    <input 
+                        type="number" 
+                        id="liquidVolume" 
+                        name="liquidVolume" 
+                        step="any"
+                        placeholder="Enter liquid volume"
+                        value="<?php echo htmlspecialchars($_POST['liquidVolume'] ?? ''); ?>"
+                    >
+                </div>
                 
                 <div class="form-group">
                     <label for="soilT">
                         <i class="fas fa-thermometer-half"></i> Soil Temperature (°C)
                     </label>
-                    <input 
-                        type="number" 
-                        id="soilT" 
-                        name="soilT" 
-                        step="any"
-                        placeholder="Enter temperature"
-                        value="<?php echo htmlspecialchars($_POST['soilT'] ?? ''); ?>"
-                    >
+                    <p class="temp">30° | 31°-34° | 34°</p>
                 </div>
                 
                 <div class="form-group">
                     <label for="soilM">
                         <i class="fas fa-tint"></i> Soil Moisture (%)
                     </label>
-                    <input 
-                        type="number" 
-                        id="soilM" 
-                        name="soilM" 
-                        step="any"
-                        placeholder="0.0 - 100.0"
-                        value="<?php echo htmlspecialchars($_POST['soilM'] ?? ''); ?>"
-                    >
-                </div>
-                
-                <div class="form-group">
-                    <label for="flowRate">
-                        <i class="fas fa-water"></i> Flow Rate (L/min)
-                    </label>
-                    <input 
-                        type="number" 
-                        id="flowRate" 
-                        name="flowRate" 
-                        step="any"
-                        placeholder="Enter flow rate"
-                        value="<?php echo htmlspecialchars($_POST['flowRate'] ?? ''); ?>"
-                    >
+                    <p id="soil-moisture-display" class="empty-moisture-warning">Please Select a Soil Type</p>
                 </div>
             </div>
             
@@ -416,6 +410,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             floweringToFruiting: <?php echo json_encode($flowringToFruitingDefaults); ?>,
             harvesting: <?php echo json_encode($harvestingDefaults); ?>
         };
+        const moistureThresholdValues = <?php echo json_encode($moistureThresholdValues); ?>;
     </script>
     <script src="../assets/js/nutrition.js"></script>
 </body>

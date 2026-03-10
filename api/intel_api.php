@@ -47,42 +47,43 @@ $result = $stmt->get_result();
 // Fetch plant parameters
 $plantParams = $conn->query("SELECT * FROM plantnutrionneed ORDER BY nutritionID DESC")->fetch_assoc();
 
-// Process the sensor data and determine actions
-if ($row['SoilT'] < 30) {
-    if ($row['SoilMois'] < $plantParams['meanMoistureThreshold']) {
-        if ($row['soilN'] < 30) {
-            if ($row['soilEC'] > 1000) {
-                // Check if motor is on condition here
-            }
-            // Check if one type of fertiliizer is needed contition here
-        }
-    }
-    // else continue monitoring soil temperature
-}
-else if ($row['SoilT'] >= 31 && $row['SoilT'] <= 34) {
-    if ($row['SoilMois'] < ($plantParams['meanMoistureThreshold'] + 5)) {
-        if ($row['soilN'] < 30) {
-            if ($row['soilEC'] > 1000) {
-                // Check if motor is on condition here
-            }
-            // Check if one type of fertiliizer is needed contition here
-        }
-    }
-    // else continue monitoring soil temperature
-}
-else if ($row['SoilT'] > 34) {
-    if ($row['SoilMois'] < ($plantParams['meanMoistureThreshold'] + 10)) {
-        if ($row['soilN'] < 30) {
-            if ($row['soilEC'] > 1000) {
-                // Check if motor is on condition here
-            }
-            // Check if one type of fertiliizer is needed contition here
-        }
-    }
-    // else continue monitoring soil temperature
-}
-
 if ($row = $result->fetch_assoc()) {
+    // Process the sensor data and determine actions
+    if ($row['SoilT'] < 30) {
+        if ($row['SoilMois'] < $plantParams['meanMoistureThreshold']) {
+            if ($row['soilN'] < 30) {
+                if ($row['soilEC'] > 1000) {
+                    // Check if motor is on condition here
+                }
+                // Check if one type of fertiliizer is needed contition here
+            }
+        }
+        // else continue monitoring soil temperature
+    }
+    else if ($row['SoilT'] >= 31 && $row['SoilT'] <= 34) {
+        if ($row['SoilMois'] < ($plantParams['meanMoistureThreshold'] + 5)) {
+            if ($row['soilN'] < 30) {
+                if ($row['soilEC'] > 1000) {
+                    // Check if motor is on condition here
+                }
+                // Check if one type of fertiliizer is needed contition here
+            }
+        }
+        // else continue monitoring soil temperature
+    }
+    else if ($row['SoilT'] > 34) {
+        if ($row['SoilMois'] < ($plantParams['meanMoistureThreshold'] + 10)) {
+            if ($row['soilN'] < 30) {
+                if ($row['soilEC'] > 1000) {
+                    // Check if motor is on condition here
+                }
+                // Check if one type of fertiliizer is needed contition here
+            }
+        }
+        // else continue monitoring soil temperature
+    }
+
+    
     echo json_encode([
         "status" => "updated",
         "sensor" => $row
