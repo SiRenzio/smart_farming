@@ -47,6 +47,7 @@ $result = $stmt->get_result();
 
 // Fetch plant parameters
 $plantParams = $conn->query("SELECT * FROM plantnutrionneed ORDER BY nutritionID DESC")->fetch_assoc();
+$checkPumEvent = $conn->query("SELECT waterstatus, wateringFlag FROM tankpumpevent WHERE tankID = 1 ORDER BY tankPumpEventID DESC LIMIT 1")->fetch_assoc();
 
 if ($row = $result->fetch_assoc()) {
     // Process the sensor data and determine actions
@@ -55,15 +56,17 @@ if ($row = $result->fetch_assoc()) {
             if ($row['SoilN'] < $plantParams['soilN']) {
                 if ($row['SoilEC'] > $plantParams['soilEC']) {
                     // Check if motor is on condition here (Tank 1)
-                    $checkPumEvent = $conn->query("SELECT waterstatus, wateringFlag FROM tankpumpevent WHERE tankID = 1 ORDER BY tankPumpEventID DESC LIMIT 1")->fetch_assoc();
-                    if ($checkPumEvent['wateringstatus'] === NULL || $checkPumEvent['wateringFlag'] === NULL) {
+                    if ($checkPumEvent) {
+                        if ($checkPumEvent['wateringFlag'] === 1) {
+                            return;
+                        }
+                    } 
+                    else if ($checkPumEvent['wateringstatus'] === NULL && $checkPumEvent['wateringFlag'] === NULL) {
                         // Send command to turn on the pump
                         $command = "trig_tsl1";
                         $liquidVolume = $plantParams['liquidVolume'];
                         sendResponse(true, 'Pump turned on', $command, $liquidVolume);
-                    } else {
-                        return;
-                    }
+                    } 
                     
 
                 }
@@ -72,16 +75,18 @@ if ($row = $result->fetch_assoc()) {
 
 
             }
-            //Check if motor is on condition here (Tank 1)
             else {
-                $checkPumEvent = $conn->query("SELECT waterstatus, wateringFlag FROM tankpumpevent WHERE tankID = 1 ORDER BY tankPumpEventID DESC LIMIT 1")->fetch_assoc();
-                if ($checkPumEvent['wateringstatus'] === NULL || $checkPumEvent['wateringFlag'] === NULL) {
+                //Check if motor is on condition here (Tank 1)
+                if ($checkPumEvent) {
+                    if ($checkPumEvent['wateringFlag'] === 1) {
+                        return;
+                    }
+                } 
+                else if ($checkPumEvent['wateringstatus'] === NULL && $checkPumEvent['wateringFlag'] === NULL) {
                     // Send command to turn on the pump
                     $command = "trig_tsl1";
                     $liquidVolume = $plantParams['liquidVolume'];
                     sendResponse(true, 'Pump turned on', $command, $liquidVolume);
-                } else {
-                    return;
                 }
             }
 
