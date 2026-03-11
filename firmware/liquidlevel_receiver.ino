@@ -204,6 +204,7 @@ void checkIntelConnection() {
           if(command != "none" && intelVolume > 0 && !wateringActive) {
             targetVolumeML = intelVolume;  // Only set target when accepting NEW command
             
+            String message = resDoc["message"];
             Serial.print("[INTEL COMMAND]: ");
             Serial.print("Message: ");
             Serial.print(message);
@@ -264,6 +265,37 @@ void checkIntelConnection() {
   if (!success) {
     Serial.println("[INTEL API ERROR] Connection failed");
   }
+}
+
+/* ===================== SEND RESET TO WATERING API ===================== */
+
+void sendResetToWatering(int sensorID) {
+
+  if (!apiReady || WiFi.status() != WL_CONNECTED) return;
+
+  HTTPClient http;
+  StaticJsonDocument<200> doc;
+
+  doc["liquidsensorID"] = sensorID;
+  doc["updateType"] = "reset";  // Signal that 15-minute cycle is complete
+
+  String payload;
+  serializeJson(doc, payload);
+
+  http.begin(sendWateringURL);
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(3000);
+
+  int httpCode = http.POST(payload);
+
+  if (httpCode > 0) {
+    Serial.print("[WATERING RESET] Tank ");
+    Serial.print(sensorID);
+    Serial.print(" reset sent: ");
+    Serial.println(http.getString());
+  }
+
+  http.end();
 }
 
 /* ===================== SEND DATA ===================== */
@@ -688,11 +720,11 @@ void loop() {
     wateringflag3 = -1;
     wateringstatus3 = -1;
     
-    // Send continuous update to trigger isActive reset in Intel
-    sendWateringData("continuous", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1);
-    sendWateringData("continuous", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2);
-    sendWateringData("continuous", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3);
+    // Send reset signal to Watering API to set isActive=0
+    sendResetToWatering(1);
+    sendResetToWatering(2);
+    sendResetToWatering(3);
     
-    Serial.println("[READY] 15-minute wait complete. Sent reset signal to Intel (isActive=0)");
+    Serial.println("[READY] 15-minute wait complete. Sent reset signal to Watering API (isActive=0)");
   }
 }

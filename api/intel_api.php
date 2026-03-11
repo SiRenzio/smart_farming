@@ -16,6 +16,8 @@ function sendResponse($success, $message, $command, $liquidVolume, $conn) {
             UPDATE tankpumpevent
             SET isActive = 1
             WHERE liquidsensorID = 1
+            AND liquidsensorID = 2
+            AND liquidsensorID = 3
             ORDER BY tankPumpEventID DESC
             LIMIT 1
         ");
@@ -31,8 +33,7 @@ function sendResponse($success, $message, $command, $liquidVolume, $conn) {
     ]);
     exit;
 }
-/* ================= RECEIVE RESET CMD FROM ESP32 ================= */
-
+/* ================= RECEIVE SE ================= */
 
 
 

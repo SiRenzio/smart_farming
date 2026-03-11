@@ -28,14 +28,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $liquidsensorID     = isset($decoded_data['liquidsensorID']) ? (int)$decoded_data['liquidsensorID'] : null;
-    $currentliquidlevel = isset($decoded_data['currentliquidlevel']) ? (int)$decoded_data['currentliquidlevel'] : null;
-    $wateringstatus     = isset($decoded_data['wateringstatus']) ? (int)$decoded_data['wateringstatus'] : null;
-    $wateringFlag       = isset($decoded_data['wateringFlag']) ? (int)$decoded_data['wateringFlag'] : null;
     $updateType         = isset($decoded_data['updateType']) ? $decoded_data['updateType'] : 'event';
 
     if (!$liquidsensorID) {
         sendResponse(false, 'liquidsensorID is required');
     }
+
+    /* ================= RESET CYCLE FROM ESP32 (AFTER 15-MINUTE WAIT) ================= */
+    if ($updateType === 'reset') {
+        $resetQuery = "UPDATE tankpumpevent SET isActive = 0 WHERE liquidsensorID = ? ORDER BY tankPumpEventID DESC LIMIT 1";
+        $resetStmt = $conn->prepare($resetQuery);
+        $resetStmt->bind_param("i", $liquidsensorID);
+        $resetStmt->execute();
+        $resetStmt->close();
+        
+        sendResponse(true, 'Cycle reset complete. isActive set to 0 for Tank ' . $liquidsensorID, [
+            'liquidsensorID' => $liquidsensorID,
+            'timestamp' => date('Y-m-d H:i:s')
+        ]);
+    }
+
+    $currentliquidlevel = isset($decoded_data['currentliquidlevel']) ? (int)$decoded_data['currentliquidlevel'] : null;
+    $wateringstatus     = isset($decoded_data['wateringstatus']) ? (int)$decoded_data['wateringstatus'] : null;
+    $wateringFlag       = isset($decoded_data['wateringFlag']) ? (int)$decoded_data['wateringFlag'] : null;
 
     $dateTime = date('Y-m-d H:i:s');
 
