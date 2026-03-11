@@ -203,19 +203,17 @@ void checkIntelConnection() {
           // AND don't overwrite targetVolumeML if watering is already active
           if(command != "none" && intelVolume > 0 && !wateringActive) {
             targetVolumeML = intelVolume;  // Only set target when accepting NEW command
-            
-            String message = resDoc["message"];
-            Serial.print("[INTEL COMMAND]: ");
-            Serial.print("Message: ");
-            Serial.print(message);
-            Serial.print(" | Command: ");
-            Serial.print(command);
-            Serial.print(" | Target Volume: ");
-            Serial.print(targetVolumeML);
-            Serial.println(" mL");
 
             if(command == "trig_tsl1" && wateringflag1 == -1 && premixBefore1 == 0) {
               // Only trigger if pump is idle (wateringflag1 == -1)
+              Serial.print("[INTEL COMMAND]: ");
+              Serial.print("Message: Pump turned on");
+              Serial.print(" | Command: ");
+              Serial.print(command);
+              Serial.print(" | Target Volume: ");
+              Serial.print(targetVolumeML);
+              Serial.println(" mL");
+              
               activeTank = 1;
               premixBefore1 = 1;
               premixStartTime1 = millis();
@@ -228,6 +226,14 @@ void checkIntelConnection() {
             }
             else if(command == "trig_tsl2" && wateringflag2 == -1 && premixBefore2 == 0) {
               // Only trigger if pump is idle (wateringflag2 == -1)
+              Serial.print("[INTEL COMMAND]: ");
+              Serial.print("Message: Pump turned on");
+              Serial.print(" | Command: ");
+              Serial.print(command);
+              Serial.print(" | Target Volume: ");
+              Serial.print(targetVolumeML);
+              Serial.println(" mL");
+              
               activeTank = 2;
               premixBefore2 = 1;
               premixStartTime2 = millis();
@@ -240,6 +246,14 @@ void checkIntelConnection() {
             }
             else if(command == "trig_tsl3" && wateringflag3 == -1 && premixBefore3 == 0) {
               // Only trigger if pump is idle (wateringflag3 == -1)
+              Serial.print("[INTEL COMMAND]: ");
+              Serial.print("Message: Pump turned on");
+              Serial.print(" | Command: ");
+              Serial.print(command);
+              Serial.print(" | Target Volume: ");
+              Serial.print(targetVolumeML);
+              Serial.println(" mL");
+              
               activeTank = 3;
               premixBefore3 = 1;
               premixStartTime3 = millis();
