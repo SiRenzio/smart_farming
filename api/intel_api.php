@@ -4,11 +4,24 @@ date_default_timezone_set('Asia/Manila');
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Allow-Methods: POST, GET');
 header('Access-Control-Allow-Headers: Content-Type');
 
+function sendResponse($success, $message, $command, $liquidVolume, $conn) {
 
-function sendResponse($success, $message, $command, $liquidVolume) {
+    // Only activate pump event if a real command is triggered
+    if ($command !== "none") {
+
+        $conn->query("
+            UPDATE tankpumpevent
+            SET isActive = 1
+            WHERE liquidsensorID = 1
+            ORDER BY tankPumpEventID DESC
+            LIMIT 1
+        ");
+
+    }
+
     echo json_encode([
         'success' => $success,
         'message' => $message,
@@ -18,114 +31,152 @@ function sendResponse($success, $message, $command, $liquidVolume) {
     ]);
     exit;
 }
+/* ================= RECEIVE RESET CMD FROM ESP32 ================= */
 
-// Fetch the latese sensor data
+
+
+
+/* ================= FETCH LATEST SENSOR DATA ================= */
+
 $sensorDataID = $_GET['sensorDataID'] ?? null;
 
 if ($sensorDataID) {
     $stmt = $conn->prepare("
-        SELECT *
-        FROM sensordata
+        SELECT * FROM sensordata
         WHERE SensorDataID > ?
-        ORDER BY DateTime DESC
-        LIMIT 1
+        ORDER BY DateTime DESC LIMIT 1
     ");
-
     $stmt->bind_param("s", $sensorDataID);
-
 } else {
     $stmt = $conn->prepare("
-        SELECT *
-        FROM sensordata
-        ORDER BY DateTime DESC
-        LIMIT 1
+        SELECT * FROM sensordata
+        ORDER BY DateTime DESC LIMIT 1
     ");
 }
 
 $stmt->execute();
 $result = $stmt->get_result();
 
-// Fetch plant parameters
-$plantParams = $conn->query("SELECT * FROM plantnutrionneed ORDER BY nutritionID DESC")->fetch_assoc();
-$checkPumEvent = $conn->query("SELECT waterstatus, wateringFlag FROM tankpumpevent WHERE tankID = 1 ORDER BY tankPumpEventID DESC LIMIT 1")->fetch_assoc();
+/* ================= FETCH PLANT PARAMETERS ================= */
+
+$plantParams = $conn->query("
+    SELECT * FROM plantnutrionneed
+    ORDER BY nutritionID DESC
+    LIMIT 1
+")->fetch_assoc();
+
+/* ================= FETCH PUMP STATUS ================= */
+
+// FIXED: Added isActive to the SELECT query
+$checkPumEvent = $conn->query("
+    SELECT wateringstatus, wateringFlag, isActive
+    FROM tankpumpevent
+    WHERE liquidsensorID = 1
+    ORDER BY tankPumpEventID DESC
+    LIMIT 1
+")->fetch_assoc();
+
+$isPumpRunning = false;
+$isActive = 0;
+
+if ($checkPumEvent) {
+
+    $wateringFlag   = $checkPumEvent['wateringFlag'] ?? -1;
+    $wateringStatus = $checkPumEvent['wateringstatus'] ?? -1;
+    
+    // FIXED: Actually read the database state into the variable
+    $isActive       = $checkPumEvent['isActive'];
+    
+    // Pump is busy if flag or status is active (>= 0)
+    if ($wateringFlag >= 0 || $wateringStatus >= 0) {
+        $isPumpRunning = true;
+    }
+}
+
+/* ================= PROCESS SENSOR DATA ================= */
 
 if ($row = $result->fetch_assoc()) {
-    // Process the sensor data and determine actions
     if ($row['SoilT'] < 30) {
         if ($row['SoilMois'] < $plantParams['meanMoistureThreshold']) {
             if ($row['SoilN'] < $plantParams['soilN']) {
                 if ($row['SoilEC'] > $plantParams['soilEC']) {
-                    // Check if motor is on condition here (Tank 1)
-                    if ($checkPumEvent) {
-                        if ($checkPumEvent['wateringFlag'] === 1) {
-                            return;
-                        }
-                    } 
-                    else if ($checkPumEvent['wateringstatus'] === NULL && $checkPumEvent['wateringFlag'] === NULL) {
-                        // Send command to turn on the pump
+
+                    /* ================= TANK 1 COMMAND ================= */
+
+                    // FIXED: This will now properly block if $isActive is 1
+                    if ($isPumpRunning || $isActive == 1) {
+
+                        
+
+                    } else {
                         $command = "trig_tsl1";
-                        $liquidVolume = $plantParams['liquidVolume'];
-                        sendResponse(true, 'Pump turned on', $command, $liquidVolume);
-                    } 
-                    
-
-                }
-                // Check if one type of fertiliizer is needed contition here (identify which type of fertilizer is needed based on the soil parameters)
-                // tank 2 | nitrabor | trig_tsl2 ========== tank 3 | UNIK16/WINNER | trig_tsl3
-
-
-            }
-            else {
-                //Check if motor is on condition here (Tank 1)
-                if ($checkPumEvent) {
-                    if ($checkPumEvent['wateringFlag'] === 1) {
-                        return;
+                        $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                        sendResponse(true,
+                            'Pump turned on',
+                            $command,
+                            $liquidVolume,
+                            $conn
+                        );
                     }
-                } 
-                else if ($checkPumEvent['wateringstatus'] === NULL && $checkPumEvent['wateringFlag'] === NULL) {
-                    // Send command to turn on the pump
+
+                }
+
+                /* ================= FUTURE FERTILIZER LOGIC ================= */
+
+                // tank 2 | nitrabor
+                // trig_tsl2
+
+                // tank 3 | UNIK16 / WINNER
+                // trig_tsl3
+
+            } else {
+                if ($isPumpRunning || $isActive == 1) {
+                    
+                } else {
+                    
                     $command = "trig_tsl1";
-                    $liquidVolume = $plantParams['liquidVolume'];
-                    sendResponse(true, 'Pump turned on', $command, $liquidVolume);
+                    $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                    sendResponse(true,
+                        'Pump turned on',
+                        $command,
+                        $liquidVolume,
+                        $conn
+                    );
                 }
             }
-
-
         }
-        // else continue monitoring soil temperature
     }
+
     else if ($row['SoilT'] >= 31 && $row['SoilT'] <= 34) {
         if ($row['SoilMois'] < ($plantParams['meanMoistureThreshold'] + 5)) {
             if ($row['SoilN'] < $plantParams['soilN']) {
                 if ($row['SoilEC'] > $plantParams['soilEC']) {
-                    // Check if motor is on condition here
+                    // future logic
+
                 }
-                // Check if one type of fertiliizer is needed contition here
             }
         }
-        // else continue monitoring soil temperature
     }
+
     else if ($row['SoilT'] > 34) {
         if ($row['SoilMois'] < ($plantParams['meanMoistureThreshold'] + 10)) {
             if ($row['SoilN'] < $plantParams['soilN']) {
                 if ($row['SoilEC'] > $plantParams['soilEC']) {
-                    // Check if motor is on condition here
+                    // future logic
+
                 }
-                // Check if one type of fertiliizer is needed contition here
             }
         }
-        // else continue monitoring soil temperature
     }
-
-    
-    echo json_encode([
-        "status" => "updated",
-        "sensor" => $row
-    ]);
-
-} else {
-    echo json_encode([
-        "status" => "no-change"
-    ]);
 }
+
+/* ================= DEFAULT RESPONSE ================= */
+
+sendResponse(
+    false,
+    'No action required based on current parameters',
+    'none',
+    0,
+    $conn
+);
 ?>
