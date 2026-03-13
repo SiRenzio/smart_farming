@@ -1,0 +1,9 @@
+for tank 1 (Normal Water) - 6 condition based on Temperature, Moisture and EC
+
+- Normal
+INSERT INTO sensordata userID, SoilSensorID, location, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT
+VALUES (1, 1, 13, 40, 43, 52, 1200, 6.4, 28, 28, NOW()); 
+
+
+INSERT INTO sensordata userID, SoilSensorID, location, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT
+VALUES (1, 1, 13, 40, 43, 52, 1200, 6.4, 28, 24, NOW()); 
