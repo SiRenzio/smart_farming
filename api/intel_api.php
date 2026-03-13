@@ -127,6 +127,7 @@ if ($row = $result->fetch_assoc()) {
                     if ($fertCount === 1) { // Check if only 1 fertilizer is needed
                         if (!$isPumpRunning || !$isActive == 1) {
                             // command for fertilizer here (calcium-based fertilizer | nitrabor OR phosphorus-based fertilizer | UNIK16/WINNER) depending on which one is needed
+
                             
                         }
                     }
@@ -137,6 +138,14 @@ if ($row = $result->fetch_assoc()) {
 
                             if (!$isPumpRunning || !$isActive == 1) {
                                 // command for tank 2 (calcium-based fertilizer | nitrabor) here 
+                                $command = "trig_tsl2";
+                                $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                                sendResponse(true,
+                                    'Pump turned on',
+                                    $command,
+                                    $liquidVolume,
+                                    $conn
+                                );
                             }
                         }
                         else if ($checkPumpEvent2['fertFlag'] === 1 && $checkPumpEvent3['fertFlag'] === 0) { // If tank 2 is active and tank 3 is not alternate to tank 3 (phosphorus-based fertilizer | UNIK16/WINNER)
@@ -145,6 +154,14 @@ if ($row = $result->fetch_assoc()) {
 
                             if (!$isPumpRunning || !$isActive == 1) {
                                 // command for tank 3 (phosphorus-based fertilizer | UNIK16/WINNER) here
+                                $command = "trig_tsl3";
+                                $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                                sendResponse(true,
+                                    'Pump turned on',
+                                    $command,
+                                    $liquidVolume,
+                                    $conn
+                                );
                             }
                         }
                         else if ($checkPumpEvent2['fertFlag'] === 0 && $checkPumpEvent3['fertFlag'] === 0) { // If both tanks are inactive turn on tank 2 first (calcium-based fertilizer | nitrabor)
@@ -152,6 +169,14 @@ if ($row = $result->fetch_assoc()) {
 
                             if (!$isPumpRunning || !$isActive == 1) {
                                 // command for tank 2 (calcium-based fertilizer | nitrabor) here
+                                $command = "trig_tsl2";
+                                $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                                sendResponse(true,
+                                    'Pump turned on',
+                                    $command,
+                                    $liquidVolume,
+                                    $conn
+                                );
                             }
                         }
                     }
@@ -205,6 +230,14 @@ if ($row = $result->fetch_assoc()) {
 
                             if (!$isPumpRunning || !$isActive == 1) {
                                 // command for tank 2 (calcium-based fertilizer | nitrabor) here
+                                $command = "trig_tsl2";
+                                $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                                sendResponse(true,
+                                    'Pump turned on',
+                                    $command,
+                                    $liquidVolume,
+                                    $conn
+                                );
                             }
                         }
                         else if ($checkPumpEvent2['fertFlag'] === 1 && $checkPumpEvent3['fertFlag'] === 0) { // If tank 2 is active and tank 3 is not alternate to tank 3 (phosphorus-based fertilizer | UNIK16/WINNER)
@@ -213,6 +246,14 @@ if ($row = $result->fetch_assoc()) {
 
                             if (!$isPumpRunning || !$isActive == 1) {
                                 // command for tank 3 (phosphorus-based fertilizer | UNIK16/WINNER) here
+                                $command = "trig_tsl3";
+                                $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                                sendResponse(true,
+                                    'Pump turned on',
+                                    $command,
+                                    $liquidVolume,
+                                    $conn
+                                );
                             }
                         }
                         else if ($checkPumpEvent2['fertFlag'] === 0 && $checkPumpEvent3['fertFlag'] === 0) { // If both tanks are inactive turn on tank 2 first (calcium-based fertilizer | nitrabor)
@@ -220,6 +261,14 @@ if ($row = $result->fetch_assoc()) {
 
                             if (!$isPumpRunning || !$isActive == 1) {
                                 // command for tank 2 (calcium-based fertilizer | nitrabor) here
+                                $command = "trig_tsl2";
+                                $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                                sendResponse(true,
+                                    'Pump turned on',
+                                    $command,
+                                    $liquidVolume,
+                                    $conn
+                                );
                             }
                         }
                     }
@@ -273,6 +322,14 @@ if ($row = $result->fetch_assoc()) {
 
                             if (!$isPumpRunning || !$isActive == 1) {
                                 // command for tank 2 (calcium-based fertilizer | nitrabor) here
+                                $command = "trig_tsl2";
+                                $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                                sendResponse(true,
+                                    'Pump turned on',
+                                    $command,
+                                    $liquidVolume,
+                                    $conn
+                                );
                             }
                         }
                         else if ($checkPumpEvent2['fertFlag'] === 1 && $checkPumpEvent3['fertFlag'] === 0) { // If tank 2 is active and tank 3 is not alternate to tank 3 (phosphorus-based fertilizer | UNIK16/WINNER)
@@ -281,6 +338,14 @@ if ($row = $result->fetch_assoc()) {
 
                             if (!$isPumpRunning || !$isActive == 1) {
                                 // command for tank 3 (phosphorus-based fertilizer | UNIK16/WINNER) here
+                                $command = "trig_tsl3";
+                                $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                                sendResponse(true,
+                                    'Pump turned on',
+                                    $command,
+                                    $liquidVolume,
+                                    $conn
+                                );
                             }
                         }
                         else if ($checkPumpEvent2['fertFlag'] === 0 && $checkPumpEvent3['fertFlag'] === 0) { // If both tanks are inactive turn on tank 2 first
@@ -288,6 +353,14 @@ if ($row = $result->fetch_assoc()) {
 
                             if (!$isPumpRunning || !$isActive == 1) {
                                 // command for tank 2 (calcium-based fertilizer | nitrabor) here
+                                $command = "trig_tsl2";
+                                $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                                sendResponse(true,
+                                    'Pump turned on',
+                                    $command,
+                                    $liquidVolume,
+                                    $conn
+                                );
                             }
                         }
                     }
