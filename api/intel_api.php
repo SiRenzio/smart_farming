@@ -118,7 +118,7 @@ if ($row = $result->fetch_assoc()) {
     if ($row['SoilT'] < 30) {
         $moistureThreshold = $plantParams['meanMoistureThreshold'];
     }
-    else if ('SoilT' >= 31 && $row['SoilT'] <= 34) {
+    else if ($row['SoilT'] >= 31 && $row['SoilT'] <= 34) {
         $moistureThreshold = $plantParams['meanMoistureThreshold'] + 5;
     }
     else if ($row['SoilT'] > 34) {
