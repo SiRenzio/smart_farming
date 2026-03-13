@@ -227,7 +227,6 @@ function getFilterParams($excludePage = true) {
                             <th><i class="fas fa-tint"></i> pH</th>
                             <th><i class="fas fa-thermometer-half"></i> Temp (°C)</th>
                             <th><i class="fas fa-tint"></i> Moisture (%)</th>
-                            <th><i class="fas fa-water"></i> Liquid Volume</th>
                             <th><i class="fas fa-cogs"></i> Action</th>
                         </tr>
                     </thead>
@@ -248,7 +247,6 @@ function getFilterParams($excludePage = true) {
                                 <td class="numeric-value"><?php echo $row['SoilPH'] !== null ? htmlspecialchars($row['SoilPH']) : '-'; ?></td>
                                 <td class="numeric-value"><?php echo $row['SoilT'] !== null ? htmlspecialchars($row['SoilT']) : '-'; ?></td>
                                 <td class="numeric-value"><?php echo $row['SoilMois'] !== null ? htmlspecialchars($row['SoilMois']) : '-'; ?></td>
-                                <td class="numeric-value"><?php echo $row['liquidVolume'] !== null ? htmlspecialchars($row['liquidVolume']) : '-'; ?></td>
                                 <td>
                                     <div class="actions">
                                         <form method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this sensor data? This action cannot be undone.');">

@@ -121,7 +121,6 @@ void sendSensorData() {
   float soilpH = random(10, 140)  / 10.0;
   float soilT  = random(100, 1000)/ 10.0;
   float soilM  = random(100, 1000)/ 10.0;
-  float soilLV = random(10, 100)  / 10.0;
 
   StaticJsonDocument<400> doc;
   doc["userID"] = userID;
@@ -134,7 +133,6 @@ void sendSensorData() {
   doc["soilpH"] = soilpH;
   doc["soilT"]  = soilT;
   doc["soilM"]  = soilM;
-  doc["soilLV"] = soilLV;
 
   String payload;
   serializeJson(doc, payload);

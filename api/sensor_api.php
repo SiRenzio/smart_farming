@@ -40,7 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $soilPH = isset($decoded_data['soilpH']) ? (float)$decoded_data['soilpH'] : 0.0;
     $soilT = isset($decoded_data['soilT']) ? (float)$decoded_data['soilT'] : 0.0;
     $soilMois = isset($decoded_data['soilM']) ? (float)$decoded_data['soilM'] : 0.0;
-    $liquidVolume = isset($decoded_data['soilLV']) ? (float)$decoded_data['soilLV'] : 0.0;
     
     // Validate required IDs
     if (!$soilSensorID || !$locationID || !$userID) {
@@ -90,9 +89,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dateTime = date('Y-m-d H:i:s');
     
     // Insert data into database
-    $stmt = $conn->prepare('INSERT INTO sensordata (userID, SoilSensorID, locationID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, liquidVolume, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
+    $stmt = $conn->prepare('INSERT INTO sensordata (userID, SoilSensorID, locationID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
     
-    $stmt->bind_param('iiidddddddd', 
+    $stmt->bind_param('iidddddddd', 
         $userID,
         $soilSensorID, 
         $locationID,
@@ -102,8 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $soilEC, 
         $soilPH, 
         $soilT, 
-        $soilMois, 
-        $liquidVolume
+        $soilMois
     );
     
     if ($stmt->execute()) {
@@ -121,8 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'EC' => $soilEC,
                 'pH' => $soilPH,
                 'Temperature' => $soilT,
-                'Moisture' => $soilMois,
-                'Volume' => $liquidVolume
+                'Moisture' => $soilMois
             ]
         ]);
     } else {

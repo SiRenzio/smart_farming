@@ -73,7 +73,6 @@ while ($row = $result->fetch_assoc()):
     <td><?= $row['SoilPH'] ?? '-' ?></td>
     <td><?= $row['SoilT'] ?? '-' ?></td>
     <td><?= $row['SoilMois'] ?? '-' ?></td>
-    <td><?= $row['liquidVolume'] ?? '-' ?></td>
     <td>
         <div class="actions">
             <form method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this sensor data? This action cannot be undone.');">

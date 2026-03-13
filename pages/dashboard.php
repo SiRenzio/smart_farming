@@ -53,6 +53,11 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
+// Get the lates plant nutrition data for the dashboard
+$depPlants = $conn->prepare('SELECT nutritionID FROM plantnutrionneed ORDER BY nutritionID DESC LIMIT 1');
+$depPlants->execute();
+$latestNutritionID = $depPlants->get_result()->fetch_assoc()['nutritionID'];
+$depPlants->close();
 
 // Helper to keep filters in URL
 function getFilterParams($excludePage = true) {
@@ -245,7 +250,7 @@ function getFilterParams($excludePage = true) {
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <a href="deployed_nutrition.php?nutritionID=<?php echo $deployment['nutritionID']; ?>" class="action-btn btn-success">
+                                    <a href="deployed_nutrition.php?nutritionID=<?php echo $latestNutritionID; ?>" class="action-btn btn-success">
                                         <i class="fas fa-eye"></i> View Data
                                     </a>
                                 </td>

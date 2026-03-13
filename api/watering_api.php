@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         sendResponse(false, 'liquidsensorID is required');
     }
 
-    /* ================= RESET CYCLE FROM ESP32 (AFTER 15-MINUTE WAIT) ================= */
+    // reset for isActive
     if ($updateType === 'reset') {
         $resetQuery = "UPDATE tankpumpevent SET isActive = 0 WHERE liquidsensorID = ? ORDER BY tankPumpEventID DESC LIMIT 1";
         $resetStmt = $conn->prepare($resetQuery);
