@@ -125,7 +125,13 @@ if ($row = $result->fetch_assoc()) {
         $moistureThreshold = $plantParams['meanMoistureThreshold'] + 10;
     }
     else {
-        return;
+        sendResponse(
+            false,
+            'No action required based on current parameters',
+            'none',
+            0,
+            $conn
+        );
     }
 
     if ($row['SoilMois'] < $moistureThreshold) {
@@ -256,7 +262,13 @@ if ($row = $result->fetch_assoc()) {
         }
     }
     else {
-        return;
+        sendResponse(
+            false,
+            'No action required based on current parameters',
+            'none',
+            0,
+            $conn
+        );
     }
 }
 
