@@ -4,6 +4,28 @@ for tank 1 (Normal Water) - 6 condition based on Temperature, Moisture and EC
 INSERT INTO sensordata userID, SoilSensorID, location, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT
 VALUES (1, 1, 13, 40, 43, 52, 1200, 6.4, 28, 28, NOW()); 
 
-
+- 1st condition trigger
 INSERT INTO sensordata userID, SoilSensorID, location, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT
 VALUES (1, 1, 13, 40, 43, 52, 1200, 6.4, 28, 24, NOW()); 
+
+
+
+for tank 2
+
+INSERT INTO `sensordata` 
+(`userID`, `SoilSensorID`, `locationID`, `SoilN`, `SoilP`, `SoilK`, `SoilEC`, `SoilPH`, `SoilT`, `SoilMois`, `DateTime`) 
+
+-- Condition 1: SoilT < 30 (moistureThreshold = 28) -> SoilMois must be < 28
+INSERT INTO `sensordata` (`userID`, `SoilSensorID`, `locationID`, `SoilN`, `SoilP`, `SoilK`, `SoilEC`, `SoilPH`, `SoilT`, `SoilMois`, `DateTime`) 
+VALUES (1, 1, 13, 40, 43, 52, 800, 6.4, 25, 20, '2026-03-13 14:01:00');
+
+INSERT INTO `sensordata` (`userID`, `SoilSensorID`, `locationID`, `SoilN`, `SoilP`, `SoilK`, `SoilEC`, `SoilPH`, `SoilT`, `SoilMois`, `DateTime`) 
+VALUES (1, 1, 13, 45, 43, 52, 900, 6.4, 29, 27, '2026-03-13 14:02:00');
+
+-- Condition 2: SoilT >= 31 && SoilT <= 34 (moistureThreshold = 33) -> SoilMois must be < 33
+(1, 1, 13, 35, 43, 52, 750, 6.4, 31, 30, '2026-03-13 14:03:00'),
+(1, 1, 13, 50, 43, 52, 950, 6.4, 33, 32, '2026-03-13 14:04:00'),
+
+-- Condition 3: SoilT > 34 (moistureThreshold = 38) -> SoilMois must be < 38
+(1, 1, 13, 42, 43, 52, 820, 6.4, 35, 34, '2026-03-13 14:05:00'),
+(1, 1, 13, 48, 43, 52, 880, 6.4, 38, 37, '2026-03-13 14:06:00');
