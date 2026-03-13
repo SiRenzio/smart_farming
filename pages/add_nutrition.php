@@ -137,6 +137,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if ($stmt->execute()) {
             $nutritionID = $conn->insert_id; // Get the auto-generated ID
+
+            for ($i = 0; $i < count($fertilizers); $i++) {
+                $fertilizer = trim($fertilizers[$i]);
+                $fertToLower = strtolower($fertilizer);
+                $amount = trim($fertilizerAmounts[$i]);
+                if ($fertilizer && $amount) {
+                    if ($fertToLower === 'nitrabor') {
+                        $stmt = $conn->prepare('INSERT INTO fertilizer (liquidsensorID, nutritionID, fertilizerName, fertilizerAmount) VALUES (2, ?, ?, ?)');
+                        $stmt->bind_param('isd', $nutritionID, $fertilizer, $amount);
+                        $stmt->execute();
+                        $stmt->close();
+                    }
+                    else if ($fertToLower === 'unik16' || $fertToLower === '16-16-16' || $fertToLower === 'winner') {
+                        $stmt = $conn->prepare('INSERT INTO fertilizer (liquidsensorID, nutritionID, fertilizerName, fertilizerAmount) VALUES (3, ?, ?, ?)');
+                        $stmt->bind_param('isd', $nutritionID, $fertilizer, $amount);
+                        $stmt->execute();
+                        $stmt->close();
+                    }
+                    else {
+                        $errors[] = 'Unknown fertilizer: ' . htmlspecialchars($fertilizer) . '. Please use "Nitrabor", "Unik16", "16-16-16", or "Winner".';
+                    }
+                }
+            }
+            
             $success = 'Nutrition needs added successfully! <a href="view_nutrition.php?plantID=' . $plantID . '">View nutrition details</a> or <a href="plants.php">view all plants</a>.';
             $_SESSION['success'] = $success;
             header('Location: add_nutrition.php?plantID=' . $plantID);
@@ -145,29 +169,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Failed to add nutrition needs. Please try again.';
         }
         $stmt->close();
-    }
-
-    for ($i = 0; $i < count($fertilizers); $i++) {
-        $fertilizer = trim($fertilizers[$i]);
-        $fertToLower = strtolower($fertilizer);
-        $amount = trim($fertilizerAmounts[$i]);
-        if ($fertilizer && $amount) {
-            if ($fertToLower === 'nitrabor') {
-                $stmt = $conn->prepare('INSERT INTO fertilizer (liquidsensorID, nutritionID, fertilizerName, fertilizerAmount) VALUES (2, ?, ?, ?)');
-                $stmt->bind_param('isd', $nutritionID, $fertilizer, $amount);
-                $stmt->execute();
-                $stmt->close();
-            }
-            else if ($fertToLower === 'unik16' || $fertToLower === '16-16-16' || $fertToLower === 'winner') {
-                $stmt = $conn->prepare('INSERT INTO fertilizer (liquidsensorID, nutritionID, fertilizerName, fertilizerAmount) VALUES (3, ?, ?, ?)');
-                $stmt->bind_param('isd', $nutritionID, $fertilizer, $amount);
-                $stmt->execute();
-                $stmt->close();
-            }
-            else {
-                $errors[] = 'Unknown fertilizer: ' . htmlspecialchars($fertilizer) . '. Please use "Nitrabor", "Unik16", "16-16-16", or "Winner".';
-            }
-        }
     }
 }
 ?>
@@ -233,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="savedNutritionSetName">
                     <i class="fas fa-floppy-disk"></i> Saved Nutrition Set Name
                 </label>
-                <select name="savedNutritionSetName" id="saved-nutrition-set" class="dropdown" onchange="applySavedNutrition()">
+                <select name="savedNutritionSetName" id="saved-nutrition-set" class="dropdown">
                     <?php if (!empty($nutritionSets)): ?>
                         <option value="">Select a saved nutrition set (optional)</option>
                         <?php foreach ($nutritionSets as $set): ?>
