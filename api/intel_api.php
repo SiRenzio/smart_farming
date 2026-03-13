@@ -126,32 +126,32 @@ if ($row = $result->fetch_assoc()) {
                     $fertCount = $conn->query("SELECT COUNT(DISTINCT liquidsensorID) AS fertCount FROM `fertilizer` WHERE nutritionID = " . $plantParams['nutritionID'])->fetch_assoc()['fertCount'] ?? 0;  
                     if ($fertCount === 1) { // Check if only 1 fertilizer is needed
                         if (!$isPumpRunning || !$isActive == 1) {
-                            // command for fertilizer here
+                            // command for fertilizer here (calcium-based fertilizer | nitrabor OR phosphorus-based fertilizer | UNIK16/WINNER) depending on which one is needed
                             
                         }
                     }
                     else {
                         if ($checkPumpEvent2['fertFlag'] === 0 && $checkPumpEvent3['fertFlag'] === 1) { // If tank 3 is active and tank 2 is not alternate to tank 2 (calcium-based fertilizer | nitrabor)
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 2 fertilizer
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn off tank 3 fertilizer
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 2 fertilizer (calcium-based fertilizer | nitrabor)
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn off tank 3 fertilizer (phosphorus-based fertilizer | UNIK16/WINNER)
 
                             if (!$isPumpRunning || !$isActive == 1) {
-                                // command for tank 2 (calcium-based fertilizer) here
+                                // command for tank 2 (calcium-based fertilizer | nitrabor) here 
                             }
                         }
                         else if ($checkPumpEvent2['fertFlag'] === 1 && $checkPumpEvent3['fertFlag'] === 0) { // If tank 2 is active and tank 3 is not alternate to tank 3 (phosphorus-based fertilizer | UNIK16/WINNER)
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn off tank 2 fertilizer
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 3 fertilizer
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn off tank 2 fertilizer (calcium-based fertilizer | nitrabor)
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 3 fertilizer (phosphorus-based fertilizer | UNIK16/WINNER)
 
                             if (!$isPumpRunning || !$isActive == 1) {
-                                // command for tank 3 (nitrogen-based fertilizer) here
+                                // command for tank 3 (phosphorus-based fertilizer | UNIK16/WINNER) here
                             }
                         }
-                        else if ($checkPumpEvent2['fertFlag'] === 0 && $checkPumpEvent3['fertFlag'] === 0) { // If both tanks are inactive turn on tank 2 first
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 2 fertilizer
+                        else if ($checkPumpEvent2['fertFlag'] === 0 && $checkPumpEvent3['fertFlag'] === 0) { // If both tanks are inactive turn on tank 2 first (calcium-based fertilizer | nitrabor)
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 2 fertilizer (calcium-based fertilizer | nitrabor)
 
                             if (!$isPumpRunning || !$isActive == 1) {
-                                // command for tank 2 (calcium-based fertilizer) here
+                                // command for tank 2 (calcium-based fertilizer | nitrabor) here
                             }
                         }
                     }
@@ -195,31 +195,31 @@ if ($row = $result->fetch_assoc()) {
                     $fertCount = $conn->query("SELECT COUNT(DISTINCT liquidsensorID) AS fertCount FROM `fertilizer` WHERE nutritionID = " . $plantParams['nutritionID'])->fetch_assoc()['fertCount'] ?? 0;  
                     if ($fertCount === 1) { // Check if only 1 fertilizer is needed
                         if (!$isPumpRunning || !$isActive == 1) {
-                            // command for fertilizer here
+                            // command for fertilizer here (calcium-based fertilizer | nitrabor OR phosphorus-based fertilizer | UNIK16/WINNER) depending on which one is needed
                         }
                     }
                     else {
                         if ($checkPumpEvent2['fertFlag'] === 0 && $checkPumpEvent3['fertFlag'] === 1) { // If tank 3 is active and tank 2 is not alternate to tank 2 (calcium-based fertilizer | nitrabor)
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 2 fertilizer
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn off tank 3 fertilizer
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 2 fertilizer (calcium-based fertilizer | nitrabor)
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn off tank 3 fertilizer (phosphorus-based fertilizer | UNIK16/WINNER)
 
                             if (!$isPumpRunning || !$isActive == 1) {
-                                // command for tank 2 (calcium-based fertilizer) here
+                                // command for tank 2 (calcium-based fertilizer | nitrabor) here
                             }
                         }
                         else if ($checkPumpEvent2['fertFlag'] === 1 && $checkPumpEvent3['fertFlag'] === 0) { // If tank 2 is active and tank 3 is not alternate to tank 3 (phosphorus-based fertilizer | UNIK16/WINNER)
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn off tank 2 fertilizer
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 3 fertilizer
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn off tank 2 fertilizer (calcium-based fertilizer | nitrabor)
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 3 fertilizer (phosphorus-based fertilizer | UNIK16/WINNER)
 
                             if (!$isPumpRunning || !$isActive == 1) {
-                                // command for tank 3 (nitrogen-based fertilizer) here
+                                // command for tank 3 (phosphorus-based fertilizer | UNIK16/WINNER) here
                             }
                         }
-                        else if ($checkPumpEvent2['fertFlag'] === 0 && $checkPumpEvent3['fertFlag'] === 0) { // If both tanks are inactive turn on tank 2 first
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 2 fertilizer
+                        else if ($checkPumpEvent2['fertFlag'] === 0 && $checkPumpEvent3['fertFlag'] === 0) { // If both tanks are inactive turn on tank 2 first (calcium-based fertilizer | nitrabor)
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 2 fertilizer (calcium-based fertilizer | nitrabor)
 
                             if (!$isPumpRunning || !$isActive == 1) {
-                                // command for tank 2 (calcium-based fertilizer) here
+                                // command for tank 2 (calcium-based fertilizer | nitrabor) here
                             }
                         }
                     }
@@ -263,31 +263,31 @@ if ($row = $result->fetch_assoc()) {
                     $fertCount = $conn->query("SELECT COUNT(DISTINCT liquidsensorID) AS fertCount FROM `fertilizer` WHERE nutritionID = " . $plantParams['nutritionID'])->fetch_assoc()['fertCount'] ?? 0;  
                     if ($fertCount === 1) { // Check if only 1 fertilizer is needed
                         if (!$isPumpRunning || !$isActive == 1) {
-                            // command for fertilizer here
+                            // command for fertilizer here (calcium-based fertilizer | nitrabor OR phosphorus-based fertilizer | UNIK16/WINNER) depending on which one is needed
                         }
                     }
                     else {
                         if ($checkPumpEvent2['fertFlag'] === 0 && $checkPumpEvent3['fertFlag'] === 1) { // If tank 3 is active and tank 2 is not alternate to tank 2 (calcium-based fertilizer | nitrabor)
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 2 fertilizer
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn off tank 3 fertilizer
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 2 fertilizer (calcium-based fertilizer | nitrabor)
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn off tank 3 fertilizer (phosphorus-based fertilizer | UNIK16/WINNER)
 
                             if (!$isPumpRunning || !$isActive == 1) {
-                                // command for tank 2 (calcium-based fertilizer) here
+                                // command for tank 2 (calcium-based fertilizer | nitrabor) here
                             }
                         }
                         else if ($checkPumpEvent2['fertFlag'] === 1 && $checkPumpEvent3['fertFlag'] === 0) { // If tank 2 is active and tank 3 is not alternate to tank 3 (phosphorus-based fertilizer | UNIK16/WINNER)
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn off tank 2 fertilizer
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 3 fertilizer
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn off tank 2 fertilizer (calcium-based fertilizer | nitrabor)
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 3 fertilizer (phosphorus-based fertilizer | UNIK16/WINNER)
 
                             if (!$isPumpRunning || !$isActive == 1) {
-                                // command for tank 3 (nitrogen-based fertilizer) here
+                                // command for tank 3 (phosphorus-based fertilizer | UNIK16/WINNER) here
                             }
                         }
                         else if ($checkPumpEvent2['fertFlag'] === 0 && $checkPumpEvent3['fertFlag'] === 0) { // If both tanks are inactive turn on tank 2 first
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 2 fertilizer
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 2 fertilizer (calcium-based fertilizer | nitrabor)
 
                             if (!$isPumpRunning || !$isActive == 1) {
-                                // command for tank 2 (calcium-based fertilizer) here
+                                // command for tank 2 (calcium-based fertilizer | nitrabor) here
                             }
                         }
                     }
