@@ -118,7 +118,7 @@ if ($row = $result->fetch_assoc()) {
     if ($row['SoilT'] < 30) {
         $moistureThreshold = $plantParams['meanMoistureThreshold'];
     }
-    else if ('SoilT' >= 31 && $row['SoilT'] <= 34) {
+    else if ($row['SoilT'] >= 31 && $row['SoilT'] <= 34) {
         $moistureThreshold = $plantParams['meanMoistureThreshold'] + 5;
     }
     else if ($row['SoilT'] > 34) {
@@ -150,8 +150,45 @@ if ($row = $result->fetch_assoc()) {
                 if ($fertCount === 1) { // Check if only 1 fertilizer is needed
                     if (!$isPumpRunning || !$isActive == 1) {
                         // command for fertilizer here (calcium-based fertilizer | nitrabor OR phosphorus-based fertilizer | UNIK16/WINNER) depending on which one is needed
-
-                        
+                        if (strtolower($fertilizers[0]['fertilizerName']) === 'nitrabor') {
+                            if (!$isPumpRunning || !$isActive == 1) {
+                                // command for tank 2 (calcium-based fertilizer | nitrabor) here
+                                $command = "trig_tsl2";
+                                $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                                sendResponse(true,
+                                    'Pump turned on',
+                                    $command,
+                                    $liquidVolume,
+                                    $conn
+                                );
+                            }
+                        }
+                        else if (strtolower($fertilizers[0]['fertilizerName']) === 'unik16') {
+                            if (!$isPumpRunning || !$isActive == 1) {
+                                // command for tank 3 (phosphorus-based fertilizer | UNIK16) here
+                                $command = "trig_tsl3";
+                                $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                                sendResponse(true,
+                                    'Pump turned on',
+                                    $command,
+                                    $liquidVolume,
+                                    $conn
+                                );
+                            }
+                        }
+                        else if (strtolower($fertilizers[0]['fertilizerName']) === 'winner') {
+                            if (!$isPumpRunning || !$isActive == 1) {
+                                // command for tank 3 (phosphorus-based fertilizer | WINNER) here
+                                $command = "trig_tsl3";
+                                $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                                sendResponse(true,
+                                    'Pump turned on',
+                                    $command,
+                                    $liquidVolume,
+                                    $conn
+                                );
+                            }
+                        }
                     }
                 }
                 else {
