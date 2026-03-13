@@ -11,9 +11,11 @@ function sendResponse($success, $message, $command, $liquidVolume, $conn) {
 
     // Only activate pump event if a real command is triggered
     if ($command !== "none") {
+
         $conn->query("UPDATE tankpumpevent SET isActive = 1 WHERE liquidsensorID = 1 ORDER BY tankPumpEventID DESC LIMIT 1");
         $conn->query("UPDATE tankpumpevent SET isActive = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1");
         $conn->query("UPDATE tankpumpevent SET isActive = 1 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1");
+
     }
 
     echo json_encode([
@@ -25,7 +27,6 @@ function sendResponse($success, $message, $command, $liquidVolume, $conn) {
     ]);
     exit;
 }
-
 /* ================= FETCH LATEST SENSOR DATA ================= */
 
 $sensorDataID = $_GET['sensorDataID'] ?? null;
@@ -57,7 +58,6 @@ $plantParams = $conn->query("
 
 /* ================= FETCH PUMP STATUS ================= */
 
-// FIXED: Added isActive to the SELECT query
 // Tank 1
 $checkPumpEvent1 = $conn->query("
     SELECT wateringstatus, wateringFlag, isActive
@@ -93,10 +93,8 @@ if ($checkPumpEvent1) {
     $wateringFlag   = $checkPumpEvent1['wateringFlag'] ?? -1;
     $wateringStatus = $checkPumpEvent1['wateringstatus'] ?? -1;
     
-    // FIXED: Actually read the database state into the variable
     $isActive       = $checkPumpEvent1['isActive'];
     
-    // Pump is busy if flag or status is active (>= 0)
     if ($wateringFlag >= 0 || $wateringStatus >= 0) {
         $isPumpRunning = true;
     }
@@ -109,7 +107,10 @@ if ($row = $result->fetch_assoc()) {
         if ($row['SoilMois'] < $plantParams['meanMoistureThreshold']) {
             if ($row['SoilN'] < $plantParams['soilN']) {
                 if ($row['SoilEC'] > $plantParams['soilEC']) {
-                    // run with EC logic here
+
+                    /* ================= TANK 1 COMMAND ================= */
+
+                    // FIXED: This will now properly block if $isActive is 1
                     if (!$isPumpRunning || !$isActive == 1) {
                         $command = "trig_tsl1";
                         $liquidVolume = $plantParams['liquidVolume'] ?? 0;
@@ -126,7 +127,7 @@ if ($row = $result->fetch_assoc()) {
                     if ($fertCount === 1) { // Check if only 1 fertilizer is needed
                         if (!$isPumpRunning || !$isActive == 1) {
                             // command for fertilizer here
-
+                            
                         }
                     }
                     else {
@@ -155,11 +156,8 @@ if ($row = $result->fetch_assoc()) {
                         }
                     }
                 }
-
-                // tank 3 | UNIK16 / WINNER
-                // trig_tsl3
-
-            } else {
+            } 
+            else {
                 if (!$isPumpRunning || !$isActive == 1) {
                     $command = "trig_tsl1";
                     $liquidVolume = $plantParams['liquidVolume'] ?? 0;
@@ -181,10 +179,67 @@ if ($row = $result->fetch_assoc()) {
         if ($row['SoilMois'] < ($plantParams['meanMoistureThreshold'] + 5)) {
             if ($row['SoilN'] < $plantParams['soilN']) {
                 if ($row['SoilEC'] > $plantParams['soilEC']) {
-                    // future logic
+                    // Check if pump motor is on
+                    if (!$isPumpRunning || !$isActive == 1) {
+                        $command = "trig_tsl1";
+                        $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                        sendResponse(true,
+                            'Pump turned on',
+                            $command,
+                            $liquidVolume,
+                            $conn
+                        );
+                    }
+                }
+                else {
+                    $fertCount = $conn->query("SELECT COUNT(DISTINCT liquidsensorID) AS fertCount FROM `fertilizer` WHERE nutritionID = " . $plantParams['nutritionID'])->fetch_assoc()['fertCount'] ?? 0;  
+                    if ($fertCount === 1) { // Check if only 1 fertilizer is needed
+                        if (!$isPumpRunning || !$isActive == 1) {
+                            // command for fertilizer here
+                        }
+                    }
+                    else {
+                        if ($checkPumpEvent2['fertFlag'] === 0 && $checkPumpEvent3['fertFlag'] === 1) { // If tank 3 is active and tank 2 is not alternate to tank 2 (calcium-based fertilizer | nitrabor)
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 2 fertilizer
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn off tank 3 fertilizer
 
+                            if (!$isPumpRunning || !$isActive == 1) {
+                                // command for tank 2 (calcium-based fertilizer) here
+                            }
+                        }
+                        else if ($checkPumpEvent2['fertFlag'] === 1 && $checkPumpEvent3['fertFlag'] === 0) { // If tank 2 is active and tank 3 is not alternate to tank 3 (phosphorus-based fertilizer | UNIK16/WINNER)
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn off tank 2 fertilizer
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 3 fertilizer
+
+                            if (!$isPumpRunning || !$isActive == 1) {
+                                // command for tank 3 (nitrogen-based fertilizer) here
+                            }
+                        }
+                        else if ($checkPumpEvent2['fertFlag'] === 0 && $checkPumpEvent3['fertFlag'] === 0) { // If both tanks are inactive turn on tank 2 first
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 2 fertilizer
+
+                            if (!$isPumpRunning || !$isActive == 1) {
+                                // command for tank 2 (calcium-based fertilizer) here
+                            }
+                        }
+                    }
                 }
             }
+            else {
+                if (!$isPumpRunning || !$isActive == 1) {
+                    $command = "trig_tsl1";
+                    $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                    sendResponse(true,
+                        'Pump turned on',
+                        $command,
+                        $liquidVolume,
+                        $conn
+                    );
+                }
+            }
+        }
+        else {
+            return;
         }
     }
 
@@ -192,11 +247,71 @@ if ($row = $result->fetch_assoc()) {
         if ($row['SoilMois'] < ($plantParams['meanMoistureThreshold'] + 10)) {
             if ($row['SoilN'] < $plantParams['soilN']) {
                 if ($row['SoilEC'] > $plantParams['soilEC']) {
-                    // future logic
+                    // Check if pump motor is on
+                    if (!$isPumpRunning || !$isActive == 1) {
+                        $command = "trig_tsl1";
+                        $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                        sendResponse(true,
+                            'Pump turned on',
+                            $command,
+                            $liquidVolume,
+                            $conn
+                        );
+                    }
+                }
+                else {
+                    $fertCount = $conn->query("SELECT COUNT(DISTINCT liquidsensorID) AS fertCount FROM `fertilizer` WHERE nutritionID = " . $plantParams['nutritionID'])->fetch_assoc()['fertCount'] ?? 0;  
+                    if ($fertCount === 1) { // Check if only 1 fertilizer is needed
+                        if (!$isPumpRunning || !$isActive == 1) {
+                            // command for fertilizer here
+                        }
+                    }
+                    else {
+                        if ($checkPumpEvent2['fertFlag'] === 0 && $checkPumpEvent3['fertFlag'] === 1) { // If tank 3 is active and tank 2 is not alternate to tank 2 (calcium-based fertilizer | nitrabor)
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 2 fertilizer
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn off tank 3 fertilizer
 
+                            if (!$isPumpRunning || !$isActive == 1) {
+                                // command for tank 2 (calcium-based fertilizer) here
+                            }
+                        }
+                        else if ($checkPumpEvent2['fertFlag'] === 1 && $checkPumpEvent3['fertFlag'] === 0) { // If tank 2 is active and tank 3 is not alternate to tank 3 (phosphorus-based fertilizer | UNIK16/WINNER)
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn off tank 2 fertilizer
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 3 fertilizer
+
+                            if (!$isPumpRunning || !$isActive == 1) {
+                                // command for tank 3 (nitrogen-based fertilizer) here
+                            }
+                        }
+                        else if ($checkPumpEvent2['fertFlag'] === 0 && $checkPumpEvent3['fertFlag'] === 0) { // If both tanks are inactive turn on tank 2 first
+                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1"); // Turn on tank 2 fertilizer
+
+                            if (!$isPumpRunning || !$isActive == 1) {
+                                // command for tank 2 (calcium-based fertilizer) here
+                            }
+                        }
+                    }
+                }
+            }
+            else {
+                if (!$isPumpRunning || !$isActive == 1) {
+                    $command = "trig_tsl1";
+                    $liquidVolume = $plantParams['liquidVolume'] ?? 0;
+                    sendResponse(true,
+                        'Pump turned on',
+                        $command,
+                        $liquidVolume,
+                        $conn
+                    );
                 }
             }
         }
+        else {
+            return;
+        }
+    }
+    else {
+        return;
     }
 }
 
