@@ -121,8 +121,6 @@ if ($row = $result->fetch_assoc()) {
                         );
                     }
                 }
-
-                /* ================= FUTURE FERTILIZER LOGIC ================= */
                 else {
                     $fertCount = $conn->query("SELECT COUNT(DISTINCT liquidsensorID) AS fertCount FROM `fertilizer` WHERE nutritionID = " . $plantParams['nutritionID'])->fetch_assoc()['fertCount'] ?? 0;  
                     if ($fertCount === 1) { // Check if only 1 fertilizer is needed
@@ -162,7 +160,6 @@ if ($row = $result->fetch_assoc()) {
                 // trig_tsl3
 
             } else {
-                // if not < 30
                 if (!$isPumpRunning || !$isActive == 1) {
                     $command = "trig_tsl1";
                     $liquidVolume = $plantParams['liquidVolume'] ?? 0;
@@ -174,6 +171,9 @@ if ($row = $result->fetch_assoc()) {
                     );
                 }
             }
+        }
+        else {
+            return;
         }
     }
 
@@ -181,32 +181,10 @@ if ($row = $result->fetch_assoc()) {
         if ($row['SoilMois'] < ($plantParams['meanMoistureThreshold'] + 5)) {
             if ($row['SoilN'] < $plantParams['soilN']) {
                 if ($row['SoilEC'] > $plantParams['soilEC']) {
-                    // run with EC logic here
-                    if (!$isPumpRunning || !$isActive == 1) {
-                        $command = "trig_tsl1";
-                        $liquidVolume = $plantParams['liquidVolume'] ?? 0;
-                        sendResponse(true,
-                            'Pump turned on',
-                            $command,
-                            $liquidVolume,
-                            $conn
-                        );
-                    }
-                }
-            } else {
-                // if not < 30
-                if (!$isPumpRunning || !$isActive == 1) {
-                    $command = "trig_tsl1";
-                    $liquidVolume = $plantParams['liquidVolume'] ?? 0;
-                    sendResponse(true,
-                        'Pump turned on',
-                        $command,
-                        $liquidVolume,
-                        $conn
-                    );
+                    // future logic
+
                 }
             }
-            
         }
     }
 
@@ -214,28 +192,8 @@ if ($row = $result->fetch_assoc()) {
         if ($row['SoilMois'] < ($plantParams['meanMoistureThreshold'] + 10)) {
             if ($row['SoilN'] < $plantParams['soilN']) {
                 if ($row['SoilEC'] > $plantParams['soilEC']) {
-                    if (!$isPumpRunning || !$isActive == 1) {
-                        $command = "trig_tsl1";
-                        $liquidVolume = $plantParams['liquidVolume'] ?? 0;
-                        sendResponse(true,
-                            'Pump turned on',
-                            $command,
-                            $liquidVolume,
-                            $conn
-                        );
-                    }
-                }
-            } else {
-                // if not < 30
-                if (!$isPumpRunning || !$isActive == 1) {
-                    $command = "trig_tsl1";
-                    $liquidVolume = $plantParams['liquidVolume'] ?? 0;
-                    sendResponse(true,
-                        'Pump turned on',
-                        $command,
-                        $liquidVolume,
-                        $conn
-                    );
+                    // future logic
+
                 }
             }
         }
