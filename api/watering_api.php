@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // reset for isActive
     if ($updateType === 'reset') {
-        $resetQuery = "UPDATE tankpumpevent SET isActive = 0 WHERE liquidsensorID = ? ORDER BY tankPumpEventID DESC LIMIT 1";
+        $resetQuery = "UPDATE tankpumpevent SET isActive = 0 AND fertFlag = 0 WHERE liquidsensorID = ? ORDER BY tankPumpEventID DESC LIMIT 1";
         $resetStmt = $conn->prepare($resetQuery);
         $resetStmt->bind_param("i", $liquidsensorID);
         $resetStmt->execute();

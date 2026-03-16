@@ -5,12 +5,12 @@
 #define echoPin1 19 // TX
 
 // tank 2
-#define trigPin2 23
+#define trigPin2 23   
 #define echoPin2 22
 
 // tank 3
 #define trigPin3 32
-#define echoPin3 33
+#define echoPin3 33   
 
 int finaldistance1 = 0;
 int finaldistance2 = 0;
