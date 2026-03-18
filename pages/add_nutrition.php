@@ -375,7 +375,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="soilT">
                         <i class="fas fa-thermometer-half"></i> Soil Temperature (°C)
                     </label>
-                    <p class="temp">30° | 31°-34° | 34°</p>
+                    <p class="temp">30° | 31°-34° | 35°</p>
                 </div>
                 
                 <div class="form-group">
