@@ -96,14 +96,13 @@ $stmt->close();
                     <thead>
                         <tr>
                             <th><i class="fas fa-layer-group"></i> Nutrition Set</th>
+                            <th><i class="fas fa-layer-group"></i> Soil Type</th>
                             <th><i class="fas fa-leaf"></i> Nitrogen (N)</th>
                             <th><i class="fas fa-seedling"></i> Phosphorus (P)</th>
                             <th><i class="fas fa-tree"></i> Potassium (K)</th>
                             <th><i class="fas fa-bolt"></i> Electrical Conductivity</th>
                             <th><i class="fas fa-tint"></i> pH</th>
-                            <th><i class="fas fa-thermometer-half"></i> Temperature (°C)</th>
-                            <th><i class="fas fa-tint"></i> Moisture (%)</th>
-                            <th><i class="fas fa-water"></i> Flow Rate (L/min)</th>
+                            <th><i class="fas fa-water"></i> Liquid Volume (mL)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -115,14 +114,13 @@ $stmt->close();
                             </tr>
                             <tr class="nutrition-values">
                                 <td><strong>Values</strong></td>
+                                <td><?php echo $nutrition['soilType'] !== null ? htmlspecialchars($nutrition['soilType']) : '-'; ?></td>
                                 <td><?php echo $nutrition['soilN'] !== null ? htmlspecialchars($nutrition['soilN']) : '-'; ?></td>
                                 <td><?php echo $nutrition['soilP'] !== null ? htmlspecialchars($nutrition['soilP']) : '-'; ?></td>
                                 <td><?php echo $nutrition['soilK'] !== null ? htmlspecialchars($nutrition['soilK']) : '-'; ?></td>
                                 <td><?php echo $nutrition['soilEC'] !== null ? htmlspecialchars($nutrition['soilEC']) : '-'; ?></td>
                                 <td><?php echo $nutrition['soilPH'] !== null ? htmlspecialchars($nutrition['soilPH']) : '-'; ?></td>
-                                <td><?php echo $nutrition['soilT'] !== null ? htmlspecialchars($nutrition['soilT']) : '-'; ?></td>
-                                <td><?php echo $nutrition['soilM'] !== null ? htmlspecialchars($nutrition['soilM']) : '-'; ?></td>
-                                <td><?php echo $nutrition['flowRate'] !== null ? htmlspecialchars($nutrition['flowRate']) : '-'; ?></td>
+                                <td><?php echo $nutrition['liquidVolume'] !== null ? htmlspecialchars($nutrition['liquidVolume']) : '-'; ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
