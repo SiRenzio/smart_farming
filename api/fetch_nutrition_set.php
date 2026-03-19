@@ -5,7 +5,7 @@ $setID = $_GET['setID'] ?? '';
 
 // Fetch nutrition set
 $stmt = $conn->prepare("
-    SELECT nutritionID, soilType, meanMoistureThreshold, growthStage, soilN, soilP, soilK, soilEC, soilPH, liquidVolume
+    SELECT nutritionID, soilType, meanMoistureThreshold, growthStage, numberOfPlants, soilN, soilP, soilK, soilEC, soilPH, liquidVolume
     FROM plantnutrionneed
     WHERE nutritionID = ?
 ");

@@ -113,6 +113,7 @@ foreach ($nutritionData as $nutrition) {
                             <th><i class="fas fa-layer-group"></i> Soil Type</th>
                             <th><i class="fas fa-water"></i> Moisture Threshold</th>
                             <th><i class="fas fa-tree"></i> Growth Stage</th>
+                            <th><i class="fas fa-seedling"></i> Number of Plants</th>
                             <th><i class="fas fa-leaf"></i> Nitrogen (N)</th>
                             <th><i class="fas fa-seedling"></i> Phosphorus (P)</th>
                             <th><i class="fas fa-tree"></i> Potassium (K)</th>
@@ -140,6 +141,7 @@ foreach ($nutritionData as $nutrition) {
                                 <td><?php echo $nutrition['soilType'] !== null ? htmlspecialchars($nutrition['soilType']) : '-'; ?></td>
                                 <td><?php echo $nutrition['meanMoistureThreshold'] !== null ? htmlspecialchars($nutrition['meanMoistureThreshold']) . " | " . htmlspecialchars($nutrition['meanMoistureThreshold'] + 5) . " | " . htmlspecialchars($nutrition['meanMoistureThreshold'] + 10) : '-'; ?></td>
                                 <td><?php echo $nutrition['growthStage'] !== null ? htmlspecialchars($nutrition['growthStage']) : '-'; ?></td>
+                                <td><?php echo $nutrition['numberOfPlants'] !== null ? htmlspecialchars($nutrition['numberOfPlants']) : '-'; ?></td>
                                 <td><?php echo $nutrition['soilN'] !== null ? htmlspecialchars($nutrition['soilN']) : '-'; ?></td>
                                 <td><?php echo $nutrition['soilP'] !== null ? htmlspecialchars($nutrition['soilP']) : '-'; ?></td>
                                 <td><?php echo $nutrition['soilK'] !== null ? htmlspecialchars($nutrition['soilK']) : '-'; ?></td>

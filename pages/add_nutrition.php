@@ -86,9 +86,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fertilizers = $_POST['fertilizer'] ?? [];
     $fertilizerAmounts = $_POST['fertilizerAmount'] ?? [];
     $soilType = $_POST['soilType'] ?? '';
+    $numberOfPlants = $_POST['numberOfPlants'] ?? '';
 
     // Validate required fields
-    if (!$nutritionSetName || !$growthStage || !$soilType) {
+    if (!$nutritionSetName || !$growthStage || !$soilType || !$numberOfPlants) {
         $errors[] = 'All fields with asterisk are required.';
     }
 
@@ -121,15 +122,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        $stmt = $conn->prepare('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, soilType, meanMoistureThreshold, growthStage, soilN, soilP, soilK, soilEC, soilPH, liquidVolume) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $conn->prepare('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, soilType, meanMoistureThreshold, growthStage, numberOfPlants, soilN, soilP, soilK, soilEC, soilPH, liquidVolume) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         if ($stmt === null) {
             $errors[] = 'Invalid SQL statement. Please try again.';
         } else {
             // Debug: Show the final SQL statement
-            $finalSQL = getFinalSQL('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, soilType, meanMoistureThreshold, growthStage, soilN, soilP, soilK, soilEC, soilPH, liquidVolume) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 'isisiiiidddd', [$nutritionSetName, $plantID, $soilType, $moistureThreshold, $growthStage, $soilN, $soilP, $soilK, $soilEC, $soilPH, $liquidVolume]);
+            $finalSQL = getFinalSQL('INSERT INTO plantnutrionneed (userID, nutritionSetName, plantID, soilType, meanMoistureThreshold, growthStage, numberOfPlants, soilN, soilP, soilK, soilEC, soilPH, liquidVolume) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 'isisisiiiidd', [$nutritionSetName, $plantID, $soilType, $moistureThreshold, $growthStage, $numberOfPlants, $soilN, $soilP, $soilK, $soilEC, $soilPH, $liquidVolume]);
             
             try {
-                $stmt->bind_param('isisisiiiidd', $_SESSION['userID'], $nutritionSetName, $plantID, $soilType, $moistureThreshold, $growthStage, $soilN, $soilP, $soilK, $soilEC, $soilPH, $liquidVolume);
+                $stmt->bind_param('isisissiiiidd', $_SESSION['userID'], $nutritionSetName, $plantID, $soilType, $moistureThreshold, $growthStage, $numberOfPlants, $soilN, $soilP, $soilK, $soilEC, $soilPH, $liquidVolume);
             } catch (Exception $e) {
                 $errors[] = 'Failed to bind parameters: ' . $e->getMessage();
                 $errors[] = 'Debug SQL: ' . $finalSQL;
@@ -286,6 +287,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </button><br>
 
                 <h2>Plant Nutrition Parameters</h2><br>
+
+                <div class="form-group">
+                    <label for="numberOfPlants">
+                        <i class="fas fa-seedling"></i> Number of Plants*
+                    </label>
+                    <input 
+                        type="number" 
+                        id="numberOfPlants" 
+                        name="numberOfPlants" 
+                        step="any"
+                        placeholder="Enter number of plants"
+                        value="<?php echo htmlspecialchars($_POST['numberOfPlants'] ?? ''); ?>"
+                    >
+                </div>
 
                 <div class="form-group">
                     <label for="soilN">

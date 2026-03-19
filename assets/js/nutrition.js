@@ -134,6 +134,7 @@ window.addEventListener("DOMContentLoaded", () => {
             document.getElementById("soilEC").value = data.nutrition.soilEC;
             document.getElementById("soilPH").value = data.nutrition.soilPH;
             document.getElementById("liquidVolume").value = data.nutrition.liquidVolume;
+            document.getElementById("numberOfPlants").value = data.nutrition.numberOfPlants;
 
             container.innerHTML = ""; // Clear existing fertilizers
 
