@@ -88,6 +88,8 @@ $checkPumpEvent3 = $conn->query("
     LIMIT 1
 ")->fetch_assoc();
 
+$totalLiquidVolume = $plantParams['liquidVolume'] * $plantParams['numberOfPlants'];
+
 /* ================= FETCH FERTILIZERS ================= */
 
 $fertilizers = [];
@@ -156,9 +158,8 @@ if ($row = $result->fetch_assoc()) {
             if ($row['SoilEC'] > $plantParams['soilEC']) {
 
                 $command = "trig_tsl1";
-                $liquidVolume = $plantParams['liquidVolume'] ?? 0;
 
-                sendResponse(true,'Pump turned on',$command,$liquidVolume,$conn);
+                sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
 
             }
             else {
@@ -168,25 +169,22 @@ if ($row = $result->fetch_assoc()) {
                     if (strtolower($fertilizers[0]['fertilizerName']) === 'nitrabor') {
 
                         $command = "trig_tsl2";
-                        $liquidVolume = $plantParams['liquidVolume'] ?? 0;
 
-                        sendResponse(true,'Pump turned on',$command,$liquidVolume,$conn);
+                        sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
 
                     }
                     else if (strtolower($fertilizers[0]['fertilizerName']) === 'unik16') {
 
                         $command = "trig_tsl3";
-                        $liquidVolume = $plantParams['liquidVolume'] ?? 0;
 
-                        sendResponse(true,'Pump turned on',$command,$liquidVolume,$conn);
+                        sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
 
                     }
                     else if (strtolower($fertilizers[0]['fertilizerName']) === 'winner') {
 
                         $command = "trig_tsl3";
-                        $liquidVolume = $plantParams['liquidVolume'] ?? 0;
 
-                        sendResponse(true,'Pump turned on',$command,$liquidVolume,$conn);
+                        sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
                     }
 
                 }
@@ -203,9 +201,8 @@ if ($row = $result->fetch_assoc()) {
                         $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1");
 
                         $command = "trig_tsl2";
-                        $liquidVolume = $plantParams['liquidVolume'] ?? 0;
 
-                        sendResponse(true,'Pump turned on',$command,$liquidVolume,$conn);
+                        sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
 
                     }
                     else if ($tank2Flag == 1 && $tank3Flag == 0) {
@@ -214,9 +211,8 @@ if ($row = $result->fetch_assoc()) {
                         $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1");
 
                         $command = "trig_tsl3";
-                        $liquidVolume = $plantParams['liquidVolume'] ?? 0;
 
-                        sendResponse(true,'Pump turned on',$command,$liquidVolume,$conn);
+                        sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
 
                     }
                     else if ($tank2Flag == 0 && $tank3Flag == 0) {
@@ -224,9 +220,8 @@ if ($row = $result->fetch_assoc()) {
                         $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1");
 
                         $command = "trig_tsl2";
-                        $liquidVolume = $plantParams['liquidVolume'] ?? 0;
 
-                        sendResponse(true,'Pump turned on',$command,$liquidVolume,$conn);
+                        sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
 
                     }
                 }
@@ -235,9 +230,8 @@ if ($row = $result->fetch_assoc()) {
         else {
 
             $command = "trig_tsl1";
-            $liquidVolume = $plantParams['liquidVolume'] ?? 0;
 
-            sendResponse(true,'Pump turned on',$command,$liquidVolume,$conn);
+            sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
         }
 
     }
