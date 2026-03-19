@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // reset for isActive
     if ($updateType === 'reset') {
-        $resetQuery = "UPDATE tankpumpevent SET isActive = 0 AND fertFlag = 0 WHERE liquidsensorID = ? ORDER BY tankPumpEventID DESC LIMIT 1";
+        $resetQuery = "UPDATE tankpumpevent SET isActive = 0, fertFlag = 0 WHERE liquidsensorID = ? ORDER BY tankPumpEventID DESC LIMIT 1";
         $resetStmt = $conn->prepare($resetQuery);
         $resetStmt->bind_param("i", $liquidsensorID);
         $resetStmt->execute();
@@ -51,6 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $currentliquidlevel = isset($decoded_data['currentliquidlevel']) ? (int)$decoded_data['currentliquidlevel'] : null;
     $wateringstatus     = isset($decoded_data['wateringstatus']) ? (int)$decoded_data['wateringstatus'] : null;
     $wateringFlag       = isset($decoded_data['wateringFlag']) ? (int)$decoded_data['wateringFlag'] : null;
+    $isActiveFlag           = isset($decoded_data['isActive']) ? (int)$decoded_data['isActive'] : null;
+    $wateringvolume     = isset($decoded_data['wateringvolume']) ? (int)$decoded_data['wateringvolume'] : null;
 
     $dateTime = date('Y-m-d H:i:s');
 
@@ -83,16 +85,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $stmt = $conn->prepare(
             'INSERT INTO tankpumpevent 
-            (liquidsensorID, wateringstatus, wateringFlag, wateringvolume, dateandtime) 
-            VALUES (?, ?, ?, ?, NOW())'
+            (liquidsensorID, wateringstatus, wateringFlag, isActive, waterlevel, wateringvolume, dateandtime) 
+            VALUES (?, ?, ?, ?, ?, ?, NOW())'
         );
 
         $stmt->bind_param(
-            'iiii',
+            'iiiiii',
             $liquidsensorID,
             $wateringstatus,
             $wateringFlag,
-            $currentliquidlevel
+            $isActiveFlag,
+            $currentliquidlevel,
+            $wateringvolume
         );
 
         if ($stmt->execute()) {
@@ -103,14 +107,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($wateringFlag === 0 && $wateringstatus === 0) {
                 $notifMessage = "[Tank $liquidsensorID]: Water tank is now FULL, system HOLD WATERING waiting to mix the solution";
                 
-                $getlowquery = "SELECT wateringvolume FROM tankpumpevent WHERE liquidsensorID = ? AND wateringFlag =1 ORDER BY dateandtime DESC LIMIT 1";
+                $getlowquery = "SELECT waterlevel FROM tankpumpevent WHERE liquidsensorID = ? AND wateringFlag =1 ORDER BY dateandtime DESC LIMIT 1";
                 $lowStmt = $conn->prepare($getlowquery);
                 $lowStmt->bind_param("i", $liquidsensorID);
                 $lowStmt->execute();
                 $res = $lowStmt->get_result();
+                $lowStmt->close();
 
                 if($row = $res->fetch_assoc()){
-                    $lowValue = $row['wateringvolume'] / 100 ;
+                    $lowValue = $row['waterlevel'] / 100 ;
                     $highValue = $currentliquidlevel / 100 ;
                     $heightDiff = abs($highValue - $lowValue);
 
@@ -126,9 +131,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $getFertStmt->execute();
                     $fertResult = $getFertStmt->get_result();
 
-                    if($row = $fertResult->fetch_assoc()){
-                        $fertilizerName = $row['fertilizerName'];
-                        $fertilizerAmount = $row['fertilizerAmount'];
+                    if($fertRow = $fertResult->fetch_assoc()){
+                        $fertilizerName = $fertRow['fertilizerName'];
+                        $fertilizerAmount = $fertRow['fertilizerAmount'];
 
                         $fertInGrams = $liters * $fertilizerAmount;
                         $fertInCup = round($fertInGrams / 150, 2);

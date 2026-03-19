@@ -70,21 +70,24 @@ const unsigned long serialTimeout = 6000;
 int wateringflag1 = -1;  
 int wateringstatus1 = -1;
 int mixingflag1 = 0;
-int trig_tsl1 = 0;     
+int trig_tsl1 = 0;
+int isActiveFlag1 = 0;
 unsigned long mixStartTime1 = 0;
 
 // Tank 2 State
 int wateringflag2 = -1;  
 int wateringstatus2 = -1;
 int mixingflag2 = 0;
-int trig_tsl2 = 0;     
+int trig_tsl2 = 0;
+int isActiveFlag2 = 0;
 unsigned long mixStartTime2 = 0;
 
 // Tank 3 State
 int wateringflag3 = -1;  
 int wateringstatus3 = -1;
 int mixingflag3 = 0;
-int trig_tsl3 = 0;     
+int trig_tsl3 = 0;
+int isActiveFlag3 = 0;
 unsigned long mixStartTime3 = 0;
 
 
@@ -302,7 +305,7 @@ void sendResetToWatering(int sensorID) {
 
 /* ===================== SEND DATA ===================== */
 
-void sendWateringData(String updateType, int sensorID, int currentLevel, int wStatus, int wFlag) {
+void sendWateringData(String updateType, int sensorID, int currentLevel, int wStatus, int wFlag, int isActive) {
 
   if (!apiReady || WiFi.status() != WL_CONNECTED) return;
   if (!dataValid) return;
@@ -313,13 +316,16 @@ void sendWateringData(String updateType, int sensorID, int currentLevel, int wSt
   doc["liquidsensorID"] = sensorID;
   doc["currentliquidlevel"] = currentLevel;
   doc["updateType"] = updateType;
-  doc["isActive"] = waitingAfterCycle ? 1 : 0;  
+  doc["isActive"] = isActive;
 
   if (wStatus == -1) doc["wateringstatus"] = nullptr;
   else doc["wateringstatus"] = wStatus;
 
   if (wFlag == -1) doc["wateringFlag"] = nullptr;
   else doc["wateringFlag"] = wFlag;
+
+  doc["fertFlag"] = 0;
+  doc["wateringvolume"] = 0;
 
   String payload;
   serializeJson(doc, payload);
@@ -332,6 +338,48 @@ void sendWateringData(String updateType, int sensorID, int currentLevel, int wSt
 
   if (httpCode > 0) {
     Serial.print("[ESP32] Data sent: ");
+    Serial.println(http.getString());
+  }
+
+  http.end();
+}
+
+/* ===================== LOG SOLENOID EVENT ===================== */
+
+void logSolenoidEvent(int tank, float dispensedML) {
+
+  if (!apiReady || WiFi.status() != WL_CONNECTED) return;
+
+  HTTPClient http;
+  StaticJsonDocument<300> doc;
+
+  doc["liquidsensorID"] = tank;
+  doc["updateType"] = "event";
+
+  doc["wateringstatus"] = nullptr;
+  doc["wateringFlag"] = nullptr;
+
+  doc["isActive"] = 1;
+
+  // volume from flow sensor
+  doc["wateringvolume"] = round(dispensedML);
+
+  // optional: send last known level
+  if (tank == 1) doc["currentliquidlevel"] = currentliquidlevel1;
+  if (tank == 2) doc["currentliquidlevel"] = currentliquidlevel2;
+  if (tank == 3) doc["currentliquidlevel"] = currentliquidlevel3;
+
+  String payload;
+  serializeJson(doc, payload);
+
+  http.begin(sendWateringURL);
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(3000);
+
+  int httpCode = http.POST(payload);
+
+  if (httpCode > 0) {
+    Serial.println("[LOG] Solenoid watering event sent");
     Serial.println(http.getString());
   }
 
@@ -490,9 +538,9 @@ void loop() {
 
     lastLevelSendTime = currentMillis;
 
-    sendWateringData("continuous", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1);
-    sendWateringData("continuous", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2);
-    sendWateringData("continuous", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3);
+    sendWateringData("continuous", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1, 0);
+    sendWateringData("continuous", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2, 0);
+    sendWateringData("continuous", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3, 0);
   }
 
   /* ================= TANK LOGIC ================= */
@@ -502,7 +550,7 @@ void loop() {
     wateringflag1 = 1;
     wateringstatus1 = 0;
     digitalWrite(pumpmotor1, HIGH);
-    sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1);
+    sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1, 0);
   }
 
   if (apiReady && dataValid && currentliquidlevel1 <= 25 && wateringflag1 == 1) {
@@ -510,7 +558,7 @@ void loop() {
     wateringstatus1 = 0;
     digitalWrite(pumpmotor1, LOW);
     mixingflag1 = 1;
-    sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1);
+    sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1, 0);
   }
 
   if (mixingflag1 == 1 && digitalRead(switch1) == LOW) {
@@ -525,7 +573,7 @@ void loop() {
     mixingflag1 = 0;
     wateringflag1 = -1;
     wateringstatus1 = -1;
-    sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1);
+    sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1, 0);
   }
 
   // Tank 2
@@ -533,7 +581,7 @@ void loop() {
     wateringflag2 = 1;
     wateringstatus2 = 0;
     digitalWrite(pumpmotor2, HIGH);
-    sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2);
+    sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2, 0);
   }
 
   if (apiReady && dataValid && currentliquidlevel2 <= 25 && wateringflag2 == 1) {
@@ -541,7 +589,7 @@ void loop() {
     wateringstatus2 = 0;
     digitalWrite(pumpmotor2, LOW);
     mixingflag2 = 1;
-    sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2);
+    sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2, 0);
   }
 
   if (mixingflag2 == 1 && digitalRead(switch2) == LOW) {
@@ -556,7 +604,7 @@ void loop() {
     mixingflag2 = 0;
     wateringflag2 = -1;
     wateringstatus2 = -1;
-    sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2);
+    sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2, 0);
   }
 
   // Tank 3
@@ -564,7 +612,7 @@ void loop() {
     wateringflag3 = 1;
     wateringstatus3 = 0;
     digitalWrite(pumpmotor3, HIGH);
-    sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3);
+    sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3, 0);
   }
 
   if (apiReady && dataValid && currentliquidlevel3 <= 25 && wateringflag3 == 1) {
@@ -572,7 +620,7 @@ void loop() {
     wateringstatus3 = 0;
     digitalWrite(pumpmotor3, LOW);
     mixingflag3 = 1;
-    sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3);
+    sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3, 0);
   }
 
   if (mixingflag3 == 1 && digitalRead(switch3) == LOW) {
@@ -587,7 +635,7 @@ void loop() {
     mixingflag3 = 0;
     wateringflag3 = -1;
     wateringstatus3 = -1;
-    sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3);
+    sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3, 0);
   }
 
 
@@ -682,6 +730,10 @@ void loop() {
     // Check if target volume reached
     if (currentVolumeML >= targetVolumeML && currentVolumeML > 0) {
       Serial.println("\n[FLOW TARGET REACHED] Closing solenoid valve...");
+
+    // LOG THE ACTUAL DISPENSED WATER
+    logSolenoidEvent(activeTank, currentVolumeML);
+
       Serial.print("[FINAL] Volume: ");
       Serial.print(currentVolumeML);
       Serial.print(" mL >= Target: ");
