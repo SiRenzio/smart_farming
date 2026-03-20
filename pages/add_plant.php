@@ -4,6 +4,9 @@ require_once '../db.php';
 require_once '../includes/notification.php';
 require_once '../includes/sensor_data_includes.php';
 
+// For testing purposes
+require_once '../includes/test_page_button.php';
+
 if (!isset($_SESSION['userID'])) {
     header('Location: login.php');
     exit;
