@@ -23,10 +23,25 @@
 </head>
 <body>
     <div class="page-container">
+        
         <div class="page-header">
             <h1>Testing Page</h1>
             <p>This page is used for testing purposes.</p>
         </div>
+
+        <section class="tanks">
+
+        </section>
+
+        <section class="sensors">
+
+        </section>
+
+        <section class="actuators">
+
+        </section>
+
+
     </div>
 </body>
 </html>
