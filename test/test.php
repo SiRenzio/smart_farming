@@ -30,30 +30,30 @@
     $tankResult = $tankStmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $tankStmt->close();
 
-    // // Tank Dimensions
-    // $diameter = 0.48;
-    // $radius = $diameter / 2; // 0.24m
-    // $tankHeightM = 0.90;
+    // Tank Dimensions
+    $diameter = 0.48;
+    $radius = $diameter / 2; // 0.24m
+    $tankHeightM = 0.90;
 
-    // foreach ($tankResult as $key => $tank) {
-    //     if ($tank['currentliquidlevel'] !== null) {
+    foreach ($tankResult as $key => $tank) {
+        if ($tank['currentliquidlevel'] !== null) {
             
-    //         $emptySpace = $tank['currentliquidlevel'] / 100;
-    //         $liquidHeightMeters = $tankHeightM - $emptySpace;
+            $emptySpace = $tank['currentliquidlevel'] / 100;
+            $liquidHeightMeters = $tankHeightM - $emptySpace;
 
-    //         if ($liquidHeightMeters < 0) {
-    //             $liquidHeightMeters = 0;
-    //         }
+            if ($liquidHeightMeters < 0) {
+                $liquidHeightMeters = 0;
+            }
             
-    //         $volume = pi() * pow($radius, 2) * $liquidHeightMeters;
-    //         $currentLiters = $volume * 1000;
+            $volume = pi() * pow($radius, 2) * $liquidHeightMeters;
+            $currentLiters = $volume * 1000;
 
-    //         $tankResult[$key]['liters'] = round($currentLiters);
+            $tankResult[$key]['liters'] = round($currentLiters);
             
-    //     } else {
-    //         $tankResult[$key]['liters'] = 0;
-    //     }
-    // }
+        } else {
+            $tankResult[$key]['liters'] = 0;
+        }
+    }
 
 ?>
 
@@ -244,7 +244,7 @@
                 </div>
                 <div class="header-actions">
                     <a href="../pages/dashboard.php" class="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i> Exit Dev Mode
+                        <i class="fas fa-sign-out-alt"></i> Exit
                     </a>
                 </div>
             </div>
@@ -258,7 +258,7 @@
                         <div class="tank-card">
                             <h1><?php echo htmlspecialchars($tank['liquidtankname'] ?? 'Unknown Tank'); ?></h1>
                             
-                            <h2><?php echo htmlspecialchars($tank['currentliquidlevel']); ?> cm</h2>
+                            <h2><?php echo htmlspecialchars($tank['currentliquidlevel']); ?>cm | <?php echo htmlspecialchars($tank['liters']); ?>L</h2>
                         </div>
                     <?php endforeach; ?>
 

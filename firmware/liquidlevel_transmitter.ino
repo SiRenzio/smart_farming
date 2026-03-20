@@ -40,7 +40,7 @@ int readUltrasonic(int trigPin, int echoPin) {
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   pinMode(trigPin1, OUTPUT);
   pinMode(echoPin1, INPUT);
@@ -79,5 +79,6 @@ void loop() {
 
     serializeJson(doc, Serial);
     Serial.println();
+    delay(20);
   }
 }

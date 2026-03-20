@@ -85,16 +85,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $stmt = $conn->prepare(
             'INSERT INTO tankpumpevent 
-            (liquidsensorID, wateringstatus, wateringFlag, isActive, waterlevel, wateringvolume, dateandtime) 
-            VALUES (?, ?, ?, ?, ?, ?, NOW())'
+            (liquidsensorID, wateringstatus, wateringFlag, waterlevel, wateringvolume, dateandtime) 
+            VALUES (?, ?, ?, ?, ?, NOW())'
         );
 
         $stmt->bind_param(
-            'iiiiii',
+            'iiiii',
             $liquidsensorID,
             $wateringstatus,
             $wateringFlag,
-            $isActiveFlag,
             $currentliquidlevel,
             $wateringvolume
         );
@@ -184,6 +183,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $stmt->close();
+    }
+
+    if ($updateType === 'watering') {
+        $wateringStmt = $conn->prepare(
+            'INSERT INTO tankpumpevent 
+            (liquidsensorID, wateringstatus, wateringFlag, isActive, waterlevel, wateringvolume, dateandtime) 
+            VALUES (?, ?, ?, ?, ?, ?, NOW())'
+        );
+
+        $wateringStmt->bind_param(
+            'iiiiii',
+            $liquidsensorID,
+            $wateringstatus,
+            $wateringFlag,
+            $isActiveFlag,
+            $currentliquidlevel,
+            $wateringvolume
+        );
+
+        if ($wateringStmt->execute()) {
+            $notifMessage = "";
+
+            if ($liquidsensorID === 1) {
+                $notifMessage = "Tank $liquidsensorID solenoid watered the plants with an amount of $wateringvolume mL of water.";
+            } else {
+                $getFertQuery = "SELECT fertilizerName, fertilizerAmount FROM fertilizer WHERE liquidsensorID = ? ORDER BY fertilizerID DESC LIMIT 1";
+                $getFertStmt = $conn->prepare($getFertQuery);
+                $getFertStmt->bind_param("i", $liquidsensorID);
+                $getFertStmt->execute();
+                $fertResult = $getFertStmt->get_result();
+
+                if ($fertRow = $fertResult->fetch_assoc()) {
+                    $fertilizerName = $fertRow['fertilizerName'];
+                    $notifMessage = "Tank $liquidsensorID solenoid watered the plants with an amount of $wateringvolume mL of $fertilizerName fertilizer.";
+                }
+                $getFertStmt->close();
+            }
+
+            if (!empty($notifMessage)) {
+                $notifSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
+                $notifStmt = $conn->prepare($notifSql);
+                $notifStmt->bind_param("s", $notifMessage);
+                $notifStmt->execute();
+                $notifStmt->close();
+            }
+
+            $wateringStmt->close();
+            sendResponse(true, 'Watering event logged successfully'); 
+
+        } else {
+            $errorMsg = $conn->error;
+            $wateringStmt->close();
+            sendResponse(false, 'Failed to store watering data: ' . $errorMsg);
+        }
     }
 
     if ($updateType === 'handshake') {

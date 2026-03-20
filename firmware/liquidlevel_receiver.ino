@@ -31,7 +31,7 @@
 #define switch3 18
 
 /* ===================== SERVER & WIFI ===================== */
-const char* webServerIp = "192.168.1.5"; //"172.18.0.9"; 
+const char* webServerIp = "192.168.1.3"; //"172.18.0.9"; 
 String sendWateringURL = "http://" + String(webServerIp) + "/smart_farming/api/watering_api.php";
 String sendIntelURL = "http://" + String(webServerIp) + "/smart_farming/api/intel_api.php";
 
@@ -62,7 +62,7 @@ const unsigned long mixingDuration = 5000;
 
 // Serial watchdog
 unsigned long lastSerialReceiveTime = 0;
-const unsigned long serialTimeout = 6000;
+const unsigned long serialTimeout = 10000;
 
 // 1 - READY, 0 - HOLD, 2 - MIXING, -1 - IDLE/ERROR
 
@@ -351,7 +351,7 @@ void solenoidWateringEvent(int tank, float dispensedML) {
   StaticJsonDocument<300> doc;
 
   doc["liquidsensorID"] = tank;
-  doc["updateType"] = "event";
+  doc["updateType"] = "watering";
 
   doc["wateringstatus"] = nullptr;
   doc["wateringFlag"] = nullptr;
@@ -388,7 +388,7 @@ void solenoidWateringEvent(int tank, float dispensedML) {
 void setup() {
 
   Serial.begin(115200);
-  Serial2.begin(9600, SERIAL_8N1, RX2, TX2);
+  Serial2.begin(115200, SERIAL_8N1, RX2, TX2);
 
   pinMode(mixermotor1, OUTPUT);
   pinMode(pumpmotor1, OUTPUT);
@@ -466,46 +466,56 @@ void loop() {
 
   while (Serial2.available()) {
     char c = Serial2.read();
+    if (c == '\r') continue;
 
     if (c == '\n') {
-      StaticJsonDocument<200> doc;
-      DeserializationError error = deserializeJson(doc, serialBuffer);
+      serialBuffer.trim();
 
-      if (error) {
-        dataValid = false;
-      } 
-      else if (doc.containsKey("distance1") &&
-               doc.containsKey("distance2") &&
-               doc.containsKey("distance3")) {
+      Serial.print("[RAW SERIAL] ");
+      Serial.println(serialBuffer);
 
-        int d1 = doc["distance1"];
-        int d2 = doc["distance2"];
-        int d3 = doc["distance3"];
+      int start = serialBuffer.indexOf('{');
+      int end = serialBuffer.lastIndexOf('}');
 
-        if (d1 > 5 && d1 < 100 &&
-            d2 > 5 && d2 < 100 &&
-            d3 > 5 && d3 < 100) {
+      if (start != -1 && end != -1 && end > start) {
+        String cleanJson = serialBuffer.substring(start, end + 1);
+
+        StaticJsonDocument<200> doc;
+        DeserializationError error = deserializeJson(doc, cleanJson);
+
+        if (error) {
+          Serial.print("[JSON ERROR] ");
+          Serial.println(error.c_str());
+          dataValid = false;
+        } 
+        else {
+          int d1 = doc["distance1"];
+          int d2 = doc["distance2"];
+          int d3 = doc["distance3"];
 
           currentliquidlevel1 = d1;
           currentliquidlevel2 = d2;
           currentliquidlevel3 = d3;
 
           dataValid = true;
-          lastSerialReceiveTime = currentMillis;
-        } 
-        else {
-          dataValid = false;
-          Serial.println("[REJECTED] Out of range");
+          lastSerialReceiveTime = millis();
+
+          Serial.println("[JSON OK]");
         }
       } 
       else {
+        Serial.println("[REJECTED] No valid JSON structure");
         dataValid = false;
-        Serial.println("[REJECTED] Invalid JSON");
       }
+
       serialBuffer = "";
-    } 
+    }
     else {
-      serialBuffer += c;
+      if (serialBuffer.length() < 200) {
+        serialBuffer += c;
+      } else {
+        serialBuffer = "";
+      }
     }
   }
 
