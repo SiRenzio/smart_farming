@@ -7,6 +7,54 @@
     $stmt->execute();
     $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
+
+
+    // fetch water level for testing
+    $tankQuery = "
+        SELECT 
+            s.liquidsensorID, 
+            s.liquidtankname, 
+            t.currentliquidlevel,
+            t.dateandtime
+        FROM liquidsensorinfo s
+        LEFT JOIN liquidlevelsensor t ON s.liquidsensorID = t.liquidsensorID
+        WHERE t.liquidsensorreadID = (
+            SELECT MAX(liquidsensorreadID)
+            FROM liquidlevelsensor
+            WHERE liquidsensorID = s.liquidsensorID
+        )
+    ";
+    
+    $tankStmt = $conn->prepare($tankQuery);
+    $tankStmt->execute(); // Fixed typo here
+    $tankResult = $tankStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $tankStmt->close();
+
+    // // Tank Dimensions
+    // $diameter = 0.48;
+    // $radius = $diameter / 2; // 0.24m
+    // $tankHeightM = 0.90;
+
+    // foreach ($tankResult as $key => $tank) {
+    //     if ($tank['currentliquidlevel'] !== null) {
+            
+    //         $emptySpace = $tank['currentliquidlevel'] / 100;
+    //         $liquidHeightMeters = $tankHeightM - $emptySpace;
+
+    //         if ($liquidHeightMeters < 0) {
+    //             $liquidHeightMeters = 0;
+    //         }
+            
+    //         $volume = pi() * pow($radius, 2) * $liquidHeightMeters;
+    //         $currentLiters = $volume * 1000;
+
+    //         $tankResult[$key]['liters'] = round($currentLiters);
+            
+    //     } else {
+    //         $tankResult[$key]['liters'] = 0;
+    //     }
+    // }
+
 ?>
 
 <!DOCTYPE html>
@@ -26,7 +74,7 @@
         }
 
         .page-container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 2rem;
         }
@@ -81,30 +129,6 @@
             text-decoration: none;
         }
 
-        .nav-links {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .nav-links a {
-            display: inline-block;
-            margin: 0 0.5rem;
-            padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            text-decoration: none;
-            border-radius: 25px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-
-        .nav-links a:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-            text-decoration: none;
-        }
-
         .sensors {
             margin-top: 2rem;
             background: #f8f9fa;
@@ -144,6 +168,69 @@
         .sensors-table tr:hover { 
             background: #f8f9fa; 
         }
+
+
+        // tanks css
+        .tanks {
+            padding: 40px 20px;
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .tank-container {
+            margin: 0 auto;
+        }
+
+        .tanks-list {
+            width: 100%;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .tank-card {
+            background: #ffffff;
+            border-radius: 15px;
+            flex: 1; 
+            min-width: 200px;
+            height: 180px;
+            text-align: center;
+            padding: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .tank-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .tank-card h1 {
+            text-align: left;
+            font-size: 0.9rem;
+            color: #495057;
+            margin: 0;
+            padding: 10px 10px; 
+            font-weight: 600;
+            border-bottom: 1px solid #e9ecef;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .tank-card h2 {
+            font-size: 1.5rem;
+            color: #007bff;
+            margin: auto;
+            font-weight: 700;
+            padding: 10px;
+        }
+
     </style>
 </head>
 <body>
@@ -163,15 +250,19 @@
             </div>
         </div>
 
-        <div class="nav-links">
-            <a href="../pages/dashboard.php">
-                <i class="fas fa-tachometer-alt"></i> Dashboard
-            </a>
-        </div>
-
         <section class="tanks">
-            <div class="tank_container">
+            <div class="tank-container">
+                <div class="tanks-list">
+                    
+                    <?php foreach ($tankResult as $tank): ?>
+                        <div class="tank-card">
+                            <h1><?php echo htmlspecialchars($tank['liquidtankname'] ?? 'Unknown Tank'); ?></h1>
+                            
+                            <h2><?php echo htmlspecialchars($tank['currentliquidlevel']); ?> cm</h2>
+                        </div>
+                    <?php endforeach; ?>
 
+                </div>
             </div>
         </section>
 
