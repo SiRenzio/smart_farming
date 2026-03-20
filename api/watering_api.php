@@ -134,11 +134,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if($fertRow = $fertResult->fetch_assoc()){
                         $fertilizerName = $fertRow['fertilizerName'];
                         $fertilizerAmount = $fertRow['fertilizerAmount'];
-
+                        
+                        //Fertilizer in grams and cups
                         $fertInGrams = $liters * $fertilizerAmount;
                         $fertInCup = round($fertInGrams / 150, 2);
 
-                        $fertALert = "[Tank $liquidsensorID]: Tank is filled $liters liters of water. Mix in $fertInCup sardine-can scoops of $fertilizerName [$fertilizerAmount g/L]. [150grams sardine-can]";
+                        //Alternatives
+                        $alternativeAmount = $liters * 2.5; // 2.5ml/L of fermented fruit juice and fish amino acid
+
+                        $fertALert = "[Tank $liquidsensorID]: Tank is filled $liters liters of water. Mix in $fertInCup sardine-can scoops of $fertilizerName [$fertilizerAmount g/L] or $alternativeAmount ml of both Fermented Fruit Juice and Fish Amino Acid. [150grams sardine-can]";
                         $fertSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
                         $alertStmt = $conn->prepare($fertSql);
                         $alertStmt->bind_param("s", $fertALert);

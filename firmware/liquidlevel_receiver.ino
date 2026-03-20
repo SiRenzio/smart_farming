@@ -71,7 +71,6 @@ int wateringflag1 = -1;
 int wateringstatus1 = -1;
 int mixingflag1 = 0;
 int trig_tsl1 = 0;
-int isActiveFlag1 = 0;
 unsigned long mixStartTime1 = 0;
 
 // Tank 2 State
@@ -79,7 +78,6 @@ int wateringflag2 = -1;
 int wateringstatus2 = -1;
 int mixingflag2 = 0;
 int trig_tsl2 = 0;
-int isActiveFlag2 = 0;
 unsigned long mixStartTime2 = 0;
 
 // Tank 3 State
@@ -87,7 +85,6 @@ int wateringflag3 = -1;
 int wateringstatus3 = -1;
 int mixingflag3 = 0;
 int trig_tsl3 = 0;
-int isActiveFlag3 = 0;
 unsigned long mixStartTime3 = 0;
 
 
@@ -346,7 +343,7 @@ void sendWateringData(String updateType, int sensorID, int currentLevel, int wSt
 
 /* ===================== LOG SOLENOID EVENT ===================== */
 
-void logSolenoidEvent(int tank, float dispensedML) {
+void solenoidWateringEvent(int tank, float dispensedML) {
 
   if (!apiReady || WiFi.status() != WL_CONNECTED) return;
 
@@ -732,7 +729,7 @@ void loop() {
       Serial.println("\n[FLOW TARGET REACHED] Closing solenoid valve...");
 
     // LOG THE ACTUAL DISPENSED WATER
-    logSolenoidEvent(activeTank, currentVolumeML);
+    solenoidWateringEvent(activeTank, currentVolumeML);
 
       Serial.print("[FINAL] Volume: ");
       Serial.print(currentVolumeML);
