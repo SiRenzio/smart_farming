@@ -48,7 +48,7 @@ function formatDate(dateStr) {
 }
 
 function sendCommand(command) {
-    const liquidAmount = document.getElementById('liquidAmount').value || 0;
+    const liquidAmount = parseFloat(document.getElementById('liquidAmount').value) || 0;
     console.log(liquidAmount);
 
     fetch('../api/intel_api.php', {

@@ -55,11 +55,6 @@
             $tankResult[$key]['liters'] = 0;
         }
     }
-
-    // Handle POST request for solenoid control (for testing purposes)
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $liquidAmount = $_POST['liquidAmount'] ?? 0;
-    }
 ?>
 
 <!DOCTYPE html>
@@ -486,10 +481,10 @@
                 <div class="actuator-header">
                     <h1><i class="fas fa-shower"></i> Solenoids</h1>
                 </div>
-                <form action="" class="liquid-amount-field">
-                    <label for="liquidAmount">Liquid Amount</label>
+                <div class="liquid-amount-field">
+                    <label for="liquidAmount">Liquid Amount (mL)</label>
                     <input type="number" id="liquidAmount" name="liquidAmount" step="0.01" min="0">
-                </form>
+                </div>
                 <div class="button-group">
                     <h3>Solenoid 1</h3>
                     <button class="btn btn-success" id="valve-1"><i class="fas fa-shower"></i> Open/Close</button>

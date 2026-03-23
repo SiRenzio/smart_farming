@@ -7,10 +7,6 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// FOR TESTING PURPOSES ONLY - SIMULATE A COMMAND
-
-
-
 function sendResponse($success, $message, $command, $liquidVolume, $conn) {
 
     // Only activate pump event if a real command is triggered
