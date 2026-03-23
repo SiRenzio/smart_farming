@@ -16,17 +16,6 @@ $liquidAmount = $input['liquidAmount'] ?? 0;
 if ($manualCommand) {
 
     switch ($manualCommand) {
-        case 'pump1':
-            sendResponse(true, 'Manual pump 1 activated', 'trig_tsl1', $liquidAmount, $conn);
-            break;
-
-        case 'pump2':
-            sendResponse(true, 'Manual pump 2 activated', 'trig_tsl2', $liquidAmount, $conn);
-            break;
-
-        case 'pump3':
-            sendResponse(true, 'Manual pump 3 activated', 'trig_tsl3', $liquidAmount, $conn);
-            break;
 
         case 'valve1':
             sendResponse(true, 'Valve 1 toggled', 'valve_1', $liquidAmount, $conn);

@@ -49,6 +49,7 @@ function formatDate(dateStr) {
 
 function sendCommand(command) {
     const liquidAmount = document.getElementById('liquidAmount').value || 0;
+    console.log(liquidAmount);
 
     fetch('../api/intel_api.php', {
         method: 'POST',
@@ -66,10 +67,6 @@ function sendCommand(command) {
 }
 
 // Buttons
-document.getElementById('pump-tank-1').onclick = () => sendCommand('pump1');
-document.getElementById('pump-tank-2').onclick = () => sendCommand('pump2');
-document.getElementById('pump-tank-3').onclick = () => sendCommand('pump3');
-
 document.getElementById('valve-1').onclick = () => sendCommand('valve1');
 document.getElementById('valve-2').onclick = () => sendCommand('valve2');
 document.getElementById('valve-3').onclick = () => sendCommand('valve3');
