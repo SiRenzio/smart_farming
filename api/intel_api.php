@@ -116,7 +116,7 @@ foreach ($checkEvents as $event) {
         $wateringStatus = $event['wateringstatus'] ?? -1;
         $active = $event['isActive'] ?? 0;
 
-        if ($wateringFlag >= 0 || $wateringStatus >= 0) {
+        if ($wateringStatus === 0 && ($wateringFlag == 0 || $wateringFlag === 1 )) {
             $isAnyPumpRunning = true;
         }
 
