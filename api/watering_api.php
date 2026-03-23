@@ -140,13 +140,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         //Alternatives
                         $alternativeAmount = $liters * 2.5; // 2.5ml/L of fermented fruit juice and fish amino acid
+                        $fishaminoAmount = round($alternativeAmount / 150, 2); // for fish amino acid
+                        $fermentfruitAmount = round($alternativeAmount / 150, 2); // for fermented fruit juice
 
-                        $fertALert = "[Tank $liquidsensorID]: Tank is filled $liters liters of water. Mix in $fertInCup sardine-can scoops of $fertilizerName [$fertilizerAmount g/L] or $alternativeAmount ml of both Fermented Fruit Juice and Fish Amino Acid. [150grams sardine-can]";
+                        // for fertilizer amount
+                        $fertALert = "[Tank $liquidsensorID]: Tank is filled $liters liters of water. Mix in $fertInCup sardine-can scoops of $fertilizerName [$fertilizerAmount g/L]. [150grams sardine-can]";
                         $fertSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
                         $alertStmt = $conn->prepare($fertSql);
                         $alertStmt->bind_param("s", $fertALert);
                         $alertStmt->execute();
                         $alertStmt->close();
+
+                        // for alternative amount notification
+                        $alternativesAlert = "[Tank $liquidsensorID]: Tank is filled $liters liters of water. Mix in $fishaminoAmount sardine-can scoops of Fish Amino Acid and $fermentfruitAmount sardine-can scoops of Fermented Fruit Juice. [150grams sardine-can]";
+                        $alternativeSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
+                        $alernativeStmt = $conn->prepare($alternativeSql);
+                        $alernativeStmt->bind_param("s", $alternativesAlert);
+                        $alernativeStmt->execute();
+                        $alernativeStmt->close();
                     }
                 }
             }

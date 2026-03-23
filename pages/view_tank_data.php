@@ -27,28 +27,6 @@ $stmtTank->close();
 
 $tankName = $tankResult->fetch_assoc()['liquidtankname'];
 
-// Temporary
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if(isset($_POST['action_watering'])) {
-        $checkFlag = $conn->prepare("SELECT wateringFlag FROM tankpumpevent WHERE liquidsensorID = ? ORDER BY dateandtime DESC LIMIT 1");
-        $checkFlag->bind_param("i", $tankID);
-        $checkFlag->execute();
-        $fResult = $checkFlag->get_result()->fetch_assoc();
-
-        if(!$fResult || $fResult['wateringFlag'] == 0) {
-            $stmt = $conn->prepare("INSERT INTO tankpumpevent (liquidsensorID, dateandtime, wateringstatus, wateringFlag, wateringvolume) VALUES (?, NOW(), 1, NULL, FLOOR(RAND() * 100 + 1))");
-            $stmt->bind_param("i", $tankID);
-            $stmt->execute();
-            $stmt->close();
-        }
-    }
-}
-// Fetch current state for button disabling
-$latestStmt = $conn->prepare("SELECT wateringFlag FROM tankpumpevent WHERE liquidsensorID = ? ORDER BY dateandtime DESC LIMIT 1");
-$latestStmt->bind_param("i", $tankID);
-$latestStmt->execute();
-$currentState = $latestStmt->get_result()->fetch_assoc();
-$isMixing = ($currentState['wateringFlag'] ?? 0) == 1;
 
 // Pagination
 $limit = 15;
@@ -106,6 +84,30 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
+$diameter = 0.48;
+$radius = $diameter / 2; // 0.24m
+$tankHeightM = 0.90;
+
+foreach ($data as $key => $tank) {
+    if ($tank['waterlevel'] !== null) {
+        
+        $emptySpace = $tank['waterlevel'] / 100;
+        $liquidHeightMeters = $tankHeightM - $emptySpace;
+
+        if ($liquidHeightMeters < 0) {
+            $liquidHeightMeters = 0;
+        }
+        
+        $volume = pi() * pow($radius, 2) * $liquidHeightMeters;
+        $currentLiters = $volume * 1000;
+
+        $data[$key]['liters'] = round($currentLiters);
+        
+    } else {
+        $data[$key]['liters'] = 0;
+    }
+}
+
 //fetch tank name
 $tankNameSql = "SELECT liquidtankname FROM liquidsensorinfo WHERE liquidsensorID = ?";
 $stmtTankName = $conn->prepare($tankNameSql);
@@ -146,13 +148,6 @@ function getFilterParams($excludePage = true) {
             <a href="dashboard.php">
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
             </a>
-            <form method="POST" action="" style="display: inline;" id="actionForm">
-                <button type="submit" name="action_watering" class="tempbtn" <?php echo $isMixing ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''; ?>>
-                    <i class="fas fa-faucet"></i> Watering
-                </button>
-                
-                <button type="submit" name="action_reset_flag" id="resetBtn" style="display:none;"></button>
-            </form>
         </div>
         
         <div class="page-header">
@@ -199,7 +194,8 @@ function getFilterParams($excludePage = true) {
                             <th><i class="fas fa-calendar"></i> Date & Time</th>
                             <th><i class="fas fa-tint"></i> Watering Status</th>
                             <th><i class="fas fa-tint"></i> Watering Flag</th>
-                            <th><i class="fas fa-water"></i> Watering Level</th>
+                            <th><i class="fas fa-water"></i> Watering Amount</th>
+                            <th><i class="fas fa-water"></i> Water Level</th>
                         </tr>
                     </thead>
                     <tbody id="tank-data-body">
@@ -208,7 +204,8 @@ function getFilterParams($excludePage = true) {
                                 <td><?php echo date('M j, Y g:i A', strtotime($row['dateandtime'])); ?></td>
                                 <td class="numeric-value"><?php echo ($row['wateringstatus'] === 1) ? 'Pumped' : ($row['wateringstatus'] === 0 ? 'Hold Watering' : 'Able Watering'); ?></td>
                                 <td class="numeric-value"><?php echo ($row['wateringFlag'] === 1) ? 'Low' : ($row['wateringFlag'] === 0 ? 'Full' : 'Idle'); ?></td>
-                                <td class="numeric-value"><?php echo $row['wateringvolume'] !== null ? htmlspecialchars($row['wateringvolume']) : '-'; ?></td>
+                                <td class="numeric-value"><?php echo $row['wateringvolume'] !== null ? htmlspecialchars($row['wateringvolume']) . ' mL' : '-'; ?></td>
+                                <td class="numeric-value"><?php echo ($row['waterlevel'] === 0) ? '0' : ($row['liters'] !== null ? $row['liters'] . ' Liters' : '-'); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

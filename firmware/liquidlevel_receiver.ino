@@ -353,7 +353,7 @@ void solenoidWateringEvent(int tank, float dispensedML) {
   doc["liquidsensorID"] = tank;
   doc["updateType"] = "watering";
 
-  doc["wateringstatus"] = nullptr;
+  doc["wateringstatus"] = 1;
   doc["wateringFlag"] = nullptr;
 
   doc["isActive"] = 1;
@@ -471,9 +471,6 @@ void loop() {
     if (c == '\n') {
       serialBuffer.trim();
 
-      Serial.print("[RAW SERIAL] ");
-      Serial.println(serialBuffer);
-
       int start = serialBuffer.indexOf('{');
       int end = serialBuffer.lastIndexOf('}');
 
@@ -499,8 +496,6 @@ void loop() {
 
           dataValid = true;
           lastSerialReceiveTime = millis();
-
-          Serial.println("[JSON OK]");
         }
       } 
       else {
