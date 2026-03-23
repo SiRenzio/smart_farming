@@ -7,6 +7,47 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET');
 header('Access-Control-Allow-Headers: Content-Type');
 
+// FOR TESTING PURPOSES ONLY - SIMULATE A COMMAND
+$input = json_decode(file_get_contents("php://input"), true);
+
+$manualCommand = $input['command'] ?? null;
+$liquidAmount = $input['liquidAmount'] ?? 0;
+
+if ($manualCommand) {
+
+    switch ($manualCommand) {
+        case 'pump1':
+            sendResponse(true, 'Manual pump 1 activated', 'trig_tsl1', $liquidAmount, $conn);
+            break;
+
+        case 'pump2':
+            sendResponse(true, 'Manual pump 2 activated', 'trig_tsl2', $liquidAmount, $conn);
+            break;
+
+        case 'pump3':
+            sendResponse(true, 'Manual pump 3 activated', 'trig_tsl3', $liquidAmount, $conn);
+            break;
+
+        case 'valve1':
+            sendResponse(true, 'Valve 1 toggled', 'valve_1', $liquidAmount, $conn);
+            break;
+
+        case 'valve2':
+            sendResponse(true, 'Valve 2 toggled', 'valve_2', $liquidAmount, $conn);
+            break;
+
+        case 'valve3':
+            sendResponse(true, 'Valve 3 toggled', 'valve_3', $liquidAmount, $conn);
+            break;
+
+        case 'alternate':
+            sendResponse(true, 'Alternating triggered', 'alternate', $liquidAmount, $conn);
+            break;
+    }
+}
+
+
+
 function sendResponse($success, $message, $command, $liquidVolume, $conn) {
 
     // Only activate pump event if a real command is triggered
@@ -126,7 +167,7 @@ $isTank3Active = isset($checkPumpEvent3['isActive']) && (int)$checkPumpEvent3['i
 $isAnyCommandActive = $isTank1Active || $isTank2Active || $isTank3Active;
 
 // If a command is currently active, block the checking of condition
-if ($isAnyCommandActive) {
+if (!$manualCommand && $isAnyCommandActive) {
     sendResponse(false, 'A command is currently active and pending execution. Waiting for it to process.', 'none', 0, $conn);
 }
 
@@ -244,45 +285,6 @@ if ($row = $result->fetch_assoc()) {
 
         sendResponse(false,'No action required based on current parameters','none',0,$conn);
 
-    }
-}
-
-// FOR TESTING PURPOSES ONLY - SIMULATE A COMMAND
-$input = json_decode(file_get_contents("php://input"), true);
-
-$manualCommand = $input['command'] ?? null;
-$liquidAmount = $input['liquidAmount'] ?? 0;
-
-if ($manualCommand) {
-
-    switch ($manualCommand) {
-        case 'pump1':
-            sendResponse(true, 'Manual pump 1 activated', 'trig_tsl1', $liquidAmount, $conn);
-            break;
-
-        case 'pump2':
-            sendResponse(true, 'Manual pump 2 activated', 'trig_tsl2', $liquidAmount, $conn);
-            break;
-
-        case 'pump3':
-            sendResponse(true, 'Manual pump 3 activated', 'trig_tsl3', $liquidAmount, $conn);
-            break;
-
-        case 'valve1':
-            sendResponse(true, 'Valve 1 toggled', 'valve_1', $liquidAmount, $conn);
-            break;
-
-        case 'valve2':
-            sendResponse(true, 'Valve 2 toggled', 'valve_2', $liquidAmount, $conn);
-            break;
-
-        case 'valve3':
-            sendResponse(true, 'Valve 3 toggled', 'valve_3', $liquidAmount, $conn);
-            break;
-
-        case 'alternate':
-            sendResponse(true, 'Alternating triggered', 'alternate', $liquidAmount, $conn);
-            break;
     }
 }
 
