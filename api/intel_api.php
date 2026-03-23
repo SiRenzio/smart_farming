@@ -104,12 +104,31 @@ while ($fertRow = $fertResult->fetch_assoc()) {
 
 $fertCount = count($fertilizers);
 
-/* ================= EVALUATE INDIVIDUAL PUMP STATUS ================= */
+// getting the each tank status
+$isTank1Running = isset($checkPumpEvent1['wateringFlag'], $checkPumpEvent1['wateringstatus']) 
+    && (int)$checkPumpEvent1['wateringstatus'] === 0 
+    && ((int)$checkPumpEvent1['wateringFlag'] === 1 || (int)$checkPumpEvent1['wateringFlag'] === 0);
 
-$isTank1Running = isset($checkPumpEvent1['wateringFlag'], $checkPumpEvent1['wateringstatus']) && (int)$checkPumpEvent1['wateringFlag'] === 0 && (int)$checkPumpEvent1['wateringstatus'] === 0;
-$isTank2Running = isset($checkPumpEvent2['wateringFlag'], $checkPumpEvent2['wateringstatus']) && (int)$checkPumpEvent2['wateringFlag'] === 0 && (int)$checkPumpEvent2['wateringstatus'] === 0;
-$isTank3Running = isset($checkPumpEvent3['wateringFlag'], $checkPumpEvent3['wateringstatus']) && (int)$checkPumpEvent3['wateringFlag'] === 0 && (int)$checkPumpEvent3['wateringstatus'] === 0;
+$isTank2Running = isset($checkPumpEvent2['wateringFlag'], $checkPumpEvent2['wateringstatus']) 
+    && (int)$checkPumpEvent2['wateringstatus'] === 0 
+    && ((int)$checkPumpEvent2['wateringFlag'] === 1 || (int)$checkPumpEvent2['wateringFlag'] === 0);
 
+$isTank3Running = isset($checkPumpEvent3['wateringFlag'], $checkPumpEvent3['wateringstatus']) 
+    && (int)$checkPumpEvent3['wateringstatus'] === 0 
+    && ((int)$checkPumpEvent3['wateringFlag'] === 1 || (int)$checkPumpEvent3['wateringFlag'] === 0);
+
+// Check if there's a active command
+
+$isTank1Active = isset($checkPumpEvent1['isActive']) && (int)$checkPumpEvent1['isActive'] === 1;
+$isTank2Active = isset($checkPumpEvent2['isActive']) && (int)$checkPumpEvent2['isActive'] === 1;
+$isTank3Active = isset($checkPumpEvent3['isActive']) && (int)$checkPumpEvent3['isActive'] === 1;
+
+$isAnyCommandActive = $isTank1Active || $isTank2Active || $isTank3Active;
+
+// If a command is currently active, block the checking of condition
+if ($isAnyCommandActive) {
+    sendResponse(false, 'A command is currently active and pending execution. Waiting for it to process.', 'none', 0, $conn);
+}
 
 /* ================= PROCESS SENSOR DATA ================= */
 
@@ -174,13 +193,12 @@ if ($row = $result->fetch_assoc()) {
                     $tank3Flag = $checkPumpEvent3['fertFlag'] ?? 0;
 
                     /* ================= ALTERNATING LOGIC ================= */
-                    // CHANGED: Added an overarching condition to prevent any alternating logic if EITHER tank 2 or 3 is running.
                     if ($isTank2Running || $isTank3Running) {
                         
                         sendResponse(false, 'A fertilizer tank is already running. Waiting for it to finish before alternating.', 'none', 0, $conn);
                         
                     } else {
-                        // If NEITHER tank is running, it's safe to proceed with the alternating logic
+                        
                         if ($tank2Flag == 0 && $tank3Flag == 1) {
 
                             $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1");
