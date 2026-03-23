@@ -49,6 +49,7 @@ function formatDate(dateStr) {
 
 function sendCommand(command) {
     const liquidAmount = document.getElementById('liquidAmount').value || 0;
+    console.log(liquidAmount);
 
     fetch('../api/intel_api.php', {
         method: 'POST',
@@ -66,29 +67,9 @@ function sendCommand(command) {
 }
 
 // Buttons
-const baseURL = "http://localhost/smart_farming/test/testmanual_control_api.php";
-
-// PUMP BUTTONS
-document.getElementById("pump-tank-1").onclick = () => {
-    fetch(`${baseURL}?mode=on&pump1=1`);
-};
-
-document.getElementById("pump-tank-2").onclick = () => {
-    fetch(`${baseURL}?mode=on&pump2=1`);
-};
-
-document.getElementById("pump-tank-3").onclick = () => {
-    fetch(`${baseURL}?mode=on&pump3=1`);
-};
-
-// MIXER BUTTONS
-document.getElementById("mixer-tank-1").onclick = () => {
-    fetch(`${baseURL}?mode=on&mixer1=1`);
-};
-
-document.getElementById("mixer-tank-2").onclick = () => {
-    fetch(`${baseURL}?mode=on&mixer2=1`);
-};
+document.getElementById('pump-tank-1').onclick = () => sendCommand('pump1');
+document.getElementById('pump-tank-2').onclick = () => sendCommand('pump2');
+document.getElementById('pump-tank-3').onclick = () => sendCommand('pump3');
 
 document.getElementById('valve-1').onclick = () => sendCommand('valve1');
 document.getElementById('valve-2').onclick = () => sendCommand('valve2');
