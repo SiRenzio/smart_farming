@@ -1,5 +1,6 @@
 <?php
     require_once '../db.php';
+    require_once '../includes/notification.php';
     session_start();
 
     // Fetch sensor data for testing
@@ -55,6 +56,10 @@
         }
     }
 
+    // Handle POST request for solenoid control (for testing purposes)
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $liquidAmount = $_POST['liquidAmount'] ?? 0;
+    }
 ?>
 
 <!DOCTYPE html>
@@ -231,6 +236,145 @@
             padding: 10px;
         }
 
+        .actuators {
+            margin-top: 40px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .actuator-header h1 {
+            text-align: left;
+            font-size: 1.2rem;
+            color: #495057;
+            margin: 0;
+            padding: 10px 10px; 
+            font-weight: 600;
+            border-bottom: 1px solid #e9ecef;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+        }
+
+        .btn-primary:hover {
+            background-color: #0069d9;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background-color: #28a745;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+
+        .liquid-amount-field {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .liquid-amount-field label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .liquid-amount-field input {
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .pump-motors {
+            background: #ffffff;
+            border-radius: 15px;
+            flex: 1; 
+            min-width: 200px;
+            height: 600px;
+            padding: 2rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .pump-motors:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .mixers {
+            background: #ffffff;
+            border-radius: 15px;
+            flex: 1; 
+            min-width: 200px;
+            height: 600px;
+            padding: 2rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .mixers:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .solenoids {
+            background: #ffffff;
+            border-radius: 15px;
+            flex: 1; 
+            min-width: 200px;
+            height: 600px;
+            padding: 2rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .solenoids:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
     </style>
 </head>
 <body>
@@ -308,10 +452,63 @@
         </section>
 
         <section class="actuators">
-
+            <div class="pump-motors">
+                <div class="actuator-header">
+                    <h1><i class="fas fa-tint"></i> Pump Motors</h1>
+                </div>
+                <div class="button-group">
+                    <h3>Tank 1</h3>
+                    <button class="btn btn-primary" id="pump-tank-1"><i class="fas fa-tint"></i> Pump</button>
+                </div>
+                <div class="button-group">
+                    <h3>Tank 2</h3>
+                    <button class="btn btn-primary" id="pump-tank-2"><i class="fas fa-tint"></i> Pump</button>
+                </div>
+                <div class="button-group">
+                    <h3>Tank 3</h3>
+                    <button class="btn btn-primary" id="pump-tank-3"><i class="fas fa-tint"></i> Pump</button>
+                </div>
+            </div>
+            <div class="mixers">
+                <div class="actuator-header">
+                    <h1><i class="fas fa-cogs"></i> Mixers</h1>
+                </div>
+                <div class="button-group">
+                    <h3>Mixer 1</h3>
+                    <button class="btn btn-secondary" id="mixer-tank-1"><i class="fas fa-cogs"></i> Mix</button>
+                </div>
+                <div class="button-group">
+                    <h3>Tank 2</h3>
+                    <button class="btn btn-secondary" id="mixer-tank-2"><i class="fas fa-cogs"></i> Mix</button>
+                </div>
+            </div>
+            <div class="solenoids">
+                <div class="actuator-header">
+                    <h1><i class="fas fa-shower"></i> Solenoids</h1>
+                </div>
+                <form action="" class="liquid-amount-field">
+                    <label for="liquidAmount">Liquid Amount</label>
+                    <input type="number" id="liquidAmount" name="liquidAmount" step="0.01" min="0">
+                </form>
+                <div class="button-group">
+                    <h3>Solenoid 1</h3>
+                    <button class="btn btn-success" id="valve-1"><i class="fas fa-shower"></i> Open/Close</button>
+                </div>
+                <div class="button-group">
+                    <h3>Solenoid 2</h3>
+                    <button class="btn btn-success" id="valve-2"><i class="fas fa-shower"></i> Open/Close</button>
+                </div>
+                <div class="button-group">
+                    <h3>Solenoid 3</h3>
+                    <button class="btn btn-success" id="valve-3"><i class="fas fa-shower"></i> Open/Close</button>
+                </div>
+                <div class="button-group">
+                    <h3>Alternating</h3>
+                    <button class="btn btn-success" id="valve-4"><i class="fas fa-shower"></i> Alternate</button>
+                </div>
+            </div>
         </section>
-
-
     </div>
 </body>
+<script src="test.js"></script>
 </html>
