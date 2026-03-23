@@ -8,32 +8,6 @@ header('Access-Control-Allow-Methods: POST, GET');
 header('Access-Control-Allow-Headers: Content-Type');
 
 // FOR TESTING PURPOSES ONLY - SIMULATE A COMMAND
-$input = json_decode(file_get_contents("php://input"), true);
-
-$manualCommand = $input['command'] ?? null;
-$liquidAmount = $input['liquidAmount'] ?? 0;
-
-if ($manualCommand) {
-
-    switch ($manualCommand) {
-
-        case 'valve1':
-            sendResponse(true, 'Valve 1 toggled', 'trig_tsl1', $liquidAmount, $conn);
-            break;
-
-        case 'valve2':
-            sendResponse(true, 'Valve 2 toggled', 'trig_tsl2', $liquidAmount, $conn);
-            break;
-
-        case 'valve3':
-            sendResponse(true, 'Valve 3 toggled', 'trig_tsl3', $liquidAmount, $conn);
-            break;
-
-        case 'alternate':
-            sendResponse(true, 'Alternating triggered', 'alternate', $liquidAmount, $conn);
-            break;
-    }
-}
 
 
 
@@ -59,6 +33,53 @@ function sendResponse($success, $message, $command, $liquidVolume, $conn) {
     ]);
     exit;
 }
+
+$input = json_decode(file_get_contents("php://input"), true);
+
+$manualCommand = $input['command'] ?? null;
+$liquidAmount = $input['liquidAmount'] ?? 0;
+
+error_log("ManualCommand: " . ($manualCommand ?? 'NULL') . " | Volume: " . $liquidAmount);
+
+/* ================= MANUAL MODE ================= */
+
+if ($manualCommand) {
+
+    switch ($manualCommand) {
+
+        case 'valve1':
+            $conn->query("UPDATE tankpumpevent 
+                SET isActive = 1 
+                WHERE liquidsensorID = 1 
+                ORDER BY tankPumpEventID DESC LIMIT 1");
+
+            sendResponse(true,'Command queued','trig_tsl1',$liquidAmount,$conn);
+            break;
+
+        case 'valve2':
+            $conn->query("UPDATE tankpumpevent 
+                SET isActive = 1 
+                WHERE liquidsensorID = 2 
+                ORDER BY tankPumpEventID DESC LIMIT 1");
+
+            sendResponse(true,'Command queued','trig_tsl2',$liquidAmount,$conn);
+            break;
+
+        case 'valve3':
+            $conn->query("UPDATE tankpumpevent 
+                SET isActive = 1 
+                WHERE liquidsensorID = 3 
+                ORDER BY tankPumpEventID DESC LIMIT 1");
+
+            sendResponse(true,'Command queued','trig_tsl3',$liquidAmount,$conn);
+            break;
+
+        case 'alternate':
+            sendResponse(true,'Alternating triggered','alternate',$liquidAmount,$conn);
+            break;
+    }
+}
+
 
 /* ================= FETCH LATEST SENSOR DATA ================= */
 
@@ -157,7 +178,18 @@ $isAnyCommandActive = $isTank1Active || $isTank2Active || $isTank3Active;
 
 // If a command is currently active, block the checking of condition
 if (!$manualCommand && $isAnyCommandActive) {
-    sendResponse(false, 'A command is currently active and pending execution. Waiting for it to process.', 'none', 0, $conn);
+
+    if ($isTank1Active) {
+        sendResponse(true,'Execute','trig_tsl1',$totalLiquidVolume,$conn);
+    }
+
+    if ($isTank2Active) {
+        sendResponse(true,'Execute','trig_tsl2',$totalLiquidVolume,$conn);
+    }
+
+    if ($isTank3Active) {
+        sendResponse(true,'Execute','trig_tsl3',$totalLiquidVolume,$conn);
+    }
 }
 
 /* ================= PROCESS SENSOR DATA ================= */
