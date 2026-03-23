@@ -230,13 +230,13 @@ void checkIntelConnection() {
                 targetVolumeML = intelVolume;
                 
                 if (cmdTank == 1) {
-                  activeTank = 1; premixFlag1 = 1; premixStartTime1 = millis(); flowPulseCount = 0; wateringflag1 = 1; wateringstatus1 = 2; lastCommand1 = command; digitalWrite(mixermotor1, HIGH);
+                  activeTank = 1; premixFlag1 = 1; premixStartTime1 = millis(); flowPulseCount = 0; lastCommand1 = command; digitalWrite(mixermotor1, HIGH);
                   Serial.println("[INTEL] Tank 1: Starting pre-watering mix (NORMAL WATER)");
                 } else if (cmdTank == 2) {
-                  activeTank = 2; premixFlag2 = 1; premixStartTime2 = millis(); flowPulseCount = 0; wateringflag2 = 1; wateringstatus2 = 2; lastCommand2 = command; digitalWrite(mixermotor2, HIGH);
+                  activeTank = 2; premixFlag2 = 1; premixStartTime2 = millis(); flowPulseCount = 0; lastCommand2 = command; digitalWrite(mixermotor2, HIGH);
                   Serial.println("[INTEL] Tank 2: Starting pre-watering mix (CALCIUM BASED)");
                 } else if (cmdTank == 3) {
-                  activeTank = 3; premixFlag3 = 1; premixStartTime3 = millis(); flowPulseCount = 0; wateringflag3 = 1; wateringstatus3 = 2; lastCommand3 = command; digitalWrite(mixermotor3, HIGH);
+                  activeTank = 3; premixFlag3 = 1; premixStartTime3 = millis(); flowPulseCount = 0; lastCommand3 = command; digitalWrite(mixermotor3, HIGH);
                   Serial.println("[INTEL] Tank 3: Starting pre-watering mix (POTASSIUM BASED)");
                 }
               } 
@@ -744,17 +744,17 @@ void loop() {
       if (activeTank == 1) {
         digitalWrite(slIndicator1, LOW);
         trig_tsl1 = 0;
-        wateringstatus1 = 3; 
+        wateringstatus1 = -1; 
       }
       if (activeTank == 2) {
         digitalWrite(slIndicator2, LOW);
         trig_tsl2 = 0;
-        wateringstatus2 = 3; 
+        wateringstatus2 = -1; 
       }
       if (activeTank == 3) {
         digitalWrite(slIndicator3, LOW);
         trig_tsl3 = 0;
-        wateringstatus3 = 3; 
+        wateringstatus3 = -1; 
       }
       
       wateringActive = false;

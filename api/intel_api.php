@@ -30,53 +30,6 @@ function sendResponse($success, $message, $command, $liquidVolume, $conn) {
     exit;
 }
 
-$input = json_decode(file_get_contents("php://input"), true);
-
-$manualCommand = $input['command'] ?? null;
-$liquidAmount = $input['liquidAmount'] ?? 0;
-
-error_log("ManualCommand: " . ($manualCommand ?? 'NULL') . " | Volume: " . $liquidAmount);
-
-/* ================= MANUAL MODE ================= */
-
-if ($manualCommand) {
-
-    switch ($manualCommand) {
-
-        case 'valve1':
-            $conn->query("UPDATE tankpumpevent 
-                SET isActive = 1 
-                WHERE liquidsensorID = 1 
-                ORDER BY tankPumpEventID DESC LIMIT 1");
-
-            sendResponse(true,'Command queued','trig_tsl1',$liquidAmount,$conn);
-            break;
-
-        case 'valve2':
-            $conn->query("UPDATE tankpumpevent 
-                SET isActive = 1 
-                WHERE liquidsensorID = 2 
-                ORDER BY tankPumpEventID DESC LIMIT 1");
-
-            sendResponse(true,'Command queued','trig_tsl2',$liquidAmount,$conn);
-            break;
-
-        case 'valve3':
-            $conn->query("UPDATE tankpumpevent 
-                SET isActive = 1 
-                WHERE liquidsensorID = 3 
-                ORDER BY tankPumpEventID DESC LIMIT 1");
-
-            sendResponse(true,'Command queued','trig_tsl3',$liquidAmount,$conn);
-            break;
-
-        case 'alternate':
-            sendResponse(true,'Alternating triggered','alternate',$liquidAmount,$conn);
-            break;
-    }
-}
-
-
 /* ================= FETCH LATEST SENSOR DATA ================= */
 
 $sensorDataID = $_GET['sensorDataID'] ?? null;
@@ -151,41 +104,34 @@ while ($fertRow = $fertResult->fetch_assoc()) {
 
 $fertCount = count($fertilizers);
 
-// getting the each tank status
-$isTank1Running = isset($checkPumpEvent1['wateringFlag'], $checkPumpEvent1['wateringstatus']) 
-    && (int)$checkPumpEvent1['wateringstatus'] === 0 
-    && ((int)$checkPumpEvent1['wateringFlag'] === 1 || (int)$checkPumpEvent1['wateringFlag'] === 0);
+$isAnyPumpRunning = false;
+$isAnyActive = false;
 
-$isTank2Running = isset($checkPumpEvent2['wateringFlag'], $checkPumpEvent2['wateringstatus']) 
-    && (int)$checkPumpEvent2['wateringstatus'] === 0 
-    && ((int)$checkPumpEvent2['wateringFlag'] === 1 || (int)$checkPumpEvent2['wateringFlag'] === 0);
+$checkEvents = [$checkPumpEvent1, $checkPumpEvent2, $checkPumpEvent3];
 
-$isTank3Running = isset($checkPumpEvent3['wateringFlag'], $checkPumpEvent3['wateringstatus']) 
-    && (int)$checkPumpEvent3['wateringstatus'] === 0 
-    && ((int)$checkPumpEvent3['wateringFlag'] === 1 || (int)$checkPumpEvent3['wateringFlag'] === 0);
+foreach ($checkEvents as $event) {
+    if ($event) {
 
-// Check if there's a active command
+        $wateringFlag = $event['wateringFlag'] ?? -1;
+        $wateringStatus = $event['wateringstatus'] ?? -1;
+        $active = $event['isActive'] ?? 0;
 
-$isTank1Active = isset($checkPumpEvent1['isActive']) && (int)$checkPumpEvent1['isActive'] === 1;
-$isTank2Active = isset($checkPumpEvent2['isActive']) && (int)$checkPumpEvent2['isActive'] === 1;
-$isTank3Active = isset($checkPumpEvent3['isActive']) && (int)$checkPumpEvent3['isActive'] === 1;
+        if ($wateringFlag >= 0 || $wateringStatus >= 0) {
+            $isAnyPumpRunning = true;
+        }
 
-$isAnyCommandActive = $isTank1Active || $isTank2Active || $isTank3Active;
-
-// If a command is currently active, block the checking of condition
-if (!$manualCommand && $isAnyCommandActive) {
-
-    if ($isTank1Active) {
-        sendResponse(true,'Execute','trig_tsl1',$totalLiquidVolume,$conn);
+        if ($active == 1) {
+            $isAnyActive = true;
+        }
     }
+}
 
-    if ($isTank2Active) {
-        sendResponse(true,'Execute','trig_tsl2',$totalLiquidVolume,$conn);
-    }
+$isPumping = $isAnyPumpRunning;
+$isActive = $isAnyActive;
 
-    if ($isTank3Active) {
-        sendResponse(true,'Execute','trig_tsl3',$totalLiquidVolume,$conn);
-    }
+
+if ($isPumping) {
+    sendResponse(false, 'Pump is already running', 'none', 0, $conn);
 }
 
 /* ================= PROCESS SENSOR DATA ================= */
@@ -210,13 +156,10 @@ if ($row = $result->fetch_assoc()) {
         if ($row['SoilN'] < $plantParams['soilN']) {
 
             if ($row['SoilEC'] > $plantParams['soilEC']) {
-                
-                if ($isTank1Running) {
-                    sendResponse(false, 'Tank 1 is already running', 'none', 0, $conn);
-                } else {
-                    $command = "trig_tsl1";
-                    sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
-                }
+
+                $command = "trig_tsl1";
+
+                sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
 
             }
             else {
@@ -224,24 +167,24 @@ if ($row = $result->fetch_assoc()) {
                 if ($fertCount === 1) {
 
                     if (strtolower($fertilizers[0]['fertilizerName']) === 'nitrabor') {
-                        
-                        if ($isTank2Running) {
-                            sendResponse(false, 'Tank 2 is already running', 'none', 0, $conn);
-                        } else {
-                            $command = "trig_tsl2";
-                            sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
-                        }
+
+                        $command = "trig_tsl2";
+
+                        sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
 
                     }
-                    else if (strtolower($fertilizers[0]['fertilizerName']) === 'unik16' || strtolower($fertilizers[0]['fertilizerName']) === 'winner') {
-                        
-                        if ($isTank3Running) {
-                            sendResponse(false, 'Tank 3 is already running', 'none', 0, $conn);
-                        } else {
-                            $command = "trig_tsl3";
-                            sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
-                        }
+                    else if (strtolower($fertilizers[0]['fertilizerName']) === 'unik16') {
 
+                        $command = "trig_tsl3";
+
+                        sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
+
+                    }
+                    else if (strtolower($fertilizers[0]['fertilizerName']) === 'winner') {
+
+                        $command = "trig_tsl3";
+
+                        sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
                     }
 
                 }
@@ -251,50 +194,44 @@ if ($row = $result->fetch_assoc()) {
                     $tank3Flag = $checkPumpEvent3['fertFlag'] ?? 0;
 
                     /* ================= ALTERNATING LOGIC ================= */
-                    if ($isTank2Running || $isTank3Running) {
-                        
-                        sendResponse(false, 'A fertilizer tank is already running. Waiting for it to finish before alternating.', 'none', 0, $conn);
-                        
-                    } else {
-                        
-                        if ($tank2Flag == 0 && $tank3Flag == 1) {
 
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1");
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1");
+                    if ($tank2Flag == 0 && $tank3Flag == 1) {
 
-                            $command = "trig_tsl2";
-                            sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
+                        $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1");
+                        $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1");
 
-                        }
-                        else if ($tank2Flag == 1 && $tank3Flag == 0) {
+                        $command = "trig_tsl2";
 
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1");
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1");
+                        sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
 
-                            $command = "trig_tsl3";
-                            sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
+                    }
+                    else if ($tank2Flag == 1 && $tank3Flag == 0) {
 
-                        }
-                        else if ($tank2Flag == 0 && $tank3Flag == 0) {
+                        $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1");
+                        $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1");
 
-                            $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1");
+                        $command = "trig_tsl3";
 
-                            $command = "trig_tsl2";
-                            sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
+                        sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
 
-                        }
+                    }
+                    else if ($tank2Flag == 0 && $tank3Flag == 0) {
+
+                        $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1");
+
+                        $command = "trig_tsl2";
+
+                        sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
+
                     }
                 }
             }
         }
         else {
-            
-            if ($isTank1Running) {
-                sendResponse(false, 'Tank 1 is already running', 'none', 0, $conn);
-            } else {
-                $command = "trig_tsl1";
-                sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
-            }
+
+            $command = "trig_tsl1";
+
+            sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
         }
 
     }
@@ -308,4 +245,5 @@ if ($row = $result->fetch_assoc()) {
 /* ================= DEFAULT RESPONSE ================= */
 
 sendResponse(false,'No action required based on current parameters','none',0,$conn);
+
 ?>
