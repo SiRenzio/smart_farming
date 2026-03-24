@@ -31,14 +31,14 @@
 #define switch3 18
 
 /* ===================== SERVER & WIFI ===================== */
-const char* webServerIp = "192.168.1.3"; //"172.18.0.9"; 
+const char* webServerIp = "172.18.0.9"; 
 String sendWateringURL = "http://" + String(webServerIp) + "/smart_farming/api/watering_api.php";
 String sendIntelURL = "http://" + String(webServerIp) + "/smart_farming/api/intel_api.php";
 
-const char* ssid = "ZTE_2.4G_cYFH3D";
-const char* password = "hyperblade";
-// const char* ssid = "CompDeptWiFiAdmin";
-// const char* password = "isatu_6134";
+// const char* ssid = "ZTE_2.4G_cYFH3D";
+// const char* password = "hyperblade";
+const char* ssid = "CompDeptWiFiAdmin";
+const char* password = "isatu_6134";
 
 /* ===================== GLOBALS ===================== */
 int currentliquidlevel1 = 0; 
