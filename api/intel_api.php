@@ -30,6 +30,75 @@ function sendResponse($success, $message, $command, $liquidVolume, $conn) {
     exit;
 }
 
+/* ================= MANUAL VALVE CONTROL (SAVE) ================= */
+
+$input = json_decode(file_get_contents("php://input"), true) ?? [];
+
+$manualCommand = $input['command'] ?? null;
+$manualLiquid = $input['liquidAmount'] ?? 0;
+
+if ($manualCommand !== null) {
+
+    $manualData = [
+        'command' => $manualCommand,
+        'liquidAmount' => $manualLiquid,
+        'timestamp' => date('Y-m-d H:i:s')
+    ];
+
+    // Save to temp file
+    file_put_contents(__DIR__ . '/manual_temp.txt', json_encode($manualData));
+
+    // Respond to frontend (DO NOT trigger ESP32 here)
+    echo json_encode([
+        'success' => true,
+        'message' => 'Manual command queued for ESP32',
+        'timestamp' => date('Y-m-d H:i:s')
+    ]);
+    exit;
+}
+
+/* ================= MANUAL VALVE CONTROL (EXECUTE FOR ESP32) ================= */
+
+$tempFile = __DIR__ . '/manual_temp.txt';
+
+if (file_exists($tempFile)) {
+
+    $manualData = json_decode(file_get_contents($tempFile), true);
+
+    if ($manualData && isset($manualData['command'])) {
+
+        $cmd = $manualData['command'];
+        $liquid = $manualData['liquidAmount'] ?? 0;
+
+        // Delete immediately to avoid repeat execution
+        unlink($tempFile);
+
+        switch ($cmd) {
+
+            case 'valve1':
+                sendResponse(true, 'Manual Valve 1 executed', 'trig_tsl1', $liquid, $conn);
+                break;
+
+            case 'valve2':
+                sendResponse(true, 'Manual Valve 2 executed', 'trig_tsl2', $liquid, $conn);
+                break;
+
+            case 'valve3':
+                sendResponse(true, 'Manual Valve 3 executed', 'trig_tsl3', $liquid, $conn);
+                break;
+
+            case 'alternate':
+                // Keep it SIMPLE → do not touch your auto alternation logic
+                sendResponse(true, 'Manual alternate triggered', 'trig_tsl2', $liquid, $conn);
+                break;
+
+            default:
+                sendResponse(false, 'Invalid manual command', 'none', 0, $conn);
+                break;
+        }
+    }
+}
+
 /* ================= FETCH LATEST SENSOR DATA ================= */
 
 $sensorDataID = $_GET['sensorDataID'] ?? null;
@@ -221,12 +290,26 @@ if ($row = $result->fetch_assoc()) {
 
                 }
                 else {
-                    if ($isActive) {
-                        sendResponse(false, 'Another pump is currently active', 'none', 0, $conn);
-                    }
 
                     $tank2Flag = $checkPumpEvent2['fertFlag'] ?? 0;
                     $tank3Flag = $checkPumpEvent3['fertFlag'] ?? 0;
+
+                    if ($tank2Flag == 1 && $tank3Flag == 0) {
+                        if (!empty($isPumping['tank3'])) {
+                            sendResponse(false,'Tank 3 already running','none',0,$conn);
+                        }
+
+                        $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1");
+                        $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1");
+
+                        $command = "trig_tsl3";
+
+                        sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
+
+                    }
+                    else if ($isActive) {
+                        sendResponse(false, 'Another pump is currently active', 'none', 0, $conn);
+                    }
 
                     /* ================= ALTERNATING LOGIC ================= */
 
@@ -239,19 +322,6 @@ if ($row = $result->fetch_assoc()) {
                         $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1");
 
                         $command = "trig_tsl2";
-                        sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
-
-                    }
-                    else if ($tank2Flag == 1 && $tank3Flag == 0) {
-                        if (!empty($isPumping['tank3'])) {
-                            sendResponse(false,'Tank 3 already running','none',0,$conn);
-                        }
-
-                        $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1");
-                        $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1");
-
-                        $command = "trig_tsl3";
-
                         sendResponse(true,'Pump turned on',$command,$totalLiquidVolume,$conn);
 
                     }
