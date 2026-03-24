@@ -507,10 +507,6 @@
                     <h3>Solenoid 3</h3>
                     <button class="btn btn-success" id="valve-3"><i class="fas fa-shower"></i> Open/Close</button>
                 </div>
-                <div class="button-group">
-                    <h3>Alternating</h3>
-                    <button class="btn btn-success" id="valve-4"><i class="fas fa-shower"></i> Alternate</button>
-                </div>
             </div>
         </section>
     </div>

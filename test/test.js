@@ -103,6 +103,25 @@ function sendCommand(command) {
     });
 }
 
+function sendManualCommand(command) {
+    fetch('manual_api.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ command: command })
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("Response:", data);
+        alert(data.message);
+    })
+    .catch(err => {
+        console.error("Error:", err);
+        alert("Request failed");
+    });
+}
+
 /* ================= BUTTON EVENTS ================= */
 
 // VALVES (mapped to trig_tslX in PHP)
@@ -110,8 +129,14 @@ document.getElementById('valve-1').onclick = () => sendCommand('valve1');
 document.getElementById('valve-2').onclick = () => sendCommand('valve2');
 document.getElementById('valve-3').onclick = () => sendCommand('valve3');
 
-// ALTERNATING
-document.getElementById('valve-4').onclick = () => sendCommand('alternate');
+// PUMP (mapped to trig_pump in PHP)
+document.getElementById('pump-tank-1').onclick = () => sendManualCommand('pump1');
+document.getElementById('pump-tank-2').onclick = () => sendManualCommand('pump2');
+document.getElementById('pump-tank-3').onclick = () => sendManualCommand('pump3');
+
+// Mixer
+document.getElementById('mixer-tank-1').onclick = () => sendManualCommand('mixer1');
+document.getElementById('mixer-tank-2').onclick = () => sendManualCommand('mixer2');
 
 /* ================= AUTO REFRESH ================= */
 
