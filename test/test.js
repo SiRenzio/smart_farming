@@ -29,10 +29,34 @@ function reloadSensorData() {
                     </tr>
                 `;
             });
+            data.tankData.forEach(tank => {
+                const sensorReadingM = tank.currentliquidlevel / 100; // Convert cm to m
+                const diameter = 0.48;
+                const totalHeight = 0.90;
+                const radius = diameter / 2;
+                let liquidHeightM = totalHeight - sensorReadingM; // Calculate liquid height in meters
+                
+                // Clamp values between 0 and totalHeight
+                liquidHeightM = Math.max(0, Math.min(totalHeight, liquidHeightM));
+
+                // Current liquid volume in Liters
+                let liquidLiters = (Math.PI * Math.pow(radius, 2) * liquidHeightM) * 1000;
+
+                updateTank(tank.liquidsensorID, tank.currentliquidlevel, Math.round(liquidLiters));
+            });
 
             tbody.innerHTML = html;
         })
     .catch(err => console.error('Auto reload failed:', err));
+}
+
+function updateTank(sensorID, currentLevel, liters) {
+    const tank = document.querySelector(`.tank-card[data-liquidsensor-id="${sensorID}"]`);
+    console.log("Found element:", tank);
+    if (!tank) return;
+
+    const level = tank.querySelector('.liquid-level');
+    level.innerText = currentLevel + ' cm' + ' | ' + liters + ' L';
 }
 
 function formatDate(dateStr) {
