@@ -135,8 +135,8 @@ document.getElementById('pump-tank-2').onclick = () => sendManualCommand('pump2'
 document.getElementById('pump-tank-3').onclick = () => sendManualCommand('pump3');
 
 // Mixer
-document.getElementById('mixer-tank-1').onclick = () => sendManualCommand('mixer1');
-document.getElementById('mixer-tank-2').onclick = () => sendManualCommand('mixer2');
+document.getElementById('mixer-tank-1').onclick = () => sendManualCommand('mixer2');
+document.getElementById('mixer-tank-2').onclick = () => sendManualCommand('mixer3');
 
 /* ================= AUTO REFRESH ================= */
 

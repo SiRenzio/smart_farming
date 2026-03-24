@@ -150,11 +150,11 @@ void IRAM_ATTR flowPulseCounter() {
 /* ===================== Manual FUNCTIONS ===================== */
 void manualTesting() {
 
-  // ================= 1. RUNNING STATE TIMER =================
+  // ================= RUNNING STATE TIMER =================
   if (manualRunning) {
     // If 5 seconds have passed, turn off the device
     if (millis() - manualStartTime >= MANUAL_DURATION) {
-      Serial.println("[MANUAL] Stopping device...");
+      Serial.println("[MANUAL] Actuators Stop!.....");
 
       // Turn off based on the active command
       if (manualCommand == "pump1") digitalWrite(pumpmotor1, LOW);
@@ -167,11 +167,10 @@ void manualTesting() {
       manualCommand = "";
       Serial.println("[MANUAL] Execution done");
     }
-    // Do not fetch new commands while a manual test is currently running
     return; 
   }
 
-  // ================= 2. FETCH COMMAND =================
+  // ================= FETCH COMMAND =================
   if (!apiReady || WiFi.status() != WL_CONNECTED) return;
 
   HTTPClient http;
@@ -199,7 +198,7 @@ void manualTesting() {
 
       // ================= 3. EXECUTE COMMAND =================
       if (command != "none") {
-        Serial.print("[MANUAL] Forcing command execution: ");
+        Serial.print("[MANUAL] Test Command: ");
         Serial.println(command);
 
         // Turn ON the specific device
@@ -218,7 +217,7 @@ void manualTesting() {
         manualCommand = command;
         manualStartTime = millis();
 
-        Serial.println("[MANUAL] Device started (5 seconds)");
+        Serial.println("[MANUAL] Actuators running......)");
       }
     } 
     else {
