@@ -45,8 +45,8 @@ function reloadSensorData() {
                 updateTank(tank.liquidsensorID, tank.currentliquidlevel, Math.round(liquidLiters));
             });
 
-            tbody.innerHTML = html;
-        })
+        tbody.innerHTML = html;
+    })
     .catch(err => console.error('Auto reload failed:', err));
 }
 
@@ -71,36 +71,49 @@ function formatDate(dateStr) {
     });
 }
 
+/* ================= SEND COMMAND ================= */
+
 function sendCommand(command) {
-    const liquidAmount = parseFloat(document.getElementById('liquidAmount').value) || 0;
-    console.log(liquidAmount);
+    const liquidAmountInput = document.getElementById('liquidAmount');
+    const liquidAmount = parseFloat(liquidAmountInput.value) || 0;
+
+    if (liquidAmount <= 0) {
+        alert("Please enter a valid liquid amount.");
+        return;
+    }
 
     fetch('../api/intel_api.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ command, liquidAmount })
+        body: JSON.stringify({ 
+            command: command,
+            liquidAmount: liquidAmount
+        })
     })
     .then(res => res.json())
     .then(data => {
-        console.log(data);
+        console.log("Response:", data);
         alert(data.message);
     })
-    .catch(err => console.error(err));
+    .catch(err => {
+        console.error("Error:", err);
+        alert("Request failed");
+    });
 }
 
-// Buttons
-document.getElementById('pump-tank-1').onclick = () => sendCommand('pump1');
-document.getElementById('pump-tank-2').onclick = () => sendCommand('pump2');
-document.getElementById('pump-tank-3').onclick = () => sendCommand('pump3');
+/* ================= BUTTON EVENTS ================= */
 
+// VALVES (mapped to trig_tslX in PHP)
 document.getElementById('valve-1').onclick = () => sendCommand('valve1');
 document.getElementById('valve-2').onclick = () => sendCommand('valve2');
 document.getElementById('valve-3').onclick = () => sendCommand('valve3');
+
+// ALTERNATING
 document.getElementById('valve-4').onclick = () => sendCommand('alternate');
 
-
+/* ================= AUTO REFRESH ================= */
 
 reloadSensorData();
 setInterval(reloadSensorData, 5000);
