@@ -1,39 +1,62 @@
 function reloadSensorData() {
     fetch('fetch_test_data.php')
     .then(res => res.json())
-    .then(data => {
-        const tbody = document.getElementById('sensor-data-body');
-        let html = "";
+        .then(data => {
+            console.log(data);
+            const tbody = document.getElementById('sensor-data-body');
+            let html = "";
+            if (!data.sensorData || data.sensorData.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='9'>No data available</td></tr>";
+                return;
+            }
+            data.sensorData.forEach(row => {
+                html += `
+                    <tr>
+                        <td>
+                            <div class="sensor-info">
+                                <strong>${row.sensorName}</strong><br>
+                                <small>${row.farmName ?? 'Unknown'}</small>
+                            </div>
+                        </td>
+                        <td>${formatDate(row.DateTime)}</td>
+                        <td>${row.SoilN ?? '-'}</td>
+                        <td>${row.SoilP ?? '-'}</td>
+                        <td>${row.SoilK ?? '-'}</td>
+                        <td>${row.SoilEC ?? '-'}</td>
+                        <td>${row.SoilPH ?? '-'}</td>
+                        <td>${row.SoilT ?? '-'}</td>
+                        <td>${row.SoilMois ?? '-'}</td>
+                    </tr>
+                `;
+            });
+            data.tankData.forEach(tank => {
+                const sensorReadingM = tank.currentliquidlevel / 100; // Convert cm to m
+                const diameter = 0.48;
+                const totalHeight = 0.90;
+                const radius = diameter / 2;
+                let liquidHeightM = totalHeight - sensorReadingM; // Calculate liquid height in meters
+                
+                // Clamp values between 0 and totalHeight
+                liquidHeightM = Math.max(0, Math.min(totalHeight, liquidHeightM));
 
-        if (!data.sensorData || data.sensorData.length === 0) {
-            tbody.innerHTML = "<tr><td colspan='9'>No data available</td></tr>";
-            return;
-        }
+                // Current liquid volume in Liters
+                let liquidLiters = (Math.PI * Math.pow(radius, 2) * liquidHeightM) * 1000;
 
-        data.sensorData.forEach(row => {
-            html += `
-                <tr>
-                    <td>
-                        <div class="sensor-info">
-                            <strong>${row.sensorName}</strong><br>
-                            <small>${row.farmName ?? 'Unknown'}</small>
-                        </div>
-                    </td>
-                    <td>${formatDate(row.DateTime)}</td>
-                    <td>${row.SoilN ?? '-'}</td>
-                    <td>${row.SoilP ?? '-'}</td>
-                    <td>${row.SoilK ?? '-'}</td>
-                    <td>${row.SoilEC ?? '-'}</td>
-                    <td>${row.SoilPH ?? '-'}</td>
-                    <td>${row.SoilT ?? '-'}</td>
-                    <td>${row.SoilMois ?? '-'}</td>
-                </tr>
-            `;
-        });
+                updateTank(tank.liquidsensorID, tank.currentliquidlevel, Math.round(liquidLiters));
+            });
 
         tbody.innerHTML = html;
     })
     .catch(err => console.error('Auto reload failed:', err));
+}
+
+function updateTank(sensorID, currentLevel, liters) {
+    const tank = document.querySelector(`.tank-card[data-liquidsensor-id="${sensorID}"]`);
+    console.log("Found element:", tank);
+    if (!tank) return;
+
+    const level = tank.querySelector('.liquid-level');
+    level.innerText = currentLevel + ' cm' + ' | ' + liters + ' L';
 }
 
 function formatDate(dateStr) {

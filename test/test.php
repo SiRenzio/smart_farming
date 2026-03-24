@@ -4,7 +4,15 @@
     session_start();
 
     // Fetch sensor data for testing
-    $stmt = $conn->prepare('SELECT s.*, sen.sensorName, f.farmName FROM sensordata s JOIN sensorinfo sen ON s.SoilSensorID = sen.SoilSensorID JOIN farmlocation f ON s.locationID = f.locationID ORDER BY s.DateTime DESC LIMIT 99');
+    $stmt = $conn->prepare('SELECT s.*, sen.sensorName, f.farmName 
+                            FROM sensordata s 
+                            JOIN sensorinfo sen 
+                            ON s.SoilSensorID = sen.SoilSensorID 
+                            JOIN farmlocation f 
+                            ON s.locationID = f.locationID 
+                            ORDER BY s.DateTime 
+                            DESC LIMIT 99'
+                            );
     $stmt->execute();
     $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
@@ -158,8 +166,8 @@
             padding: 0.75em; 
             text-align: center; 
             border-bottom: 1px solid #dee2e6; 
-        
         }
+
         .sensors-table th { 
             background: #f8f9fa; 
             font-weight: bold; 
@@ -170,11 +178,12 @@
         }
 
 
-        // tanks css
+        /* // tanks css */
         .tanks {
             padding: 40px 20px;
             background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            border-radius: 25px;
         }
 
         .tank-container {
@@ -231,6 +240,7 @@
             padding: 10px;
         }
 
+        /* actuator css */
         .actuators {
             margin-top: 40px;
             display: flex;
@@ -394,10 +404,10 @@
                 <div class="tanks-list">
                     
                     <?php foreach ($tankResult as $tank): ?>
-                        <div class="tank-card">
+                        <div class="tank-card" data-liquidsensor-id="<?= $tank['liquidsensorID'] ?? '' ?>">
                             <h1><?php echo htmlspecialchars($tank['liquidtankname'] ?? 'Unknown Tank'); ?></h1>
                             
-                            <h2><?php echo htmlspecialchars($tank['currentliquidlevel']); ?>cm | <?php echo htmlspecialchars($tank['liters']); ?>L</h2>
+                            <h2 class="liquid-level"><?php echo htmlspecialchars($tank['currentliquidlevel']); ?>cm | <?php echo htmlspecialchars($tank['liters']); ?>L</h2>
                         </div>
                     <?php endforeach; ?>
 
