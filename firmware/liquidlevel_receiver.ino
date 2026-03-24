@@ -35,10 +35,23 @@ const char* webServerIp = "172.18.0.9";
 String sendWateringURL = "http://" + String(webServerIp) + "/smart_farming/api/watering_api.php";
 String sendIntelURL = "http://" + String(webServerIp) + "/smart_farming/api/intel_api.php";
 
+// For manual testing
+String sendManualURL = "http://" + String(webServerIp) + "/smart_farming/test/manual_api.php";
+
 // const char* ssid = "ZTE_2.4G_cYFH3D";
 // const char* password = "hyperblade";
 const char* ssid = "CompDeptWiFiAdmin";
 const char* password = "isatu_6134";
+
+/* ===================== MANUAL GLOBALS ===================== */
+bool manualRunning = false;
+String manualCommand = "";
+unsigned long manualStartTime = 0;
+const unsigned long MANUAL_DURATION = 5000;
+
+unsigned long lastManualCheck = 0;
+const unsigned long manualInterval = 1500;
+String lastManualCommand = "";
 
 /* ===================== GLOBALS ===================== */
 int currentliquidlevel1 = 0; 
@@ -132,6 +145,88 @@ String serialBuffer = "";
 
 void IRAM_ATTR flowPulseCounter() {
   flowPulseCount++;
+}
+
+/* ===================== Manual FUNCTIONS ===================== */
+void manualTesting() {
+
+  // ================= 1. RUNNING STATE TIMER =================
+  if (manualRunning) {
+    // If 5 seconds have passed, turn off the device
+    if (millis() - manualStartTime >= MANUAL_DURATION) {
+      Serial.println("[MANUAL] Stopping device...");
+
+      // Turn off based on the active command
+      if (manualCommand == "pump1") digitalWrite(pumpmotor1, LOW);
+      else if (manualCommand == "pump2") digitalWrite(pumpmotor2, LOW);
+      else if (manualCommand == "pump3") digitalWrite(pumpmotor3, LOW);
+      else if (manualCommand == "mixer2") digitalWrite(mixermotor2, LOW);
+      else if (manualCommand == "mixer3") digitalWrite(mixermotor3, LOW);
+
+      manualRunning = false;
+      manualCommand = "";
+      Serial.println("[MANUAL] Execution done");
+    }
+    // Do not fetch new commands while a manual test is currently running
+    return; 
+  }
+
+  // ================= 2. FETCH COMMAND =================
+  if (!apiReady || WiFi.status() != WL_CONNECTED) return;
+
+  HTTPClient http;
+  http.setTimeout(3000);
+
+  http.begin(sendManualURL);
+  http.addHeader("Content-Type", "application/json");
+
+  int httpCode = http.POST("{}");
+
+  if (httpCode > 0) {
+    String response = http.getString();
+    StaticJsonDocument<200> doc;
+    DeserializationError error = deserializeJson(doc, response);
+
+    if (!error) {
+      String command = doc["command"];
+
+      // Ignore if it's the exact same command we just processed
+      if (command == lastManualCommand) {
+        http.end();
+        return;
+      }
+      lastManualCommand = command;
+
+      // ================= 3. EXECUTE COMMAND =================
+      if (command != "none") {
+        Serial.print("[MANUAL] Forcing command execution: ");
+        Serial.println(command);
+
+        // Turn ON the specific device
+        if (command == "pump1") digitalWrite(pumpmotor1, HIGH);
+        else if (command == "pump2") digitalWrite(pumpmotor2, HIGH);
+        else if (command == "pump3") digitalWrite(pumpmotor3, HIGH);
+        else if (command == "mixer2") digitalWrite(mixermotor2, HIGH);
+        else if (command == "mixer3") digitalWrite(mixermotor3, HIGH);
+        else {
+          http.end();
+          return; // Ignore invalid commands
+        }
+
+        // Save state to trigger the 5-second timer
+        manualRunning = true;
+        manualCommand = command;
+        manualStartTime = millis();
+
+        Serial.println("[MANUAL] Device started (5 seconds)");
+      }
+    } 
+    else {
+      Serial.println("[MANUAL ERROR] JSON parse failed");
+    }
+  }
+
+  http.end();
 }
 
 /* ===================== API FUNCTIONS ===================== */
@@ -460,6 +555,17 @@ void loop() {
 
     lastIntelCheck = currentMillis;
     checkIntelConnection();
+  }
+
+/* ================= MANUAL API HEARTBEAT & TIMER ================= */
+  if (apiReady) {
+    if (manualRunning) {
+      manualTesting(); 
+    } 
+    else if (millis() - lastManualCheck >= manualInterval) {
+      lastManualCheck = millis();
+      manualTesting();
+    }
   }
 
   /* ================= RECEIVE DATA ================= */
