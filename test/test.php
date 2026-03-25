@@ -483,7 +483,7 @@
                     <button class="btn btn-secondary" id="mixer-tank-1"><i class="fas fa-cogs"></i> Mix</button>
                 </div>
                 <div class="button-group">
-                    <h3>Tank 2</h3>
+                    <h3>Mixer 2</h3>
                     <button class="btn btn-secondary" id="mixer-tank-2"><i class="fas fa-cogs"></i> Mix</button>
                 </div>
             </div>
