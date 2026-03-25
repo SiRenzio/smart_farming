@@ -125,6 +125,7 @@ window.addEventListener("DOMContentLoaded", () => {
             if (!data.nutrition) return;
 
             // Fill nutrition fields
+            document.getElementById("nutritionSetName").value = data.nutrition.nutritionSetName;
             soilTypeSelect.value = data.nutrition.soilType;
             soilTypeSelect.dispatchEvent(new Event("change"));
             stageSelect.value = data.nutrition.growthStage;

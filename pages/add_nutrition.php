@@ -223,24 +223,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Nutrition Form -->
         <form method="post" action="add_nutrition.php?plantID=<?php echo $plantID; ?>">
             <div class="form-group full-width">
-                <label for="nutritionSetName">
-                    <i class="fas fa-pen"></i> Custom Nutrition Set Name *
-                </label>
-                <input 
-                    type="text" 
-                    id="nutritionSetName" 
-                    name="nutritionSetName" 
-                    placeholder="Enter a name for this nutrition set"
-                >
-            </div>
-
-            <div class="form-group full-width">
                 <label for="savedNutritionSetName">
                     <i class="fas fa-floppy-disk"></i> Saved Nutrition Set Name
                 </label>
                 <select name="savedNutritionSetName" id="saved-nutrition-set" class="dropdown">
                     <?php if (!empty($nutritionSets)): ?>
-                        <option value="">Select a saved nutrition set (optional)</option>
+                        <option value="">Select a saved nutrition set</option>
                         <?php foreach ($nutritionSets as $set): ?>
                             <option value="<?php echo htmlspecialchars($set['nutritionID']); ?>">
                                 <?php echo htmlspecialchars($set['nutritionSetName']); ?> - <?php echo htmlspecialchars($set['plantName']); ?>
@@ -250,6 +238,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <option value="">No saved nutrition sets available</option>
                     <?php endif; ?>
                 </select>
+            </div>
+
+            <div class="form-group full-width">
+                <label for="nutritionSetName">
+                    <i class="fas fa-pen"></i> Custom Nutrition Set Name *
+                </label>
+                <input 
+                    type="text" 
+                    id="nutritionSetName" 
+                    name="nutritionSetName" 
+                    placeholder="Enter a name for this nutrition set"
+                >
             </div>
 
             <div class="form-group full-width">
