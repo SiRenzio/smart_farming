@@ -79,6 +79,6 @@ void loop() {
 
     serializeJson(doc, Serial);
     Serial.println();
-    delay(15);
+    delay(20);
   }
 }
