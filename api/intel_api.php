@@ -175,11 +175,6 @@ $fertCount = count($fertilizers);
 
 $isAnyActive = false;
 
-$isPumpRunning = [
-    'tank1' => false,
-    'tank2' => false,
-    'tank3' => false
-];
 
 $checkEvents = [
     'tank1' => $checkPumpEvent1,
@@ -189,21 +184,14 @@ $checkEvents = [
 
 foreach ($checkEvents as $tank => $event) {
     if ($event) {
-
-        $wateringFlag = $event['wateringFlag'] ?? -1;
-        $wateringStatus = $event['wateringstatus'] ?? -1;
         $active = $event['isActive'] ?? 0;
 
-        if ($wateringStatus === 0 && ($wateringFlag == 0 || $wateringFlag === 1)) {
-            $isPumpRunning[$tank] = true;
-        }
         if ($active == 1) {
             $isAnyActive = true;
         }
     }
 }
 
-$isPumping = $isPumpRunning;
 $isActive = $isAnyActive;
 
 
@@ -234,7 +222,7 @@ if ($row = $result->fetch_assoc()) {
                     sendResponse(false, 'Another pump is currently active', 'none', 0, $conn);
                 }
 
-                if(!empty($isPumping['tank1'])){
+                if($checkPumpEvent1['wateringFlag'] !== null) {
                     sendResponse(false,'Pump currently running','none',0,$conn);
                 }
                 else{
@@ -252,7 +240,7 @@ if ($row = $result->fetch_assoc()) {
                             sendResponse(false, 'Another pump is currently active', 'none', 0, $conn);
                         }
 
-                        if(!empty($isPumping['tank2'])){
+                        if ($checkPumpEvent2['wateringFlag'] !== null){
                             sendResponse(false,'Pump currently running','none',0,$conn);
                         }
                         else{
@@ -265,7 +253,7 @@ if ($row = $result->fetch_assoc()) {
                             sendResponse(false, 'Another pump is currently active', 'none', 0, $conn);
                         }
 
-                        if(!empty($isPumping['tank3'])){
+                        if($checkPumpEvent3['wateringFlag'] !== null){
                             sendResponse(false,'Pump currently running','none',0,$conn);
                         }
                         else{
@@ -279,7 +267,7 @@ if ($row = $result->fetch_assoc()) {
                             sendResponse(false, 'Another pump is currently active', 'none', 0, $conn);
                         }
 
-                        if(!empty($isPumping['tank3'])){
+                        if($checkPumpEvent3['wateringFlag'] !== null){
                             sendResponse(false,'Pump currently running','none',0,$conn);
                         }
                         else{
@@ -295,8 +283,8 @@ if ($row = $result->fetch_assoc()) {
                     $tank3Flag = $checkPumpEvent3['fertFlag'] ?? 0;
 
                     if ($tank2Flag == 1 && $tank3Flag == 0) {
-                        if (!empty($isPumping['tank3'])) {
-                            sendResponse(false,'Tank 3 already running','none',0,$conn);
+                        if ($checkPumpEvent2['wateringFlag'] !== null || $checkPumpEvent3['wateringFlag'] !== null) {
+                            sendResponse(false,'Tank 2 or 3 already running','none',0,$conn);
                         }
 
                         $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1");
@@ -310,14 +298,13 @@ if ($row = $result->fetch_assoc()) {
                     else if ($isActive) {
                         sendResponse(false, 'Another pump is currently active', 'none', 0, $conn);
                     }
+                    else if ($checkPumpEvent2['wateringFlag'] !== null || $checkPumpEvent3['wateringFlag'] !== null) {
+                        sendResponse(false,'Tank 2 or 3 already running','none',0,$conn);
+                    }
 
                     /* ================= ALTERNATING LOGIC ================= */
 
                     if ($tank2Flag == 0 && $tank3Flag == 1) {
-                        if (!empty($isPumping['tank2']) ) {
-                            sendResponse(false,'Tank 2 already running','none',0,$conn);
-                        }
-
                         $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1");
                         $conn->query("UPDATE tankpumpevent SET fertFlag = 0 WHERE liquidsensorID = 3 ORDER BY tankPumpEventID DESC LIMIT 1");
 
@@ -326,10 +313,6 @@ if ($row = $result->fetch_assoc()) {
 
                     }
                     else if ($tank2Flag == 0 && $tank3Flag == 0) {
-                        if (!empty($isPumping['tank2'])) {
-                            sendResponse(false,'Tank 2 already running','none',0,$conn);
-                        }
-
                         $conn->query("UPDATE tankpumpevent SET fertFlag = 1 WHERE liquidsensorID = 2 ORDER BY tankPumpEventID DESC LIMIT 1");
 
                         $command = "trig_tsl2";

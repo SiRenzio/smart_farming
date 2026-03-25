@@ -568,9 +568,9 @@ void loop() {
   }
 
   /* ================= RECEIVE DATA ================= */
-
   while (Serial2.available()) {
     char c = Serial2.read();
+    
     if (c == '\r') continue;
 
     if (c == '\n') {
@@ -591,16 +591,18 @@ void loop() {
           dataValid = false;
         } 
         else {
-          int d1 = doc["distance1"];
-          int d2 = doc["distance2"];
-          int d3 = doc["distance3"];
+          if (doc.containsKey("distance1") && doc.containsKey("distance2") && doc.containsKey("distance3")) {
+            currentliquidlevel1 = doc["distance1"];
+            currentliquidlevel2 = doc["distance2"];
+            currentliquidlevel3 = doc["distance3"];
 
-          currentliquidlevel1 = d1;
-          currentliquidlevel2 = d2;
-          currentliquidlevel3 = d3;
-
-          dataValid = true;
-          lastSerialReceiveTime = millis();
+            dataValid = true;
+            lastSerialReceiveTime = millis();
+          } 
+          else {
+            Serial.println("[REJECTED] JSON parsed, but keys are missing.");
+            dataValid = false;
+          }
         }
       } 
       else {

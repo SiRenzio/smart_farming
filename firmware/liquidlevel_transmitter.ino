@@ -18,14 +18,13 @@ int finaldistance3 = 0;
 
 /* ===== TIMER SETTINGS ===== */
 unsigned long sendInterval = 1000;     // send every 1 second
-unsigned long readInterval = 60;       // sensor refresh rate
+unsigned long readInterval = 150;      // FIX: Increased to accommodate the echo fade delays
 
 unsigned long previousSendMillis = 0;
 unsigned long previousReadMillis = 0;
 
 /* ===== ULTRASONIC FUNCTION ===== */
 int readUltrasonic(int trigPin, int echoPin) {
-
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
   digitalWrite(trigPin, HIGH);
@@ -51,24 +50,25 @@ void setup() {
 }
 
 void loop() {
-
   unsigned long currentMillis = millis();
 
-  /* ===== FAST SENSOR READING ===== */
+  /* ===== SENSOR READING ===== */
   if (currentMillis - previousReadMillis >= readInterval) {
     previousReadMillis = currentMillis;
 
     int d1 = readUltrasonic(trigPin1, echoPin1);
-    delayMicroseconds(200);  
+    delay(40);
     int d2 = readUltrasonic(trigPin2, echoPin2);
-    delayMicroseconds(200);
+    delay(40);
     int d3 = readUltrasonic(trigPin3, echoPin3);
 
+    // Filter out 0s and outliers
     if (d1 > 0 && d1 < 100) finaldistance1 = d1;
     if (d2 > 0 && d2 < 100) finaldistance2 = d2;
     if (d3 > 0 && d3 < 100) finaldistance3 = d3;
   }
 
+  /* ===== SEND DATA ===== */
   if (currentMillis - previousSendMillis >= sendInterval) {
     previousSendMillis = currentMillis;
 
