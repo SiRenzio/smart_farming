@@ -55,6 +55,10 @@ foreach ($nutritionData as $nutrition) {
     }
     $stmt->close();
 }
+
+$fertList = isset($fertilizerData[$nutrition['nutritionID']]) 
+    ? json_encode($fertilizerData[$nutrition['nutritionID']]) 
+    : json_encode([]);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -112,18 +116,14 @@ foreach ($nutritionData as $nutrition) {
                 <table class="nutrition-table">
                     <thead>
                         <tr>
-                            <th><i class="fas fa-layer-group"></i> Nutrition Set</th>
                             <th><i class="fas fa-layer-group"></i> Soil Type</th>
                             <th><i class="fas fa-water"></i> Moisture Threshold</th>
                             <th><i class="fas fa-tree"></i> Growth Stage</th>
                             <th><i class="fas fa-seedling"></i> Number of Plants</th>
                             <th><i class="fas fa-leaf"></i> Nitrogen (N)</th>
-                            <th><i class="fas fa-seedling"></i> Phosphorus (P)</th>
-                            <th><i class="fas fa-tree"></i> Potassium (K)</th>
-                            <th><i class="fas fa-bolt"></i> Electrical Conductivity</th>
-                            <th><i class="fas fa-tint"></i> pH</th>
                             <th><i class="fas fa-water"></i> Liquid Volume (ml)</th>
                             <th><i class="fas fa-poo-storm"></i> Fertilizer</th>
+                            <th><i class="fas fa-cog"></i> Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -134,22 +134,17 @@ foreach ($nutritionData as $nutrition) {
                                 $nutritionSetStages = $nutrition['nutritionSetName'];
                         ?>
                             <tr class="nutrition-set-name">
-                                <td colspan="12">
+                                <td colspan="8">
                                     <i class="fas fa-layer-group"></i> <?php echo htmlspecialchars($nutrition['nutritionSetName']); ?>
                                 </td>
                             </tr>
                             <?php endif; ?>
                             <tr class="nutrition-values">
-                                <td><strong>Values</strong></td>
                                 <td><?php echo $nutrition['soilType'] !== null ? htmlspecialchars($nutrition['soilType']) : '-'; ?></td>
                                 <td><?php echo $nutrition['meanMoistureThreshold'] !== null ? htmlspecialchars($nutrition['meanMoistureThreshold']) . " | " . htmlspecialchars($nutrition['meanMoistureThreshold'] + 5) . " | " . htmlspecialchars($nutrition['meanMoistureThreshold'] + 10) : '-'; ?></td>
                                 <td><?php echo $nutrition['growthStage'] !== null ? htmlspecialchars($nutrition['growthStage']) : '-'; ?></td>
                                 <td><?php echo $nutrition['numberOfPlants'] !== null ? htmlspecialchars($nutrition['numberOfPlants']) : '-'; ?></td>
                                 <td><?php echo $nutrition['soilN'] !== null ? htmlspecialchars($nutrition['soilN']) : '-'; ?></td>
-                                <td><?php echo $nutrition['soilP'] !== null ? htmlspecialchars($nutrition['soilP']) : '-'; ?></td>
-                                <td><?php echo $nutrition['soilK'] !== null ? htmlspecialchars($nutrition['soilK']) : '-'; ?></td>
-                                <td><?php echo $nutrition['soilEC'] !== null ? htmlspecialchars($nutrition['soilEC']) : '-'; ?></td>
-                                <td><?php echo $nutrition['soilPH'] !== null ? htmlspecialchars($nutrition['soilPH']) : '-'; ?></td>
                                 <td><?php echo $nutrition['liquidVolume'] !== null ? htmlspecialchars($nutrition['liquidVolume']) : '-'; ?></td>
                                 <td>
                                     <?php 
@@ -162,6 +157,22 @@ foreach ($nutritionData as $nutrition) {
                                     }
                                     ?>
                                 </td>
+                                <td>
+                                    <button class="details-btn"
+                                        data-soil="<?php echo htmlspecialchars($nutrition['soilType']); ?>"
+                                        data-moisture="<?php echo htmlspecialchars($nutrition['meanMoistureThreshold']); ?>"
+                                        data-stage="<?php echo htmlspecialchars($nutrition['growthStage']); ?>"
+                                        data-plants="<?php echo htmlspecialchars($nutrition['numberOfPlants']); ?>"
+                                        data-n="<?php echo htmlspecialchars($nutrition['soilN']); ?>"
+                                        data-p="<?php echo htmlspecialchars($nutrition['soilP']); ?>"
+                                        data-k="<?php echo htmlspecialchars($nutrition['soilK']); ?>"
+                                        data-ec="<?php echo htmlspecialchars($nutrition['soilEC']); ?>"
+                                        data-ph="<?php echo htmlspecialchars($nutrition['soilPH']); ?>"
+                                        data-liquid="<?php echo htmlspecialchars($nutrition['liquidVolume']); ?>"
+                                        data-fertilizers='<?php echo json_encode($fertilizerData[$nutrition['nutritionID']] ?? []); ?>'><i class="fas fa-list"></i> Details</button>
+                                    <button class="use-btn"><i class="fas fa-paper-plane"></i> Use</button>
+                                    <button class="cancel-btn" disabled><i class="fas fa-ban"></i> Cancel</button>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -169,5 +180,16 @@ foreach ($nutritionData as $nutrition) {
             </div>
         <?php endif; ?>
     </div>
+    <div id="modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Nutrition Details</h3>
+                <button id="close-btn">&times;</button>
+            </div>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+    <script src="../assets/js/nutrition_sets.js" defer></script>
 </body>
 </html> 
