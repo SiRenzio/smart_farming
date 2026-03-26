@@ -316,7 +316,7 @@
             border-radius: 15px;
             flex: 1; 
             min-width: 200px;
-            height: 600px;
+            height: 500px;
             padding: 2rem;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -337,7 +337,7 @@
             border-radius: 15px;
             flex: 1; 
             min-width: 200px;
-            height: 600px;
+            height: 500px;
             padding: 2rem;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -358,7 +358,7 @@
             border-radius: 15px;
             flex: 1; 
             min-width: 200px;
-            height: 600px;
+            height: 500px;
             padding: 2rem;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
             transition: transform 0.3s ease, box-shadow 0.3s ease;

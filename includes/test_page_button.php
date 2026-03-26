@@ -19,11 +19,18 @@
             color: #fff;
             text-decoration: none;
             border-radius: 25px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 8px rgba(40, 167, 69, 0.5);
+            transition: all 0.3s ease;
         }
 
         .test:hover {
-            background-color: #218838;
+            background: linear-gradient(135deg, #28a745, #28a745);
+
+            box-shadow: 
+                0 0 12px rgba(40, 167, 69, 0.7),
+                0 0 20px rgba(40, 167, 69, 0.5);
+
+            transform: translateY(-2px);
         }
     </style>
 </head>
