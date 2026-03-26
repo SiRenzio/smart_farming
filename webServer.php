@@ -26,7 +26,7 @@ if ($result && $result->num_rows > 0) {
     // Update unregistered sensor status and last online time
     $conn->query("UPDATE sensorinfo SET sensorStatus=1, last_sensor_online='$dateTime' WHERE soilSensorID='$sID'");
     //file_get_contents("http://localhost/smart_farming/api/check_if_offline.php");
-    exec('php "' . __DIR__ . '/api/check_if_offline.php"');
+    //exec('php "' . __DIR__ . '/api/check_if_offline.php"');
 
     // If device is registered, we proceed to check deployment
     if ((int)$sensor['isRegistered'] === 1) {
