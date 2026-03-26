@@ -2,7 +2,10 @@
     include_once '../db.php';
 
     // Sensor Data
-    $sensorStmt = $conn->prepare('SELECT s.*, sen.sensorName, f.farmName FROM sensordata s JOIN sensorinfo sen ON s.SoilSensorID = sen.SoilSensorID JOIN farmlocation f ON s.locationID = f.locationID ORDER BY s.DateTime DESC LIMIT 99');
+    $sensorStmt = $conn->prepare('SELECT s.*, sen.sensorName, f.farmName FROM sensordata s 
+                                    JOIN sensorinfo sen ON s.SoilSensorID = sen.SoilSensorID 
+                                    JOIN farmlocation f ON s.locationID = f.locationID 
+                                    ORDER BY s.DateTime DESC LIMIT 1');
     $sensorStmt->execute();
     $sensorData = $sensorStmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $sensorStmt->close();

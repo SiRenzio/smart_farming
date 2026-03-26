@@ -11,7 +11,7 @@
                             JOIN farmlocation f 
                             ON s.locationID = f.locationID 
                             ORDER BY s.DateTime 
-                            DESC LIMIT 99'
+                            DESC LIMIT 1'
                             );
     $stmt->execute();
     $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
