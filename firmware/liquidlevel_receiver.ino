@@ -106,6 +106,9 @@ volatile unsigned long flowPulseCount = 0;
 const float calibrationFactor = 450.0; // YF-S201: 450 pulses per liter
 float currentVolumeML = 0;
 float targetVolumeML = 0;
+//Flow Sensor fail safe
+unsigned long lastFlowPulseTime = 0;
+const unsigned long flowTimeout = 180000; // 3 minutes (180,000 ms)
 
 bool wateringActive = false;
 int activeTank = 0;
@@ -145,6 +148,7 @@ String serialBuffer = "";
 
 void IRAM_ATTR flowPulseCounter() {
   flowPulseCount++;
+  lastFlowPulseTime = millis();
 }
 
 /* ===================== Manual FUNCTIONS ===================== */
@@ -762,6 +766,7 @@ void loop() {
       wateringActive = true;  
       activeTank = 1;
       flowPulseCount = 0;
+      lastFlowPulseTime = millis();
       wateringstatus1 = 1;
 
       digitalWrite(slIndicator1, HIGH); // solenoid open | start watering
@@ -781,6 +786,7 @@ void loop() {
       wateringActive = true;
       activeTank = 2;
       flowPulseCount = 0;
+      lastFlowPulseTime = millis();
       wateringstatus2 = 1;
 
       digitalWrite(slIndicator2, HIGH); // solenoid open | start watering
@@ -800,6 +806,7 @@ void loop() {
       wateringActive = true;
       activeTank = 3;
       flowPulseCount = 0;
+      lastFlowPulseTime = millis();
       wateringstatus3 = 1;
 
       digitalWrite(slIndicator3, HIGH); // solenoid open | start watering
@@ -834,6 +841,41 @@ void loop() {
       Serial.print(" mL | Progress: ");
       Serial.print((currentVolumeML / targetVolumeML) * 100);
       Serial.println("%");
+    }
+
+    if (millis() - lastFlowPulseTime >= flowTimeout) {
+      Serial.println("[FAILSAFE] No flow detected for 3 minutes! Closing solenoid...");
+
+      // Close the active solenoid
+      if (activeTank == 1) {
+        digitalWrite(slIndicator1, LOW);
+        wateringstatus1 = -1;
+      }
+      else if (activeTank == 2) {
+        digitalWrite(slIndicator2, LOW);
+        wateringstatus2 = -1;
+      }
+      else if (activeTank == 3) {
+        digitalWrite(slIndicator3, LOW);
+        wateringstatus3 = -1;
+      }
+
+      // Stop watering process
+      wateringActive = false;
+      flowPulseCount = 0;
+      currentVolumeML = 0;
+
+      // Reset DB flags
+      sendResetToWatering(activeTank);
+
+      // Reset system state
+      activeTank = 0;
+      cycleRunning = false;
+      intakeLocked = false;
+
+      Serial.println("[FAILSAFE] System reset due to no flow.");
+
+      return; // EXIT early to prevent further execution
     }
 
     // Check if target volume reached

@@ -179,12 +179,6 @@
 
 
         /* // tanks css */
-        .tanks {
-            padding: 40px 20px;
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            border-radius: 25px;
-        }
 
         .tank-container {
             margin: 0 auto;
