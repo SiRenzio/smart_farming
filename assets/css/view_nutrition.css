@@ -254,7 +254,18 @@ body {
     align-items: center;
 }
 
-.details-btn, .use-btn, .cancel-btn {
+.cancel-btn {
+    width: 100px;
+    padding: 0.5rem;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+    position: relative;
+    z-index: 1;
+    display: none;
+}
+
+.details-btn, .use-btn {
     width: 100px;
     padding: 0.5rem;
     border-radius: 5px;
@@ -292,6 +303,11 @@ body {
     transform: translateY(-2px);
 }
 
+.use-btn:disabled {
+    opacity: 0.8;
+    cursor: not-allowed;
+}
+
 .cancel-btn {
     background: linear-gradient(135deg, #f44336, #d32f2f);
     color: white;
@@ -307,11 +323,11 @@ body {
 }
 
 .cancel-btn:disabled {
-    background: #e0e0e0;
-    color: #888;
+    opacity: 0.8;
     box-shadow: none;
     cursor: not-allowed;
 }   
+
 
 .modal {
     display: none;
