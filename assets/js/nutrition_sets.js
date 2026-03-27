@@ -114,6 +114,9 @@ document.querySelectorAll(".use-btn").forEach(button => {
                     document.querySelectorAll(".use-btn").forEach(btn => { 
                         btn.style.display = "none";
                     }); 
+
+                    button.style.display = "inline-block";
+                    button.disabled = true; 
                 } 
             }) 
             .catch(err => console.error("Fetch error:", err)); 
