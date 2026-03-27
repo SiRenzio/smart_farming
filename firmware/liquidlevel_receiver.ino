@@ -31,17 +31,18 @@
 #define switch3 18
 
 /* ===================== SERVER & WIFI ===================== */
-const char* webServerIp = "172.18.0.9"; 
+//const char* webServerIp = "172.18.0.9"; 
+const char* webServerIp = "192.168.1.6"; 
 String sendWateringURL = "http://" + String(webServerIp) + "/smart_farming/api/watering_api.php";
 String sendIntelURL = "http://" + String(webServerIp) + "/smart_farming/api/intel_api.php";
 
 // For manual testing
 String sendManualURL = "http://" + String(webServerIp) + "/smart_farming/test/manual_api.php";
 
-// const char* ssid = "ZTE_2.4G_cYFH3D";
-// const char* password = "hyperblade";
-const char* ssid = "CompDeptWiFiAdmin";
-const char* password = "isatu_6134";
+const char* ssid = "ZTE_2.4G_cYFH3D";
+const char* password = "hyperblade";
+// const char* ssid = "CompDeptWiFiAdmin";
+// const char* password = "isatu_6134";
 
 /* ===================== MANUAL GLOBALS ===================== */
 bool manualRunning = false;
@@ -866,12 +867,17 @@ void loop() {
       currentVolumeML = 0;
 
       // Reset DB flags
-      sendResetToWatering(activeTank);
+      sendResetToWatering(1);
+      sendResetToWatering(2);
+      sendResetToWatering(3);
 
       // Reset system state
       activeTank = 0;
       cycleRunning = false;
       intakeLocked = false;
+
+      queuedTank = 0;
+      queuedVolumeML = 0;
 
       Serial.println("[FAILSAFE] System reset due to no flow.");
 
