@@ -323,11 +323,11 @@ body {
 }
 
 .cancel-btn:disabled {
-    background: #e0e0e0;
-    color: #888;
+    opacity: 0.8;
     box-shadow: none;
     cursor: not-allowed;
 }   
+
 
 .modal {
     display: none;

@@ -69,6 +69,7 @@ modal.addEventListener("click", (e) => {
     }
 });
 
+// USE BUTTON
 document.querySelectorAll(".use-btn").forEach(button => { 
     button.addEventListener("click", () => { 
         const nutritionID = button.dataset.id; 
@@ -84,8 +85,11 @@ document.querySelectorAll(".use-btn").forEach(button => {
             btn.disabled = true; 
             btn.innerHTML = '<i class="fas fa-paper-plane"></i> Use'; 
         }); 
+
             
         // Enable ONLY the clicked button 
+        button.style.display = "inline-block";
+        button.disabled = true; 
         button.disabled = true; button.textContent = "Processing..."; 
         console.log("Action is processing..."); 
         
@@ -103,7 +107,13 @@ document.querySelectorAll(".use-btn").forEach(button => {
                     const row = button.closest("tr"); 
                     const cancelBtn = row.querySelector(".cancel-btn"); 
                     cancelBtn.style.display = "inline-block"; 
+                    cancelBtn.innerHTML = '<i class="fas fa-ban"></i> Cancel';
                     cancelBtn.disabled = false; 
+
+                    // Hide all buttons
+                    document.querySelectorAll(".use-btn").forEach(btn => { 
+                        btn.style.display = "none";
+                    }); 
                 } 
             }) 
             .catch(err => console.error("Fetch error:", err)); 
@@ -118,29 +128,35 @@ document.querySelectorAll(".cancel-btn").forEach(cancelBtn => {
         const useBtn = row.querySelector(".use-btn"); 
         const nutritionID = useBtn.dataset.id; 
         
-        // Enable all use buttons again 
-        document.querySelectorAll(".use-btn").forEach(btn => { 
-            btn.disabled = false; 
-            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Use'; 
-        }); 
-        
-        // Hide all cancel buttons 
-        document.querySelectorAll(".cancel-btn").forEach(c => { 
-            c.style.display = "none"; // 
-            c.disabled = true; // 
-        }); 
-        
         console.log("Action cancelled"); 
+        cancelBtn.disabled = true;
+        cancelBtn.textContent = 'Cancelling...'
         
         setTimeout(() => { 
             fetch('../api/set_nutritionneed_flag.php', { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, 
-                body: `inactive=${nutritionID} `
+                body: `inactive=${nutritionID}`
             }) 
             .then(res => res.json()) 
             .then(response => { 
                 console.log("Cancel response:", response); 
+
+                if (response.success) {
+
+                    // Show ALL use buttons again
+                    document.querySelectorAll(".use-btn").forEach(btn => { 
+                        btn.style.display = "inline-block";
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Use'; 
+                    }); 
+
+                    // Hide all cancel buttons
+                    document.querySelectorAll(".cancel-btn").forEach(c => { 
+                        c.style.display = "none"; 
+                        c.disabled = true; 
+                    }); 
+                }
             }) 
             .catch(err => console.error("Fetch error:", err)); 
         }, 1000); 
@@ -240,10 +256,11 @@ window.addEventListener("DOMContentLoaded", () => {
     .then(data => {
         if (!data.success) return;
 
-        const activeID = data.active; // now expecting SINGLE value
+        const activeID = data.active;
 
-        // Reset ALL buttons first
+        // Show all buttons first
         document.querySelectorAll(".use-btn").forEach(btn => {
+            btn.style.display = "inline-block";
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-paper-plane"></i> Use';
         });
@@ -253,26 +270,27 @@ window.addEventListener("DOMContentLoaded", () => {
             cancel.disabled = true;
         });
 
-        // If there is an active set
         if (activeID) {
-            const button = document.querySelector(`.use-btn[data-id="${activeID}"]`);
+            const activeBtn = document.querySelector(`.use-btn[data-id="${activeID}"]`);
 
-            if (button) {
-                const row = button.closest("tr");
+            if (activeBtn) {
+                const row = activeBtn.closest("tr");
                 const cancelBtn = row.querySelector(".cancel-btn");
 
-                // Activate this row
-                button.innerHTML = '<i class="fas fa-check"></i> In Use';
-                button.disabled = true;
+                // Hide all other use buttons
+                document.querySelectorAll(".use-btn").forEach(btn => {
+                    if (btn.dataset.id !== String(activeID)) {
+                        btn.style.display = "none";
+                    }
+                });
+
+                // Activate current
+                activeBtn.style.display = "inline-block";
+                activeBtn.innerHTML = '<i class="fas fa-check"></i> In Use';
+                activeBtn.disabled = true;
 
                 cancelBtn.style.display = "inline-block";
                 cancelBtn.disabled = false;
-
-                document.querySelectorAll(".use-btn").forEach(btn => {
-                    if (btn.dataset.id !== String(activeID)) {
-                        btn.disabled = true;
-                    }
-                });
             }
         }
     })
