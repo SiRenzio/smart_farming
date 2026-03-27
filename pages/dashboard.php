@@ -57,9 +57,14 @@ while ($row = $result->fetch_assoc()) {
 $stmt->close();
 
 // Get the lates plant nutrition data for the dashboard
-$depPlants = $conn->prepare('SELECT nutritionID FROM plantnutrionneed ORDER BY nutritionID DESC LIMIT 1');
+$depPlants = $conn->prepare('SELECT nutritionID FROM deployment WHERE userID = ? ORDER BY deploymentID DESC LIMIT 1');
+$depPlants->bind_param('i', $_SESSION['userID']);
 $depPlants->execute();
-$latestNutritionID = $depPlants->get_result()->fetch_assoc()['nutritionID'];
+$result = $depPlants->get_result();
+$latestNutritionID = null; 
+if ($row = $result->fetch_assoc()) {
+    $latestNutritionID = $row['nutritionID'];
+}
 $depPlants->close();
 
 // Helper to keep filters in URL
@@ -221,7 +226,7 @@ function getFilterParams($excludePage = true) {
                     <i class="fas fa-microchip"></i>
                 </div>
                 <div class="card-content">
-                    <h3>User Sensor Deployments</h3>
+                    <h3>Deployment Summary</h3>
                     <p>Summary of your current deployed sensors.</p>
                 </div>
             </div>
