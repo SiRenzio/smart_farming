@@ -171,7 +171,7 @@ $fertList = isset($fertilizerData[$nutrition['nutritionID']])
                                             data-ph="<?php echo htmlspecialchars($nutrition['soilPH']); ?>"
                                             data-liquid="<?php echo htmlspecialchars($nutrition['liquidVolume']); ?>"
                                             data-fertilizers='<?php echo json_encode($fertilizerData[$nutrition['nutritionID']] ?? []); ?>'><i class="fas fa-list"></i> Details</button>
-                                        <button class="use-btn"><i class="fas fa-paper-plane"></i> Use</button>
+                                        <button class="use-btn" data-id="<?php echo $nutrition['nutritionID'] ?>"><i class="fas fa-paper-plane"></i> Use</button>
                                         <button class="cancel-btn" disabled><i class="fas fa-ban"></i> Cancel</button>
                                     </div>
                                 </td>

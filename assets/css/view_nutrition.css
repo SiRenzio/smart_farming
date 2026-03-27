@@ -254,7 +254,18 @@ body {
     align-items: center;
 }
 
-.details-btn, .use-btn, .cancel-btn {
+.cancel-btn {
+    width: 100px;
+    padding: 0.5rem;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+    position: relative;
+    z-index: 1;
+    display: none;
+}
+
+.details-btn, .use-btn {
     width: 100px;
     padding: 0.5rem;
     border-radius: 5px;
@@ -290,6 +301,11 @@ body {
         0 0 12px rgba(76, 175, 80, 0.6),
         0 0 20px rgba(76, 175, 80, 0.4);
     transform: translateY(-2px);
+}
+
+.use-btn:disabled {
+    opacity: 0.8;
+    cursor: not-allowed;
 }
 
 .cancel-btn {
