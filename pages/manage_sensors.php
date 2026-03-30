@@ -13,11 +13,21 @@ if (!isset($_SESSION['userID'])) {
 }
 
 // Fetch sensors
-$sensors = $conn->query("SELECT s.*, sd.*, f.* FROM sensorinfo s
-    LEFT JOIN sensordata sd ON s.soilSensorID = sd.SoilSensorID
-    LEFT JOIN farmlocation f ON sd.locationID = f.locationID
-    GROUP BY s.soilSensorID
-    ORDER BY s.soilSensorID ASC");
+$sensors = $conn->query("
+    SELECT s.*, sd.*, f.*
+    FROM sensorinfo s
+    LEFT JOIN sensordata sd 
+        ON sd.SensorDataID = (
+            SELECT sd2.SensorDataID
+            FROM sensordata sd2
+            WHERE sd2.SoilSensorID = s.soilSensorID
+            ORDER BY sd2.SensorDataID DESC
+            LIMIT 1
+        )
+    LEFT JOIN farmlocation f 
+        ON sd.locationID = f.locationID
+    ORDER BY s.soilSensorID ASC
+");
 
 
 // Fetch all farm locations

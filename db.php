@@ -7,9 +7,9 @@
 
 $servername = "localhost"; // This is the service name of your MySQL container
 $username = "root";    // As defined in MYSQL_USER
-$password = ""; // As defined in MYSQL_PASSWORD
+$password = "db12345"; // As defined in MYSQL_PASSWORD
 $dbname = "smart_agri";    // As defined in MYSQL_DATABASE
-$port = "3306";        // The default MySQL port inside the container
+$port = "3307";        // The default MySQL port inside the container
 
 // Create connection using MySQLi
 $conn = new mysqli($servername, $username, $password, $dbname, $port);
