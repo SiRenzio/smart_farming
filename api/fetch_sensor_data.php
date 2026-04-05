@@ -3,44 +3,74 @@ session_start();
 require_once '../db.php';
 
 if (!isset($_SESSION['userID'])) {
-    header('Location: login.php');
+    http_response_code(403);
+    echo json_encode(['error' => 'Unauthorized']);
     exit;
 }
+
 $userID = $_SESSION['userID'];
 
-// Initialize filtering
-$filterSensor = $_GET['sensor'] ?? '';
+$filterSensor   = $_GET['sensor'] ?? '';
 $filterLocation = $_GET['location'] ?? '';
 $filterDateFrom = $_GET['dateFrom'] ?? '';
-$filterDateTo = $_GET['dateTo'] ?? '';
+$filterDateTo   = $_GET['dateTo'] ?? '';
 
+$type = $_GET['type'] ?? 'table';
 
-$whereSQL = " WHERE si.userID = ? ";
+$whereConditions = ["si.userID = ?"];
 $params = [$userID];
 $types = "i";
 
-// Append optional filters
 if ($filterSensor) {
-    $whereSQL .= " AND sd.SoilSensorID = ?";
+    $whereConditions[] = "sd.SoilSensorID = ?";
     $params[] = $filterSensor;
     $types .= "i";
 }
 if ($filterLocation) {
-    $whereSQL .= " AND sd.locationID = ?";
+    $whereConditions[] = "sd.locationID = ?";
     $params[] = $filterLocation;
     $types .= "i";
 }
 if ($filterDateFrom) {
-    $whereSQL .= " AND sd.DateTime >= ?";
+    $whereConditions[] = "sd.DateTime >= ?";
     $params[] = $filterDateFrom;
     $types .= "s";
 }
 if ($filterDateTo) {
-    $whereSQL .= " AND sd.DateTime <= ?";
+    $whereConditions[] = "sd.DateTime <= ?";
     $params[] = $filterDateTo;
     $types .= "s";
 }
 
+$whereSQL = " WHERE " . implode(" AND ", $whereConditions);
+
+// for graph
+if ($type === 'visual') {
+
+    header('Content-Type: application/json');
+
+    $sql = "
+        SELECT sd.DateTime, sd.SoilN, sd.SoilP, sd.SoilK, sd.SoilEC, sd.SoilPH, sd.SoilT, sd.SoilMois, 
+               si.soilSensorID, si.sensorName, fl.farmName 
+        FROM sensordata sd 
+        INNER JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID 
+        LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID
+        $whereSQL
+        ORDER BY sd.DateTime DESC
+    ";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param($types, ...$params);
+    $stmt->execute();
+
+    $data = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    echo json_encode($data);
+    exit;
+}
+
+// Sensor Data
 $sql = "
     SELECT sd.*, si.sensorName, fl.farmName
     FROM sensordata sd
@@ -48,7 +78,7 @@ $sql = "
     LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID
     $whereSQL
     ORDER BY sd.DateTime DESC
-    LIMIT 15
+    LIMIT 10
 ";
 
 $stmt = $conn->prepare($sql);
@@ -75,11 +105,17 @@ while ($row = $result->fetch_assoc()):
     <td><?= $row['SoilMois'] ?? '-' ?></td>
     <td>
         <div class="actions">
-            <form method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this sensor data? This action cannot be undone.');">
-                <input type="hidden" name="data_id" value="<?php echo $row['SensorDataID']; ?>">
-                <button type="submit" name="delete_data" class="btn btn-delete"><i class="fas fa-trash"></i> Delete</button>
+            <form method="post" style="display: inline;" 
+                  onsubmit="return confirm('Are you sure you want to delete this sensor data? This action cannot be undone.');">
+                <input type="hidden" name="data_id" value="<?= $row['SensorDataID']; ?>">
+                <button type="submit" name="delete_data" class="btn btn-delete">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
             </form>
         </div>
     </td>
 </tr>
-<?php endwhile; ?>
+<?php endwhile;
+
+$stmt->close();
+?>

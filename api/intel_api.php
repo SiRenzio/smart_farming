@@ -208,6 +208,23 @@ foreach ($checkEvents as $tank => $event) {
 
 $isActive = $isAnyActive;
 
+/* ================= FAIL SAFE ================= */
+if ($row['soilMois'] == 0 ) {
+    
+    exit;
+}
+
+if ($row['SoilMois'] < 10 || $row['SoilMois'] > 100 || $row['SoilN'] >=1000 || $row['SoilP'] >=3000 || $row['SoilK'] >= 3000){
+    $fsSql = "UPDATE sensorinfo SET isRestart = '1' WHERE soilSensorID = ?";
+    $fsStmt = $conn->prepare($fsSql);
+    $fsStmt->bind_param("i", $row['SoilSensorID']);
+    $fsStmt->execute();
+    $fsStmt->close();
+
+    // delete the flactuate sensor data
+    $conn->query("DELETE FROM sensordata ORDER BY DateTime DESC LIMIT 1");
+    exit;
+}
 
 /* ================= PROCESS SENSOR DATA ================= */
 
@@ -289,7 +306,6 @@ if ($row['SoilMois'] < $moistureThreshold) {
 
             }
             else {
-
                 $tank2Flag = $checkPumpEvent2['fertFlag'] ?? 0;
                 $tank3Flag = $checkPumpEvent3['fertFlag'] ?? 0;
 

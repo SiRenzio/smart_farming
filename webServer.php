@@ -15,25 +15,24 @@ $mac = $conn->real_escape_string($input['macAddress']);
 $ip  = $conn->real_escape_string($input['ipAddress']);
 $dateTime = date('Y-m-d H:i:s');
 
-// fetch sensor info based on MAC address
-$sql = "SELECT soilSensorID, isRegistered FROM sensorinfo WHERE sensorMacAddress='$mac' LIMIT 1";
+// fetch sensor info based on MAC address, including isRestart flag
+$sql = "SELECT soilSensorID, isRegistered, isRestart FROM sensorinfo WHERE sensorMacAddress='$mac' LIMIT 1";
 $result = $conn->query($sql);
 
 if ($result && $result->num_rows > 0) {
     $sensor = $result->fetch_assoc();
     $sID = $sensor['soilSensorID'];
+    $isRestart = (int)$sensor['isRestart'];
 
-    // Update unregistered sensor status and last online time
-    $conn->query("UPDATE sensorinfo SET sensorStatus=1, last_sensor_online='$dateTime' WHERE soilSensorID='$sID'");
-    //file_get_contents("http://localhost/smart_farming/api/check_if_offline.php");
-    //exec('php "' . __DIR__ . '/api/check_if_offline.php"');
+    if ($isRestart === 1) {
+        $conn->query("UPDATE sensorinfo SET isRestart=0, sensorStatus=1, last_sensor_online='$dateTime' WHERE sensorMacAddress='$mac'");
+    } else {
+        $conn->query("UPDATE sensorinfo SET sensorStatus=1, last_sensor_online='$dateTime' WHERE sensorMacAddress='$mac'");
+    }
 
     // If device is registered, we proceed to check deployment
     if ((int)$sensor['isRegistered'] === 1) {
         
-        // Update deployment info
-        $conn->query("UPDATE sensorinfo SET sensorStatus=1, last_sensor_online='$dateTime' WHERE soilSensorID='$sID'");
-
         // fetch deployment details
         $depSql = "SELECT userID, soilSensorID, locationID, isConnected FROM deployment WHERE soilSensorID = '$sID' LIMIT 1";
         $depRes = $conn->query($depSql);
@@ -47,23 +46,36 @@ if ($result && $result->num_rows > 0) {
                     "status" => "success",
                     "userID" => (int)$deploy['userID'],
                     "SoilSensorID" => (int)$deploy['soilSensorID'],
-                    "locationID"   => (int)$deploy['locationID']
+                    "locationID"   => (int)$deploy['locationID'],
+                    "isRestart"    => $isRestart
                 ]);
             } else {
                 // Device is registered and online, but the admin set isConnected to 0
-                echo json_encode(["status" => "disconnected", "message" => "Device is set to disconnected"]);
+                echo json_encode([
+                    "status" => "disconnected", 
+                    "message" => "Device is set to disconnected",
+                    "isRestart" => $isRestart
+                ]);
             }
         } else {
-            echo json_encode(["status" => "error", "message" => "No deployment assigned"]);
+            echo json_encode([
+                "status" => "error", 
+                "message" => "No deployment assigned",
+                "isRestart" => $isRestart
+            ]);
         }
     } else {
-        echo json_encode(["status" => "unregistered", "message" => "Waiting for registration"]);
+        echo json_encode([
+            "status" => "unregistered", 
+            "message" => "Waiting for registration",
+            "isRestart" => $isRestart
+        ]);
     }
 } else {
-    // If MAC is not in DB, insert as a new unregistered device
-    $conn->query("INSERT INTO sensorinfo (sensorMacAddress, sensorStatus, isRegistered, last_sensor_online) 
-                  VALUES ('$mac', 1, 0, '$dateTime')");
-    echo json_encode(["status" => "new", "message" => "New device detected"]);
+    // If MAC is not in DB, insert as a new unregistered device (default isRestart to 0)
+    $conn->query("INSERT INTO sensorinfo (sensorMacAddress, sensorStatus, isRegistered, last_sensor_online, isRestart) 
+                  VALUES ('$mac', 1, 0, '$dateTime', 0)");
+    echo json_encode(["status" => "new", "message" => "New device detected", "isRestart" => 0]);
 }
 
 $conn->close();

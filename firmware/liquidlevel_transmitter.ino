@@ -18,7 +18,7 @@ int finaldistance3 = 0;
 
 /* ===== TIMER SETTINGS ===== */
 unsigned long sendInterval = 1000;     // send every 1 second
-unsigned long readInterval = 150;      // FIX: Increased to accommodate the echo fade delays
+unsigned long readInterval = 60;      // FIX: Increased to accommodate the echo fade delays
 
 unsigned long previousSendMillis = 0;
 unsigned long previousReadMillis = 0;

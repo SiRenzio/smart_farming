@@ -15,6 +15,7 @@ if (!isset($_SESSION['userID'])) {
 $nutritionID = $_GET['nutritionID'] ?? '';
 $plantName = '';
 $nutritionData = [];
+$fertilizerData = [];
 
 // Validate nutritionID and get plant info
 if (!$nutritionID) {
@@ -44,6 +45,17 @@ while ($row = $result->fetch_assoc()) {
     $nutritionData[] = $row;
 }
 $stmt->close();
+
+foreach ($nutritionData as $nutrition) {
+    $stmt = $conn->prepare('SELECT fertilizerName, fertilizerAmount FROM fertilizer WHERE nutritionID = ?');
+    $stmt->bind_param('i', $nutrition['nutritionID']);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($fertRow = $res->fetch_assoc()) {
+        $fertilizerData[$nutrition['nutritionID']][] = $fertRow;
+    }
+    $stmt->close();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -93,37 +105,68 @@ $stmt->close();
                 </a>
             </div>
         <?php else: ?>
-            <!-- Nutrition Data Table -->
+        <!-- Nutrition Data Table -->
             <div class="nutrition-container">
                 <table class="nutrition-table">
                     <thead>
                         <tr>
-                            <th><i class="fas fa-layer-group"></i> Nutrition Set</th>
                             <th><i class="fas fa-layer-group"></i> Soil Type</th>
+                            <th><i class="fas fa-water"></i> Moisture Threshold</th>
+                            <th><i class="fas fa-tree"></i> Growth Stage</th>
+                            <th><i class="fas fa-thermometer-half"></i> Temperature</th>
                             <th><i class="fas fa-leaf"></i> Nitrogen (N)</th>
-                            <th><i class="fas fa-seedling"></i> Phosphorus (P)</th>
-                            <th><i class="fas fa-tree"></i> Potassium (K)</th>
-                            <th><i class="fas fa-bolt"></i> Electrical Conductivity</th>
-                            <th><i class="fas fa-tint"></i> pH</th>
-                            <th><i class="fas fa-water"></i> Liquid Volume (mL)</th>
+                            <th><i class="fas fa-poo-storm"></i> Fertilizer</th>
+                            <th><i class="fas fa-cog"></i> Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($nutritionData as $nutrition): ?>
+                        <?php 
+                        $nutritionSetStages = '';
+                        foreach ($nutritionData as $nutrition):
+                            if ($nutritionSetStages !== $nutrition['nutritionSetName']):
+                                $nutritionSetStages = $nutrition['nutritionSetName'];
+                        ?>
                             <tr class="nutrition-set-name">
-                                <td colspan="9">
+                                <td colspan="8">
                                     <i class="fas fa-layer-group"></i> <?php echo htmlspecialchars($nutrition['nutritionSetName']); ?>
                                 </td>
                             </tr>
+                            <?php endif; ?>
                             <tr class="nutrition-values">
-                                <td><strong>Values</strong></td>
                                 <td><?php echo $nutrition['soilType'] !== null ? htmlspecialchars($nutrition['soilType']) : '-'; ?></td>
+                                <td><?php echo $nutrition['meanMoistureThreshold'] !== null ? htmlspecialchars($nutrition['meanMoistureThreshold']) . " | " . htmlspecialchars($nutrition['meanMoistureThreshold'] + 5) . " | " . htmlspecialchars($nutrition['meanMoistureThreshold'] + 10) : '-'; ?></td>
+                                <td><?php echo $nutrition['growthStage'] !== null ? htmlspecialchars($nutrition['growthStage']) : '-'; ?></td>
+                                <td>30° | 31°-34° | 35°</td>
                                 <td><?php echo $nutrition['soilN'] !== null ? htmlspecialchars($nutrition['soilN']) : '-'; ?></td>
-                                <td><?php echo $nutrition['soilP'] !== null ? htmlspecialchars($nutrition['soilP']) : '-'; ?></td>
-                                <td><?php echo $nutrition['soilK'] !== null ? htmlspecialchars($nutrition['soilK']) : '-'; ?></td>
-                                <td><?php echo $nutrition['soilEC'] !== null ? htmlspecialchars($nutrition['soilEC']) : '-'; ?></td>
-                                <td><?php echo $nutrition['soilPH'] !== null ? htmlspecialchars($nutrition['soilPH']) : '-'; ?></td>
-                                <td><?php echo $nutrition['liquidVolume'] !== null ? htmlspecialchars($nutrition['liquidVolume']) : '-'; ?></td>
+                                <td>
+                                    <?php 
+                                        if (isset($fertilizerData[$nutrition['nutritionID']])) {
+                                            foreach ($fertilizerData[$nutrition['nutritionID']] as $fertilizer) {
+                                                echo '<span class="fert-badge">'
+                                                    . htmlspecialchars($fertilizer['fertilizerName']) 
+                                                    . ' (' . htmlspecialchars($fertilizer['fertilizerAmount']) . 'g)</span>';
+                                            }
+                                        } else {
+                                            echo '-';
+                                        }
+                                    ?>
+                                </td>
+                                <td>
+                                    <div class="action-group">
+                                        <button class="details-btn"
+                                            data-soil="<?php echo htmlspecialchars($nutrition['soilType']); ?>"
+                                            data-moisture="<?php echo htmlspecialchars($nutrition['meanMoistureThreshold']); ?>"
+                                            data-stage="<?php echo htmlspecialchars($nutrition['growthStage']); ?>"
+                                            data-plants="<?php echo htmlspecialchars($nutrition['numberOfPlants']); ?>"
+                                            data-n="<?php echo htmlspecialchars($nutrition['soilN']); ?>"
+                                            data-p="<?php echo htmlspecialchars($nutrition['soilP']); ?>"
+                                            data-k="<?php echo htmlspecialchars($nutrition['soilK']); ?>"
+                                            data-ec="<?php echo htmlspecialchars($nutrition['soilEC']); ?>"
+                                            data-ph="<?php echo htmlspecialchars($nutrition['soilPH']); ?>"
+                                            data-liquid="<?php echo htmlspecialchars($nutrition['liquidVolume']); ?>"
+                                            data-fertilizers='<?php echo json_encode($fertilizerData[$nutrition['nutritionID']] ?? []); ?>'><i class="fas fa-list"></i> Details</button>
+                                    </div>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -131,5 +174,16 @@ $stmt->close();
             </div>
         <?php endif; ?>
     </div>
+    <div id="modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Nutrition Details</h3>
+                <button id="close-btn">&times;</button>
+            </div>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+    <script src="../assets/js/nutrition_sets.js" defer></script>
 </body>
 </html> 

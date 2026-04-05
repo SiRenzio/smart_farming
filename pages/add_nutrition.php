@@ -37,7 +37,11 @@ $stmt->close();
 
 // Fetch Nutrition Sets for dropdown
 $nutritionSets = [];
-$savedSetsStmt = $conn->prepare('SELECT nutritionID, nutritionSetName, plantnutrionneed.plantID, plantName FROM plantnutrionneed LEFT JOIN plantinfo ON plantnutrionneed.plantID = plantinfo.plantID');
+$savedSetsStmt = $conn->prepare('SELECT nutritionID, nutritionSetName, plantnutrionneed.plantID, plantName 
+                                FROM plantnutrionneed 
+                                LEFT JOIN plantinfo ON plantnutrionneed.plantID = plantinfo.plantID
+                                WHERE plantnutrionneed.userID = ?');
+$savedSetsStmt->bind_param('i', $_SESSION['userID']);
 $savedSetsStmt->execute();
 $savedSets = $savedSetsStmt->get_result();
 while ($row = $savedSets->fetch_assoc()) {
