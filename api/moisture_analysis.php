@@ -2,52 +2,63 @@
 require_once __DIR__ . '/../db.php';
 
 function moisture_analysis($conn) {
+    // Fixed path with proper slash
     $jobFiles = glob(__DIR__ . "/../moisture_jobs/*.json");
 
     foreach ($jobFiles as $job) {
 
         $data = json_decode(file_get_contents($job), true);
 
-        // wait 2 minutes
+        // 1. Wait 2 minutes (120 seconds) before doing anything
         if (time() - $data['startTime'] < 120) {
-            continue;
+            continue; 
         }
 
         $soilSensorID = $data['soilSensorID'];
         $eventID = $data['eventID'];
 
-        // get last 20 soil moisture readings
+        // Calculate the exact database timestamp when the 2-minute wait finished
+        $targetTime = date('Y-m-d H:i:s', $data['startTime'] + 120);
+
+        // 2. Get up to 20 soil moisture readings AFTER the 2-minute wait ended
         $query = $conn->prepare("
             SELECT SoilMois 
             FROM sensordata
-            WHERE SoilSensorID = ?
-            ORDER BY DateTime DESC
+            WHERE SoilSensorID = ? AND DateTime >= ?
+            ORDER BY DateTime ASC
             LIMIT 20
         ");
 
-        $query->bind_param("i", $soilSensorID);
+        $query->bind_param("is", $soilSensorID, $targetTime);
         $query->execute();
         $result = $query->get_result();
 
         $values = [];
         while ($row = $result->fetch_assoc()) {
             $values[] = $row['SoilMois'];
+        }
 
-            // store sample
+        // 3. Only process if we have collected exactly 20 new readings
+        if (count($values) == 20) {
+
+            // Store the 20 samples
             $insert = $conn->prepare("
                 INSERT INTO soilmoisture_samples 
                 (soilSensorID, tankpumpeventID, SoilMois)
                 VALUES (?, ?, ?)
             ");
-            $insert->bind_param("iid", $soilSensorID, $eventID, $row['SoilMois']);
-            $insert->execute();
-        }
 
-        if (count($values) == 20) {
+            foreach ($values as $moistureVal) {
+                $insert->bind_param("iid", $soilSensorID, $eventID, $moistureVal);
+                $insert->execute();
+            }
 
+            // Calculate metrics
             $average = array_sum($values) / 20;
-            $latest = $values[0];
+            // end() gets the last item in the array (the 20th chronological reading)
+            $latest = end($values); 
 
+            // Store the analysis
             $analysis = $conn->prepare("
                 INSERT INTO soilmoisture_analysis
                 (soilSensorID, tankpumpeventID, averageMoisture, latestMoisture)
@@ -56,12 +67,14 @@ function moisture_analysis($conn) {
 
             $analysis->bind_param("iidd", $soilSensorID, $eventID, $average, $latest);
             $analysis->execute();
-        }
 
-        unlink($job);
+            // 4. Job complete, delete the file
+            unlink($job);
+        }
     }
 }
 
+// Background loop
 while (true) {
     moisture_analysis($conn);
     sleep(30);

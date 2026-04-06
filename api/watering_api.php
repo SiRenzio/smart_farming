@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../db.php';
+require_once __DIR__ . '/../db.php';
 date_default_timezone_set('Asia/Manila');
 
 header('Content-Type: application/json');
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $currentliquidlevel = isset($decoded_data['currentliquidlevel']) ? (int)$decoded_data['currentliquidlevel'] : null;
     $wateringstatus     = isset($decoded_data['wateringstatus']) ? (int)$decoded_data['wateringstatus'] : null;
     $wateringFlag       = isset($decoded_data['wateringFlag']) ? (int)$decoded_data['wateringFlag'] : null;
-    $isActiveFlag           = isset($decoded_data['isActive']) ? (int)$decoded_data['isActive'] : null;
+    $isActiveFlag       = isset($decoded_data['isActive']) ? (int)$decoded_data['isActive'] : null;
     $wateringvolume     = isset($decoded_data['wateringvolume']) ? (int)$decoded_data['wateringvolume'] : null;
 
     $dateTime = date('Y-m-d H:i:s');
@@ -101,12 +101,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->execute()) {
 
             $notifMessage = "";
-
             
             if ($wateringFlag === 0 && $wateringstatus === 0) {
                 $notifMessage = "[Tank $liquidsensorID]: Water tank is now FULL, system HOLD WATERING waiting to mix the solution";
                 
-                $getlowquery = "SELECT waterlevel FROM tankpumpevent WHERE liquidsensorID = ? AND wateringFlag =1 ORDER BY dateandtime DESC LIMIT 1";
+                $getlowquery = "SELECT waterlevel FROM tankpumpevent WHERE liquidsensorID = ? AND wateringFlag = 1 ORDER BY dateandtime DESC LIMIT 1";
                 $lowStmt = $conn->prepare($getlowquery);
                 $lowStmt->bind_param("i", $liquidsensorID);
                 $lowStmt->execute();
@@ -197,17 +196,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($updateType === 'watering') {
-
-        $wateringEventID = $conn->insert_id;
-
-        // schedule moisture analysis
-        file_put_contents(__DIR__ . "../moisture_jobs/job_$wateringEventID.json", json_encode([
-            "eventID" => $wateringEventID,
-            "soilSensorID" => 1,
-            "startTime" => time()
-        ]));
-
-        error_log("Creating job file for event $wateringEventID");
         
         $lastFert = $conn->query("SELECT fertFlag FROM tankpumpevent WHERE liquidsensorID = $liquidsensorID ORDER BY tankPumpEventID DESC LIMIT 1")->fetch_assoc();
         $currentFertFlag = $lastFert['fertFlag'] ?? 0;
@@ -224,6 +212,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
 
         if ($wateringStmt->execute()) {
+            // Get the ID of the new row AFTER executing the query
+            $wateringEventID = $conn->insert_id;
+
+            // Schedule moisture analysis and log accurate Unix time. Also fixed the directory string missing a slash
+            file_put_contents(__DIR__ . "/../moisture_jobs/job_$wateringEventID.json", json_encode([
+                "eventID" => $wateringEventID,
+                "soilSensorID" => 3,
+                "startTime" => time() // Unix timestamp makes adding 120 seconds easy in the analyzer
+            ]));
+
+            error_log("Creating job file for event $wateringEventID");
+
             $notifMessage = "";
 
             if ($liquidsensorID === 1) {
@@ -259,7 +259,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             sendResponse(false, 'Failed to store watering data: ' . $errorMsg);
         }
     }
-
 
     if ($updateType === 'handshake') {
         sendResponse(true, 'Handshake successful', [
