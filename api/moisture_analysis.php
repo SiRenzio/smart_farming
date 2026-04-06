@@ -1,7 +1,7 @@
 <?php
-require_once '../db.php';
+require_once __DIR__ . '/../db.php';
 
-$jobFiles = glob("../moisture_jobs/*.json");
+$jobFiles = glob(__DIR__ . "/../moisture_jobs/*.json");
 
 foreach ($jobFiles as $job) {
 
