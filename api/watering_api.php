@@ -197,6 +197,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($updateType === 'watering') {
+
+        $wateringEventID = $conn->insert_id;
+
+        // schedule moisture analysis
+        file_put_contents(__DIR__ . "../moisture_jobs/job_$wateringEventID.json", json_encode([
+            "eventID" => $wateringEventID,
+            "soilSensorID" => 1,
+            "startTime" => time()
+        ]));
+
+        error_log("Creating job file for event $wateringEventID");
         
         $lastFert = $conn->query("SELECT fertFlag FROM tankpumpevent WHERE liquidsensorID = $liquidsensorID ORDER BY tankPumpEventID DESC LIMIT 1")->fetch_assoc();
         $currentFertFlag = $lastFert['fertFlag'] ?? 0;
@@ -241,15 +252,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $wateringStmt->close();
             sendResponse(true, 'Watering event logged successfully'); 
-
-            $wateringEventID = $conn->insert_id;
-
-            // schedule moisture analysis
-            file_put_contents("../moisture_jobs/job_$wateringEventID.json", json_encode([
-                "eventID" => $wateringEventID,
-                "soilSensorID" => 1,
-                "startTime" => time()
-            ]));
 
         } else {
             $errorMsg = $conn->error;
