@@ -242,6 +242,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $wateringStmt->close();
             sendResponse(true, 'Watering event logged successfully'); 
 
+            $wateringEventID = $conn->insert_id;
+
+            // schedule moisture analysis
+            file_put_contents("../moisture_jobs/job_$wateringEventID.json", json_encode([
+                "eventID" => $wateringEventID,
+                "soilSensorID" => 1,
+                "startTime" => time()
+            ]));
+
         } else {
             $errorMsg = $conn->error;
             $wateringStmt->close();
