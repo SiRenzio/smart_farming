@@ -16,26 +16,17 @@ foreach ($jobFiles as $job) {
     $eventID = $data['eventID'];
 
     // get last 20 soil moisture readings
-    $stmt = $conn->prepare("
-    SELECT 
-        AVG(SoilMois) AS avgMoisture,
-            (SELECT SoilMois 
-            FROM sensordata 
-            WHERE SoilSensorID = ? 
-            ORDER BY DateTime DESC 
-            LIMIT 1) AS latestMoisture
-        FROM (
-            SELECT SoilMois
-            FROM sensordata
-            WHERE SoilSensorID = ?
-            ORDER BY DateTime DESC
-            LIMIT 20
-        ) AS last20
+    $query = $conn->prepare("
+        SELECT SoilMois 
+        FROM sensordata
+        WHERE SoilSensorID = ?
+        ORDER BY DateTime DESC
+        LIMIT 20
     ");
 
-    $stmt->bind_param("ii", $soilSensorID, $soilSensorID);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $query->bind_param("i", $soilSensorID);
+    $query->execute();
+    $result = $query->get_result();
 
     $values = [];
     while ($row = $result->fetch_assoc()) {
