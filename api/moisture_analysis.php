@@ -58,15 +58,21 @@ function moisture_analysis($conn) {
             // end() gets the last item in the array (the 20th chronological reading)
             $latest = end($values); 
 
-            // Store the analysis
-            $analysis = $conn->prepare("
-                INSERT INTO soilmoisture_analysis
-                (soilSensorID, tankpumpeventID, averageMoisture, latestMoisture)
-                VALUES (?, ?, ?, ?)
-            ");
+            $deviation = (($latest - $average) / $average) * 100;
 
-            $analysis->bind_param("iidd", $soilSensorID, $eventID, $average, $latest);
-            $analysis->execute();
+            if ($deviation > 20) {
+                $notifMessage = "Alert: Soil moisture has increased by more than 20% compared to the average.";
+            } elseif ($deviation < -20) {
+                $notifMessage = "Alert: Soil moisture has decreased by more than 20% compared to the average.";
+            }
+
+            if (!empty($notifMessage)) {
+                $notifSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
+                $notifStmt = $conn->prepare($notifSql);
+                $notifStmt->bind_param("s", $notifMessage);
+                $notifStmt->execute();
+                $notifStmt->close();
+            }
 
             // 4. Job complete, delete the file
             unlink($job);
