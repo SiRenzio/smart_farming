@@ -65,6 +65,28 @@ function moisture_analysis($conn) {
             } elseif ($deviation < -20) {
                 $notifMessage = "Alert: Soil moisture has decreased by more than 20% compared to the average.";
             }
+            else {
+                // No significant change, first delete the oldest moisture entry
+                $delete = $conn->prepare("
+                    DELETE FROM soilmoisture_samples 
+                    WHERE soilSensorID = ? AND tankpumpeventID = ? 
+                    ORDER BY sampleID ASC 
+                    LIMIT 1
+                ");
+                $delete->bind_param("iid", $soilSensorID, $eventID);
+                $delete->execute();
+                $delete->close();
+
+                // Then insert the new moisture value
+                $insert = $conn->prepare("
+                    INSERT INTO soilmoisture_samples 
+                    (soilSensorID, tankpumpeventID, SoilMois)
+                    VALUES (?, ?, ?)
+                ");
+                $insert->bind_param("iid", $soilSensorID, $eventID, $latest);
+                $insert->execute();
+                $insert->close();
+            }
 
             if (!empty($notifMessage)) {
                 $notifSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
