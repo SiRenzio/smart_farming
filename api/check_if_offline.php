@@ -1,5 +1,6 @@
 <?php
 require_once 'db.php';
+session_start();
 header('Content-Type: application/json; charset=utf-8');
 date_default_timezone_set('Asia/Manila');
 
@@ -44,14 +45,31 @@ function checkIF_Offline($conn) {
                 $updateInfo->execute();
                 $updateInfo->close();
 
-                // Update deployment
-                $updateDep = $conn->prepare("UPDATE deployment SET isConnected = 0 WHERE soilSensorID = ?");
-                $updateDep->bind_param("i", $soilSensorID);
-                
-                if ($updateDep->execute()) {
-                    echo "[" . date('Y-m-d H:i:s') . "] Sensor ID {$soilSensorID} (MAC: {$macAddress}) set to Offline.\n";
+                // Check if the user has another connected sensor available
+                $checkSql = "SELECT soilSensorID FROM deployment WHERE userID = ? AND isConnected = 1 AND soilSensorID != ? ORDER BY deploymentID ASC";
+                $checkStmt = $conn->prepare($checkSql);
+                $checkStmt->bind_param("ii", $_SESSION['userID'], $soilSensorID);
+                $checkStmt->execute();
+                $checkResult = $checkStmt->get_result();
+                if ($checkResult->num_rows > 0) {
+                    // Found another connected sensor, transfer the primary flag
+                    $nextSensor = $checkResult->fetch_assoc();
+                    $newPrimaryID = $nextSensor['soilSensorID'];
+
+                    // Update deployment
+                    $updateDep = $conn->prepare("UPDATE deployment SET isConnected = 0, isPrimary = 0 WHERE soilSensorID = ?");
+                    $updateDep->bind_param("i", $soilSensorID);
+
+                    if ($updateDep->execute()) {
+                        echo "[" . date('Y-m-d H:i:s') . "] Sensor ID {$soilSensorID} (MAC: {$macAddress}) set to Offline.\n";
+                    }
+                    $updateDep->close();
+                    
+                    $promoteStmt = $conn->prepare("UPDATE deployment SET isPrimary = 1 WHERE soilSensorID = ?");
+                    $promoteStmt->bind_param("i", $newPrimaryID);
+                    $promoteStmt->execute();
+                    $promoteStmt->close();
                 }
-                $updateDep->close();
             }
         }
     }
