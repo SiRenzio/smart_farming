@@ -103,43 +103,51 @@ if (file_exists($tempFile)) {
 
 $sensorDataID = $_GET['sensorDataID'] ?? null;
 
+// Fetch latest sensor data ONLY for the primary deployed sensor
 if ($sensorDataID) {
     $stmt = $conn->prepare("
-        SELECT * FROM sensordata
-        WHERE SensorDataID > ?
-        ORDER BY DateTime DESC LIMIT 1
+        SELECT s.*, d.nutritionID 
+        FROM sensordata s
+        INNER JOIN deployment d ON s.SoilSensorID = d.soilSensorID
+        WHERE s.SensorDataID > ? AND d.isPrimary = 1
+        ORDER BY s.DateTime DESC LIMIT 1
     ");
-    $stmt->bind_param("s", $sensorDataID);
+    $stmt->bind_param("i", $sensorDataID);
 } else {
     $stmt = $conn->prepare("
-        SELECT * FROM sensordata
-        ORDER BY DateTime DESC LIMIT 1
+        SELECT s.*, d.nutritionID 
+        FROM sensordata s
+        INNER JOIN deployment d ON s.SoilSensorID = d.soilSensorID
+        WHERE d.isPrimary = 1
+        ORDER BY s.DateTime DESC LIMIT 1
     ");
 }
 
 $stmt->execute();
 $result = $stmt->get_result();
 $row = $result->fetch_assoc();
-$currentUserID = $row['userID'];
 
 if (!$row) {
-    sendResponse(false, 'No sensor data found', 'none', 0, $conn);
+    sendResponse(false, 'No primary sensor data found from deployments', 'none', 0, $conn);
 }
+
+$currentUserID = $row['userID'];
+$deployedNutritionID = $row['nutritionID'];
 
 /* ================= FETCH PLANT PARAMETERS ================= */
 
+// Strictly use the nutrition profile linked in the deployment table
 $plantStmt = $conn->prepare("
     SELECT * FROM plantnutrionneed 
-    WHERE isActive = 1 AND userID = ?
-    ORDER BY nutritionID DESC 
+    WHERE nutritionID = ?
     LIMIT 1
 ");
-$plantStmt->bind_param("i", $currentUserID);
+$plantStmt->bind_param("i", $deployedNutritionID);
 $plantStmt->execute();
 $plantParams = $plantStmt->get_result()->fetch_assoc();
 
 if (!$plantParams) {
-    sendResponse(false, 'No active plant parameters found for this user', 'none', 0, $conn);
+    sendResponse(false, 'No plant parameters found for this deployment', 'none', 0, $conn);
 }
 
 /* ================= FETCH PUMP STATUS ================= */
