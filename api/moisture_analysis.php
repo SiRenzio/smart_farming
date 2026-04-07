@@ -43,8 +43,8 @@ function moisture_analysis($conn) {
             // Store the 20 samples
             $insert = $conn->prepare("
                 INSERT INTO soilmoisture_samples 
-                (soilSensorID, tankpumpeventID, SoilMois)
-                VALUES (?, ?, ?)
+                (soilSensorID, SoilMois)
+                VALUES (?, ?)
             ");
 
             foreach ($values as $moistureVal) {
