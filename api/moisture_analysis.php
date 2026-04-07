@@ -15,7 +15,6 @@ function moisture_analysis($conn) {
         }
 
         $soilSensorID = $data['soilSensorID'];
-        $eventID = $data['eventID'];
 
         // Calculate the exact database timestamp when the 2-minute wait finished
         $targetTime = date('Y-m-d H:i:s', $data['startTime'] + 120);
@@ -49,43 +48,78 @@ function moisture_analysis($conn) {
             ");
 
             foreach ($values as $moistureVal) {
-                $insert->bind_param("iid", $soilSensorID, $eventID, $moistureVal);
-                $insert->execute();
-            }
-
-            // Calculate metrics
-            $average = array_sum($values) / 20;
-            // end() gets the last item in the array (the 20th chronological reading)
-            $latest = end($values); 
-
-            $deviation = (($latest - $average) / $average) * 100;
-
-            if ($deviation > 20) {
-                $notifMessage = "Alert: Soil moisture has increased by more than 20% compared to the average.";
-            } elseif ($deviation < -20) {
-                $notifMessage = "Alert: Soil moisture has decreased by more than 20% compared to the average.";
-            }
-            else {
-                // No significant change, first delete the oldest moisture entry
-                $delete = $conn->prepare("
-                    DELETE FROM soilmoisture_samples 
-                    WHERE soilSensorID = ? AND tankpumpeventID = ? 
-                    ORDER BY sampleID ASC 
-                    LIMIT 1
+                // get current stored samples
+                $sampleQuery = $conn->prepare("
+                    SELECT SoilMois 
+                    FROM soilmoisture_samples
+                    WHERE soilSensorID = ?
+                    ORDER BY sampleID ASC
                 ");
-                $delete->bind_param("iid", $soilSensorID, $eventID);
-                $delete->execute();
-                $delete->close();
 
-                // Then insert the new moisture value
-                $insert = $conn->prepare("
-                    INSERT INTO soilmoisture_samples 
-                    (soilSensorID, tankpumpeventID, SoilMois)
-                    VALUES (?, ?, ?)
-                ");
-                $insert->bind_param("iid", $soilSensorID, $eventID, $latest);
-                $insert->execute();
-                $insert->close();
+                $sampleQuery->bind_param("i", $soilSensorID);
+                $sampleQuery->execute();
+                $sampleResult = $sampleQuery->get_result();
+
+                $existingValues = [];
+                while ($row = $sampleResult->fetch_assoc()) {
+                    $existingValues[] = $row['SoilMois'];
+                }
+
+                // if no samples yet, just insert
+                if (count($existingValues) == 0) {
+
+                    $insert = $conn->prepare("
+                        INSERT INTO soilmoisture_samples (soilSensorID, SoilMois)
+                        VALUES (?, ?)
+                    ");
+                    $insert->bind_param("id", $soilSensorID, $moistureVal);
+                    $insert->execute();
+                    $insert->close();
+
+                    continue;
+                }
+
+                // calculate average
+                $average = array_sum($existingValues) / count($existingValues);
+
+                // deviation percentage
+                $deviation = (($moistureVal - $average) / $average) * 100;
+
+                if (abs($deviation) <= 20) {
+
+                    // acceptable value → maintain rolling 20 rows
+
+                    $delete = $conn->prepare("
+                        DELETE FROM soilmoisture_samples
+                        WHERE soilSensorID = ?
+                        ORDER BY sampleID ASC
+                        LIMIT 1
+                    ");
+                    $delete->bind_param("i", $soilSensorID);
+                    $delete->execute();
+                    $delete->close();
+
+                    $insert = $conn->prepare("
+                        INSERT INTO soilmoisture_samples (soilSensorID, SoilMois)
+                        VALUES (?, ?)
+                    ");
+                    $insert->bind_param("id", $soilSensorID, $moistureVal);
+                    $insert->execute();
+                    $insert->close();
+
+                } else {
+
+                    // deviated value detected
+                    $notifMessage = "Sensor $soilSensorID detected abnormal soil moisture value: $moistureVal (Deviation: " . round($deviation,2) . "%)";
+
+                    $notifStmt = $conn->prepare("
+                        INSERT INTO notification (message, createdAT)
+                        VALUES (?, NOW())
+                    ");
+                    $notifStmt->bind_param("s", $notifMessage);
+                    $notifStmt->execute();
+                    $notifStmt->close();
+                }
             }
 
             if (!empty($notifMessage)) {

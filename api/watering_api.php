@@ -213,12 +213,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($wateringStmt->execute()) {
             $soilSensorID = $conn->query("SELECT soilSensorID FROM deployment WHERE isPrimary = 1 LIMIT 1")->fetch_assoc()['soilSensorID'];
-            // Get the ID of the new row AFTER executing the query
-            $wateringEventID = $conn->insert_id;
 
             // Schedule moisture analysis and log accurate Unix time. Also fixed the directory string missing a slash
             file_put_contents(__DIR__ . "/../moisture_jobs/job_$wateringEventID.json", json_encode([
-                "eventID" => $wateringEventID,
                 "soilSensorID" => $soilSensorID,
                 "startTime" => time() // Unix timestamp makes adding 120 seconds easy in the analyzer
             ]));
