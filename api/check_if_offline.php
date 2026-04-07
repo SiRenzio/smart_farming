@@ -8,7 +8,8 @@ date_default_timezone_set('Asia/Manila');
 function checkIF_Offline($conn) {
     $currentTime = time();
 
-    $checkSql = "SELECT soilSensorID, sensorMacAddress, last_sensor_online, sensorStatus, isRegistered 
+    // Fetch userID as well to avoid relying on session in a continuous loop
+    $checkSql = "SELECT soilSensorID, userID, sensorMacAddress, last_sensor_online, sensorStatus, isRegistered 
                  FROM sensorinfo";
 
     $result = $conn->query($checkSql);
@@ -16,6 +17,7 @@ function checkIF_Offline($conn) {
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
             $soilSensorID = $row['soilSensorID'];
+            $userID       = $row['userID'];
             $macAddress   = $row['sensorMacAddress'];
             $lastOnline   = $row['last_sensor_online'];
             $status       = (int)$row['sensorStatus'];
@@ -39,37 +41,50 @@ function checkIF_Offline($conn) {
 
             // If inactive for more than 15 seconds, update status
             if ($isRegistered === 1 && $status === 1 && $timeDiffSeconds > 15) {
-                // Update sensorinfo
+                
+                // sensor offline
                 $updateInfo = $conn->prepare("UPDATE sensorinfo SET sensorStatus = 0 WHERE soilSensorID = ?");
                 $updateInfo->bind_param("i", $soilSensorID);
                 $updateInfo->execute();
                 $updateInfo->close();
 
-                // Check if the user has another connected sensor available
-                $checkSql = "SELECT soilSensorID FROM deployment WHERE userID = ? AND isConnected = 1 AND soilSensorID != ? ORDER BY deploymentID ASC";
-                $checkStmt = $conn->prepare($checkSql);
-                $checkStmt->bind_param("ii", $_SESSION['userID'], $soilSensorID);
+                // disconnect
+                $updateDep = $conn->prepare("UPDATE deployment SET isConnected = 0, isPrimary = 0 WHERE soilSensorID = ?");
+                $updateDep->bind_param("i", $soilSensorID);
+                if ($updateDep->execute()) {
+                    echo "[" . date('Y-m-d H:i:s') . "] Sensor ID {$soilSensorID} (MAC: {$macAddress}) set to Offline.\n";
+                }
+                $updateDep->close();
+
+                // look for another connected sensor or user
+                $checkNextSql = "SELECT d.soilSensorID 
+                                 FROM deployment d
+                                 JOIN sensorinfo s ON d.soilSensorID = s.soilSensorID
+                                 WHERE d.userID = ? 
+                                   AND s.sensorStatus = 1 
+                                   AND d.isConnected = 1 
+                                   AND d.isPrimary = 0 
+                                   AND d.soilSensorID != ? 
+                                 ORDER BY d.deploymentID ASC LIMIT 1";
+                                 
+                $checkStmt = $conn->prepare($checkNextSql);
+                $checkStmt->bind_param("ii", $userID, $soilSensorID);
                 $checkStmt->execute();
                 $checkResult = $checkStmt->get_result();
+                
                 if ($checkResult->num_rows > 0) {
                     // Found another connected sensor, transfer the primary flag
                     $nextSensor = $checkResult->fetch_assoc();
                     $newPrimaryID = $nextSensor['soilSensorID'];
-
-                    // Update deployment
-                    $updateDep = $conn->prepare("UPDATE deployment SET isConnected = 0, isPrimary = 0 WHERE soilSensorID = ?");
-                    $updateDep->bind_param("i", $soilSensorID);
-
-                    if ($updateDep->execute()) {
-                        echo "[" . date('Y-m-d H:i:s') . "] Sensor ID {$soilSensorID} (MAC: {$macAddress}) set to Offline.\n";
-                    }
-                    $updateDep->close();
                     
                     $promoteStmt = $conn->prepare("UPDATE deployment SET isPrimary = 1 WHERE soilSensorID = ?");
                     $promoteStmt->bind_param("i", $newPrimaryID);
-                    $promoteStmt->execute();
+                    if ($promoteStmt->execute()) {
+                        echo "[" . date('Y-m-d H:i:s') . "] Sensor ID {$newPrimaryID} promoted to Primary.\n";
+                    }
                     $promoteStmt->close();
                 }
+                $checkStmt->close();
             }
         }
     }
