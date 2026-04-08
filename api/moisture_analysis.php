@@ -14,7 +14,7 @@ function initialize_samples($conn, $job, $data){
         SELECT SoilMois
         FROM sensordata
         WHERE SoilSensorID=? AND DateTime>=?
-        ORDER BY DateTime ASC
+        ORDER BY DateTime DESC
         LIMIT 20
     ");
 
