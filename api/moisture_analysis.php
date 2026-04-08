@@ -128,7 +128,9 @@ function moisture_analysis($conn) {
             }
         }
 
-        unlink($job);
+        // keep job active for continuous monitoring
+        $data['startTime'] = time();
+        file_put_contents($job, json_encode($data));
     }
 }
 
