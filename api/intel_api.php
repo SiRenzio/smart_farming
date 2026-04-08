@@ -217,7 +217,7 @@ foreach ($checkEvents as $tank => $event) {
 $isActive = $isAnyActive;
 
 /* ================= FAIL SAFE ================= */
-if ($row['soilMois'] == 0 ) {
+if ($row['SoilMois'] === 0 ) {
     
     exit;
 }
