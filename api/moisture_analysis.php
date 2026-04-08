@@ -86,8 +86,9 @@ function monitor_moisture($conn,$job,$data){
     $deviation=(($latest-$average)/$average)*100;
 
     if(abs($deviation) > 20){
-
-        $notif="Sensor $soilSensorID abnormal moisture: $latest (avg $average)";
+        $average = round($average, 2);
+        $deviation = round($deviation, 2);
+        $notif="Sensor $soilSensorID abnormal moisture: $latest (avg $average) | Deviation: $deviation%";
 
         $stmt=$conn->prepare("
             INSERT INTO notification(message,createdAT)
@@ -99,12 +100,12 @@ function monitor_moisture($conn,$job,$data){
 
         // Switch isPrimary flag to another sensor if exists
         $switch=$conn->prepare("
-            UPDATE sensorinfo
+            UPDATE deployment
             SET isPrimary=CASE WHEN soilSensorID=? THEN 0 ELSE 1 END
             WHERE soilSensorID IN (
                 SELECT soilSensorID
-                FROM sensorinfo
-                WHERE userID = (SELECT userID FROM sensorinfo WHERE soilSensorID = ?)
+                FROM deployment
+                WHERE userID = (SELECT userID FROM deployment WHERE soilSensorID = ?)
             )
         ");
         $switch->bind_param("ii", $soilSensorID, $soilSensorID);
