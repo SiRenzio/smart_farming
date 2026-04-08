@@ -68,6 +68,12 @@ function process_sensor_job($conn, $jobFile, $data) {
         $stmt->bind_param("s", $notif);
         $stmt->execute();
 
+        // Clear all records for this sensor to force a fresh baseline capture on next run
+        $clearQuery = $conn->prepare("DELETE FROM soilmoisture_samples WHERE soilSensorID = ?");
+        $clearQuery->bind_param("i", $soilSensorID);
+        $clearQuery->execute();
+        $clearQuery->close();
+
         // Sensor Switching Logic
         $userQuery = $conn->prepare("SELECT userID FROM deployment WHERE soilSensorID = ? LIMIT 1");
         $userQuery->bind_param("i", $soilSensorID);
