@@ -33,7 +33,7 @@
 #define switch3 18
 
 /* ===================== SERVER & WIFI ===================== */
-const char* webServerIp = "192.168.1.6";
+const char* webServerIp = "172.16.0.100";
  
 String sendWateringURL = "http://" + String(webServerIp) + "/smart_farming/api/watering_api.php";
 String sendIntelURL = "http://" + String(webServerIp) + "/smart_farming/api/intel_api.php";

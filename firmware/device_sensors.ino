@@ -13,7 +13,7 @@ SoftwareSerial mySerial(TX_PIN, RX_PIN);
 
 /* ===================== SERVER URLs ===================== */
 // Update this to your current server IP if necessary
-const char* webServerIp = "192.168.1.6"; 
+const char* webServerIp = "172.16.0.100"; 
 
 String verifyDeviceURL = "http://" + String(webServerIp) + "/smart_farming/webServer.php";
 String sendDataURL     = "http://" + String(webServerIp) + "/smart_farming/api/sensor_api.php";
@@ -77,7 +77,8 @@ void handleSave() {
 void startAPMode() {
   Serial.println("\n[WiFi] Starting Access Point Mode...");
   WiFi.mode(WIFI_AP);
-  WiFi.softAP("ESP32-SmartFarming-Setup"); 
+  WiFi.softAP("ESP32-Sensor-Setup"); 
+  // WiFi.softAP("ESP32-Sensor2-Setup"); 
 
   dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
 
@@ -229,6 +230,7 @@ void setup() {
   if (savedSSID != "") {
     Serial.println("\n[WiFi] Found saved credentials. Connecting to: " + savedSSID);
     WiFi.mode(WIFI_STA);
+    WiFi.setHostname("ESP32-Smart-Agri_Sensor");
     WiFi.begin(savedSSID.c_str(), savedPass.c_str());
 
     int timeout = 20;
