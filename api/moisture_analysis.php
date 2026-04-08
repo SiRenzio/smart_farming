@@ -115,7 +115,7 @@ function moisture_analysis($conn) {
 
             } else {
 
-                $notifMessage = "Sensor $soilSensorID detected abnormal soil moisture value: $moistureVal (Deviation: " . round($deviation,2) . "%)";
+                $notifMessage = "Sensor $soilSensorID detected abnormal soil moisture value: $moistureVal, average value: $average (Deviation: " . round($deviation,2) . "%)";
 
                 $notifStmt = $conn->prepare("
                     INSERT INTO notification (message, createdAT)
