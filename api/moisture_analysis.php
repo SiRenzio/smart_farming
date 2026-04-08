@@ -88,13 +88,53 @@ function monitor_moisture($conn, $data){
         $stmt->execute();
 
         // Switch isPrimary logic
-        $switch = $conn->prepare("
-            UPDATE deployment 
-            SET isPrimary = CASE WHEN soilSensorID = ? THEN 0 ELSE 1 END 
-            WHERE userID = (SELECT userID FROM (SELECT userID FROM deployment WHERE soilSensorID = ?) as t)
-        ");
-        $switch->bind_param("ii", $soilSensorID, $soilSensorID);
-        $switch->execute();
+        // 1. First, find the User ID associated with this failing sensor
+        $userQuery = $conn->prepare("SELECT userID FROM deployment WHERE soilSensorID = ? LIMIT 1");
+        $userQuery->bind_param("i", $soilSensorID);
+        $userQuery->execute();
+        $userData = $userQuery->get_result()->fetch_assoc();
+
+        if ($userData) {
+            $uid = $userData['userID'];
+
+            // 2. Look for EXACTLY ONE other connected sensor for this user
+            $backupQuery = $conn->prepare("
+                SELECT soilSensorID 
+                FROM deployment 
+                WHERE userID = ? 
+                AND soilSensorID != ? 
+                AND isConnected = 1 
+                LIMIT 1
+            ");
+            $backupQuery->bind_param("ii", $uid, $soilSensorID);
+            $backupQuery->execute();
+            $backupData = $backupQuery->get_result()->fetch_assoc();
+
+            if ($backupData) {
+                // A connected backup sensor was found!
+                $backupSensorID = $backupData['soilSensorID'];
+
+                // 3. Swap the primary status between the two specific sensors
+                $switch = $conn->prepare("
+                    UPDATE deployment 
+                    SET isPrimary = CASE 
+                        WHEN soilSensorID = ? THEN 0 
+                        WHEN soilSensorID = ? THEN 1 
+                    END 
+                    WHERE soilSensorID IN (?, ?)
+                ");
+                
+                // Bind the parameters (failing ID, backup ID, failing ID, backup ID)
+                $switch->bind_param("iiii", $soilSensorID, $backupSensorID, $soilSensorID, $backupSensorID);
+                $switch->execute();
+                $switch->close();
+                
+            } else {
+                // Optional: What happens if there are NO other connected sensors?
+                // You might want to leave it as primary, or set it to 0 and send a critical alert.
+                // e.g., error_log("User $uid has no active backup sensors!");
+            }
+        }
     }
 }
 
