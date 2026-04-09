@@ -10,7 +10,7 @@ function process_sensor_job($conn, $jobFile, $data) {
     $soilSensorID = $data['soilSensorID'];
     $targetTime = date('Y-m-d H:i:s', $data['startTime'] + 120);
 
-    // 1. Check current baseline count and average
+    // Check current baseline count and average
     $checkQuery = $conn->prepare("SELECT COUNT(*) as total, AVG(SoilMois) as avgVal FROM soilmoisture_samples WHERE soilSensorID = ?");
     $checkQuery->bind_param("i", $soilSensorID);
     $checkQuery->execute();
@@ -18,7 +18,7 @@ function process_sensor_job($conn, $jobFile, $data) {
     $count = $sampleStats['total'];
     $average = $sampleStats['avgVal'];
 
-    // 2. CAPTURE BASELINE (First time or immediately after a sensor switch)
+    // CAPTURE BASELINE (First time or immediately after a sensor switch)
     if($count < 20){
         $query = $conn->prepare("
             SELECT SoilMois FROM sensordata 
@@ -42,7 +42,7 @@ function process_sensor_job($conn, $jobFile, $data) {
         return true;
     }
 
-    // 3. SUBSEQUENT MONITORING
+    // SUBSEQUENT MONITORING
     $latestQuery = $conn->prepare("
         SELECT SoilMois FROM sensordata 
         WHERE SoilSensorID=? 
@@ -109,24 +109,23 @@ function process_sensor_job($conn, $jobFile, $data) {
 
                 // --- CRITICAL FIXES FOR JOB & BASELINE SWITCHING ---
                 
-                // A. Delete old samples for backup sensor so it is forced to fetch 20 fresh readings
+                // Delete old samples for backup sensor so it is forced to fetch 20 fresh readings
                 $clearBaseline = $conn->prepare("DELETE FROM soilmoisture_samples WHERE soilSensorID = ?");
                 $clearBaseline->bind_param("i", $backupSensorID);
                 $clearBaseline->execute();
 
-                // B. Create the new job file for the new sensor
+                // Create the new job file for the new sensor
                 $newJobFile = dirname($jobFile) . "/job_$backupSensorID.json";
                 file_put_contents($newJobFile, json_encode([
                     "soilSensorID" => $backupSensorID,
                     "startTime" => time() // Restarts the 120s timer
                 ]));
 
-                // C. Delete the old job file to stop monitoring the broken sensor
+                // Delete the old job file to stop monitoring the broken sensor
                 unlink($jobFile);
             }
         }
     } else {
-        // 5. NORMAL READING
         // Deviation is safe, so we add it to the average pool
         $insert = $conn->prepare("INSERT INTO soilmoisture_samples (soilSensorID, SoilMois, is_baseline) VALUES (?, ?, 0)");
         $insert->bind_param("id", $soilSensorID, $latest);

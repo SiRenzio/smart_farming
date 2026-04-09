@@ -39,13 +39,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resetQuery = "UPDATE tankpumpevent SET isActive = 0, fertFlag = 0 WHERE liquidsensorID = ? ORDER BY tankPumpEventID DESC LIMIT 1";
         $resetStmt = $conn->prepare($resetQuery);
         $resetStmt->bind_param("i", $liquidsensorID);
-        $resetStmt->execute();
-        $resetStmt->close();
         
-        sendResponse(true, 'Cycle reset complete. isActive set to 0 for Tank ' . $liquidsensorID, [
-            'liquidsensorID' => $liquidsensorID,
-            'timestamp' => date('Y-m-d H:i:s')
-        ]);
+        if ($resetStmt->execute()) {
+            $rowsChanged = $resetStmt->affected_rows;
+            $resetStmt->close();
+            
+            // check if rows were updated
+            if ($rowsChanged > 0) {
+                sendResponse(true, 'Cycle reset complete. isActive set to 0 for Tank ' . $liquidsensorID, [
+                    'liquidsensorID' => $liquidsensorID,
+                    'rows_affected' => $rowsChanged,
+                    'timestamp' => date('Y-m-d H:i:s')
+                ]);
+            } else {
+                // If 0 rows changed, either the row didn't exist, OR it was already set to 0
+                sendResponse(true, 'No update needed or record not found. isActive is already 0.', [
+                    'liquidsensorID' => $liquidsensorID
+                ]);
+            }
+        } else {
+            // db error handling
+            $errorMsg = $resetStmt->error;
+            $resetStmt->close();
+            sendResponse(false, 'Database Error during reset: ' . $errorMsg);
+        }
     }
 
     $currentliquidlevel = isset($decoded_data['currentliquidlevel']) ? (int)$decoded_data['currentliquidlevel'] : null;
