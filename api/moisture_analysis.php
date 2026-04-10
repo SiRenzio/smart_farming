@@ -3,7 +3,7 @@ require_once __DIR__ . '/../db.php';
 
 function process_sensor_job($conn, $jobFile, $data) {
     // Wait for the 120-second startup window
-    if(time() - $data['startTime'] < 120){
+    if(isset($data['startTime']) && (time() - $data['startTime'] < 120)){
         return false; 
     }
 
