@@ -2,13 +2,34 @@
 require_once __DIR__ . '/../db.php';
 
 function process_sensor_job($conn, $jobFile, $data) {
-    // Wait for the 120-second startup window
-    if(isset($data['startTime']) && (time() - $data['startTime'] < 120)){
-        return false; 
+    // Only wait 120 seconds if the job was triggered by watering
+    if(isset($data['triggeredBy']) && $data['triggeredBy'] === "watering"){
+        if(time() - $data['startTime'] < 120){
+            return false;
+        }
     }
 
     $soilSensorID = $data['soilSensorID'];
-    $targetTime = date('Y-m-d H:i:s', $data['startTime'] + 120);
+    // Check if baseline belongs to another sensor
+    $existingBaseline = $conn->query("
+        SELECT soilSensorID 
+        FROM soilmoisture_samples 
+        WHERE is_baseline = 1 
+        LIMIT 1
+    ")->fetch_assoc();
+
+    if($existingBaseline && $existingBaseline['soilSensorID'] != $soilSensorID){
+
+        $conn->query("DELETE FROM soilmoisture_samples");
+
+        error_log("Primary sensor changed. Baseline reset.");
+    }
+
+    if(isset($data['triggeredBy']) && $data['triggeredBy'] === "watering"){
+        $targetTime = date('Y-m-d H:i:s', $data['startTime'] + 120);
+    } else {
+        $targetTime = date('Y-m-d H:i:s', $data['startTime']);
+    }
 
     // Check primary status and connectivity of the sensor before doing anything else
     $statusQuery = $conn->prepare("SELECT isConnected, isPrimary FROM deployment WHERE soilSensorID = ? LIMIT 1");
@@ -26,7 +47,12 @@ function process_sensor_job($conn, $jobFile, $data) {
         $clearQuery->close();
 
         // Log a notification about the sensor status change
-        $notif = "Sensor $soilSensorID is no longer active/primary. Baseline data cleared.";
+        if($sensorStatus['isConnected'] == 0){
+            $notif = "Sensor $soilSensorID disconnected. Monitoring stopped.";
+        }
+        elseif($sensorStatus['isPrimary'] == 0){
+            $notif = "Sensor $soilSensorID is no longer the primary sensor.";
+        }
         $stmt = $conn->prepare("INSERT INTO notification(message, createdAT) VALUES (?, NOW())");
         $stmt->bind_param("s", $notif);
         $stmt->execute();

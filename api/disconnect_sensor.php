@@ -57,6 +57,18 @@ if ($wasPrimary) {
         $promoteStmt->bind_param("i", $newPrimaryID);
         $promoteStmt->execute();
         $promoteStmt->close();
+
+        $jobPath = __DIR__ . "/../moisture_jobs/job_$newPrimaryID.json";
+
+        if(file_exists($jobPath)){
+            unlink($jobPath);
+        }
+
+        file_put_contents($jobPath, json_encode([
+            "soilSensorID" => $newPrimaryID,
+            "startTime" => time(),
+            "triggeredBy" => "primary_switch"
+        ]));
     }
     $nextStmt->close();
 }

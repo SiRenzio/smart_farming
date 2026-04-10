@@ -234,7 +234,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Schedule moisture analysis and log accurate Unix time. Also fixed the directory string missing a slash
             file_put_contents(__DIR__ . "/../moisture_jobs/job_$soilSensorID.json", json_encode([
                 "soilSensorID" => $soilSensorID,
-                "startTime" => time() // Unix timestamp makes adding 120 seconds easy in the analyzer
+                "startTime" => time(), // Unix timestamp makes adding 120 seconds easy in the analyzer
+                "triggeredBy" => "watering"
             ]));
 
             error_log("Creating job file for event $soilSensorID");
