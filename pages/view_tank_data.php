@@ -37,11 +37,22 @@ $offset = ($page - 1) * $limit;
 // Filters
 $filterDateFrom = $_GET['dateFrom'] ?? '';
 $filterDateTo = $_GET['dateTo'] ?? '';
+$filterEvent = $_GET['event'] ?? '';
 
 
 $whereSQL = " WHERE liquidsensorID = ?";
 $params = [$tankID];
 $types = "i";
+
+if($filterEvent !== '') {
+    if ($filterEvent === 'NULL') {
+        $whereSQL .= " AND wateringstatus IS NULL";
+    } else {
+        $whereSQL .= " AND wateringstatus = ?";
+        $params[] = $filterEvent;
+        $types .= "s";
+    }
+}
 
 if (!empty($filterDateFrom)) {
     $whereSQL .= " AND dateandtime >= ?";
@@ -157,17 +168,27 @@ function getFilterParams($excludePage = true) {
                 <div class="filters-container">
 
                     <div class="filter">
+                        <label for="event"><i class="fa fa-filter"></i> Event:</label>
+                        <select id="event" name="event" onchange="applyFilters()">
+                            <option value="" <?php echo $filterEvent === '' ? 'selected' : ''; ?>>All Event</option>
+                            <option value="1" <?php echo $filterEvent === '1' ? 'selected' : ''; ?>>Pumped</option>
+                            <option value="0" <?php echo $filterEvent === '0' ? 'selected' : ''; ?>>Hold Watering</option>
+                            <option value="NULL" <?php echo $filterEvent === 'NULL' ? 'selected' : ''; ?>>Able Watering</option>
+                        </select>
+                    </div>
+
+                    <div class="filter">
                         <label for="dateFrom"><i class="fa fa-filter"></i> Date & Time (From):</label>
                         <input type="datetime-local" name="dateFrom" id="dateFrom" 
                                value="<?php echo htmlspecialchars($filterDateFrom); ?>" 
-                               onchange="this.form.submit()">
+                               onchange="applyFilters()">
                     </div>
 
                     <div class="filter">
                         <label for="dateTo"><i class="fa fa-filter"></i> Date & Time (To):</label>
                         <input type="datetime-local" name="dateTo" id="dateTo" 
                                value="<?php echo htmlspecialchars($filterDateTo); ?>" 
-                               onchange="this.form.submit()">
+                               onchange="applyFilters()">
                     </div>
 
                     <div class="filter">
@@ -179,7 +200,7 @@ function getFilterParams($excludePage = true) {
 
                 </div>
             </form>
-
+        <div id="data-wrapper">
             <?php if (empty($data)): ?>
             <div class="empty-state">
                 <p>No sensor data found matching your criteria.</p>
