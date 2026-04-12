@@ -236,7 +236,7 @@ if ($row['SoilMois'] < 10 || $row['SoilMois'] > 100 || $row['SoilN'] >=1000 || $
 
 /* ================= PROCESS SENSOR DATA ================= */
 
-if ($row['SoilT'] <= 30) {
+if ($row['SoilT'] < 31) {
     $moistureThreshold = $plantParams['meanMoistureThreshold'];
 }
 else if ($row['SoilT'] >= 31 && $row['SoilT'] <= 34) {
