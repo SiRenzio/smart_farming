@@ -8,6 +8,8 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
+$userID = $_SESSION['userID'] ?? null; // Get userID from session for authentication
+
 function sendResponse($success, $message, $data = null) {
     echo json_encode([
         'success' => $success,
@@ -33,19 +35,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$liquidsensorID) {
         sendResponse(false, 'liquidsensorID is required');
     }
-
-    // FIX: Look up the userID based on the sensor ID
-    $userQuery = $conn->prepare("SELECT userID FROM deployment WHERE liquidsensorID = ? LIMIT 1");
-    $userQuery->bind_param("i", $liquidsensorID);
-    $userQuery->execute();
-    $userResult = $userQuery->get_result()->fetch_assoc();
-
-    if (!$userResult) {
-        sendResponse(false, 'Unrecognized sensor or sensor not assigned to a user.');
-    }
-
-    $userID = $userResult['userID'];
-    $userQuery->close();
 
     // reset for isActive
     if ($updateType === 'reset') {
