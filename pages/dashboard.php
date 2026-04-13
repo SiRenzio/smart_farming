@@ -128,6 +128,11 @@ function getFilterParams($excludePage = true) {
                         <h3>Liquid Tank Level Overview</h3>
                         <p>Monitor current tanks liquid level.</p>
                     </div>
+                    <div class="failsafe_btn">
+                        <a href="failsafe.php" class="fsafe-btn">
+                            <i class="fas fa-shield-alt"></i>  Failsafe Settings
+                        </a>
+                    </div>
                 </div>
                 <?php if ($tanks): ?>
                     <div class="tanks-wrapper">
