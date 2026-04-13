@@ -29,7 +29,6 @@ $sensors = $conn->query("
     ORDER BY s.soilSensorID ASC
 ");
 
-
 // Fetch all farm locations
 $locations = [];
 $mapResult = $conn->prepare("SELECT locationID, farmName FROM farmlocation WHERE userID = ?");
@@ -41,7 +40,7 @@ while ($row = $result->fetch_assoc()) {
     $locations[] = $row;
 }
 
-// Register Senor Handling
+// Register Sensor Handling
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isset($_POST['modalSensorID'])) {
     $sensorName = trim($_POST['sensorName'] ?? '');
     $sensorID = trim($_POST['modalSensorID']);
@@ -56,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
             $success = "Sensor registered successfully.";
             $_SESSION['success'] = $success;
             header("Location: manage_sensors.php");
+            exit;
         } else {
             $error = "Error registering sensor: " . $conn->error;
         }
@@ -64,6 +64,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
     }
 }
 
+// Unregister Sensor Handling (Pure PHP, No JS API needed)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'unregister' && isset($_POST['unregisterSensorID'])) {
+    $sensorID = trim($_POST['unregisterSensorID']);
+
+    // Using 0 for status/registered flags to prevent the JSON/HTML database error
+    $stmt = $conn->prepare("
+        UPDATE sensorinfo 
+        SET 
+            userID = NULL, 
+            sensorName = NULL, 
+            sensorStatus = 0, 
+            isRegistered = 0
+        WHERE soilSensorID = ?
+    ");
+    
+    $stmt->bind_param("i", $sensorID);
+
+    if ($stmt->execute()) {
+        $_SESSION['success'] = "Sensor unregistered and cleared successfully.";
+    } else {
+        $error = "Error unregistering sensor: " . $conn->error;
+    }
+
+    $stmt->close();
+    
+    // Redirect to prevent form resubmission on page refresh
+    header("Location: manage_sensors.php");
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -113,7 +142,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
             <a href="add_sensor_location.php" class="btn-primary">
                 <i class="fas fa-plus"></i> Add New Location
             </a>
-            
         </div>
 
         <div class="sensors-container">
@@ -130,8 +158,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                         <p class="status-text">Offline</p>
                     </div>
                     <label class="sensor-label">
-                        <span class="sensor-name"><?= htmlspecialchars($sensor['sensorName']) ?></span>
+                        <span class="sensor-name"><?= htmlspecialchars($sensor['sensorName'] ?? 'Unknown') ?></span>
                     </label>
+
+                    <form action="manage_sensors.php" method="POST" class="unregister-form" style="display: none; margin-bottom: 10px;">
+                        <input type="hidden" name="action" value="unregister">
+                        <input type="hidden" name="unregisterSensorID" value="<?= htmlspecialchars($sensor['soilSensorID']) ?>">
+                        <button type="submit" class="unregister-btn" onclick="return confirm('Are you sure you want to unregister this sensor? All configurations will be cleared.');">
+                            Unregister
+                        </button>
+                    </form>
+
                     <div class="checkbox-wrapper">
                         <input type="checkbox" 
                             id="cb-<?= $sensor['soilSensorID'] ?>"
@@ -173,6 +210,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
                     <button type="button" class="send-button" onclick="connectSensor(this)" disabled>Connect</button>
                     <button class="disconnect" style="display: none;" data-id="<?= htmlspecialchars($sensor['soilSensorID'] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
                     <button class="register" style="display: none;" onclick="registerSensor(<?= $sensor['soilSensorID'] ?>)">Register</button>
+                    
                     <div class="add-sensor-modal" style="display: none;">
                         <div class="modal-header">
                             <div class="icon">
