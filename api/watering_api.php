@@ -237,7 +237,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             file_put_contents(__DIR__ . "/../moisture_jobs/job_$soilSensorID.json", json_encode([
                 "soilSensorID" => $soilSensorID,
                 "startTime" => time(), // Unix timestamp makes adding 120 seconds easy in the analyzer
-                "userID" => $userID, 
                 "triggeredBy" => "watering"
             ]));
 

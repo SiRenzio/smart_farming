@@ -67,7 +67,6 @@ if ($wasPrimary) {
         file_put_contents($jobPath, json_encode([
             "soilSensorID" => $newPrimaryID,
             "startTime" => time(),
-            "userID" => $userID,
             "triggeredBy" => "primary_switch"
         ]));
     }

@@ -2,13 +2,6 @@
 require_once __DIR__ . '/../db.php';
 
 function process_sensor_job($conn, $jobFile, $data) {
-    // 1. Get userID from the JSON payload, NOT the session.
-    $userID = $data['userID'] ?? null; 
-    if (!$userID) {
-        error_log("No userID found in job: " . basename($jobFile));
-        return false;
-    }
-    
     // Only wait 120 seconds if the job was triggered by watering
     if(isset($data['triggeredBy']) && $data['triggeredBy'] === "watering"){
         if(time() - $data['startTime'] < 120){
@@ -18,6 +11,13 @@ function process_sensor_job($conn, $jobFile, $data) {
 
     $soilSensorID = $data['soilSensorID'];
 
+    // Fetch userID for the sensor to find another connected sensor
+        $userQuery = $conn->prepare("SELECT userID FROM deployment WHERE soilSensorID = ? LIMIT 1");
+        $userQuery->bind_param("i", $soilSensorID);
+        $userQuery->execute();
+        $userResult = $userQuery->get_result()->fetch_assoc();
+        $userQuery->close();
+
     // FIX: Scope the baseline check to the user so you don't wipe the whole table
     $existingQuery = $conn->prepare("
         SELECT sms.soilSensorID 
@@ -26,7 +26,7 @@ function process_sensor_job($conn, $jobFile, $data) {
         WHERE sms.is_baseline = 1 AND d.userID = ?
         LIMIT 1
     ");
-    $existingQuery->bind_param("i", $userID);
+    $existingQuery->bind_param("i", $userResult['userID']);
     $existingQuery->execute();
     $existingBaseline = $existingQuery->get_result()->fetch_assoc();
     $existingQuery->close();
@@ -38,10 +38,10 @@ function process_sensor_job($conn, $jobFile, $data) {
             JOIN deployment d ON sms.soilSensorID = d.soilSensorID
             WHERE d.userID = ?
         ");
-        $wipeQuery->bind_param("i", $userID);
+        $wipeQuery->bind_param("i", $userResult['userID']);
         $wipeQuery->execute();
         $wipeQuery->close();
-        error_log("Primary sensor changed for user $userID. Baseline reset.");
+        error_log("Primary sensor changed for user $userResult[userID]. Baseline reset.");
     }
 
     $targetTime = isset($data['triggeredBy']) && $data['triggeredBy'] === "watering" 
@@ -148,7 +148,7 @@ function process_sensor_job($conn, $jobFile, $data) {
             WHERE userID = ? AND isConnected = 1 AND soilSensorID != ? 
             ORDER BY deploymentID ASC LIMIT 1
         ");
-        $nextStmt->bind_param("ii", $userID, $soilSensorID);
+        $nextStmt->bind_param("ii", $userResult['userID'], $soilSensorID);
         $nextStmt->execute();
         $nextResult = $nextStmt->get_result();
         
@@ -175,7 +175,6 @@ function process_sensor_job($conn, $jobFile, $data) {
 
             file_put_contents($jobPath, json_encode([
                 "soilSensorID" => $newPrimaryID,
-                "userID"       => $userID, 
                 "startTime"    => time(),
                 "triggeredBy"  => "primary_switch"
             ]));
