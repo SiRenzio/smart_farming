@@ -2,6 +2,13 @@
 require_once __DIR__ . '/../db.php';
 
 function process_sensor_job($conn, $jobFile, $data) {
+    // 1. Get userID from the JSON payload, NOT the session.
+    $userID = $data['userID'] ?? null; 
+    if (!$userID) {
+        error_log("No userID found in job: " . basename($jobFile));
+        return false;
+    }
+    
     // Only wait 120 seconds if the job was triggered by watering
     if(isset($data['triggeredBy']) && $data['triggeredBy'] === "watering"){
         if(time() - $data['startTime'] < 120){
@@ -10,57 +17,67 @@ function process_sensor_job($conn, $jobFile, $data) {
     }
 
     $soilSensorID = $data['soilSensorID'];
-    // Check if baseline belongs to another sensor
-    $existingBaseline = $conn->query("
-        SELECT soilSensorID 
-        FROM soilmoisture_samples 
-        WHERE is_baseline = 1 
+
+    // FIX: Scope the baseline check to the user so you don't wipe the whole table
+    $existingQuery = $conn->prepare("
+        SELECT sms.soilSensorID 
+        FROM soilmoisture_samples sms
+        JOIN deployment d ON sms.soilSensorID = d.soilSensorID
+        WHERE sms.is_baseline = 1 AND d.userID = ?
         LIMIT 1
-    ")->fetch_assoc();
+    ");
+    $existingQuery->bind_param("i", $userID);
+    $existingQuery->execute();
+    $existingBaseline = $existingQuery->get_result()->fetch_assoc();
+    $existingQuery->close();
 
     if($existingBaseline && $existingBaseline['soilSensorID'] != $soilSensorID){
-
-        $conn->query("DELETE FROM soilmoisture_samples");
-
-        error_log("Primary sensor changed. Baseline reset.");
+        // FIX: Only delete baselines for sensors belonging to this specific user
+        $wipeQuery = $conn->prepare("
+            DELETE sms FROM soilmoisture_samples sms
+            JOIN deployment d ON sms.soilSensorID = d.soilSensorID
+            WHERE d.userID = ?
+        ");
+        $wipeQuery->bind_param("i", $userID);
+        $wipeQuery->execute();
+        $wipeQuery->close();
+        error_log("Primary sensor changed for user $userID. Baseline reset.");
     }
 
-    if(isset($data['triggeredBy']) && $data['triggeredBy'] === "watering"){
-        $targetTime = date('Y-m-d H:i:s', $data['startTime'] + 120);
-    } else {
-        $targetTime = date('Y-m-d H:i:s', $data['startTime']);
-    }
+    $targetTime = isset($data['triggeredBy']) && $data['triggeredBy'] === "watering" 
+        ? date('Y-m-d H:i:s', $data['startTime'] + 120) 
+        : date('Y-m-d H:i:s', $data['startTime']);
 
-    // Check primary status and connectivity of the sensor before doing anything else
+    // Check primary status and connectivity of the sensor
     $statusQuery = $conn->prepare("SELECT isConnected, isPrimary FROM deployment WHERE soilSensorID = ? LIMIT 1");
     $statusQuery->bind_param("i", $soilSensorID);
     $statusQuery->execute();
     $sensorStatus = $statusQuery->get_result()->fetch_assoc();
+    $statusQuery->close();
 
     // If the sensor was removed, disconnected, or is no longer primary
     if (!$sensorStatus || $sensorStatus['isPrimary'] == 0 || $sensorStatus['isConnected'] == 0) {
         
-        // Wipe all baseline data for this sensor
         $clearQuery = $conn->prepare("DELETE FROM soilmoisture_samples WHERE soilSensorID = ?");
         $clearQuery->bind_param("i", $soilSensorID);
         $clearQuery->execute();
         $clearQuery->close();
 
-        // Log a notification about the sensor status change
-        if($sensorStatus['isConnected'] == 0){
-            $notif = "Sensor $soilSensorID disconnected. Monitoring stopped.";
-        }
-        elseif($sensorStatus['isPrimary'] == 0){
-            $notif = "Sensor $soilSensorID is no longer the primary sensor.";
-        }
+        $notif = (!$sensorStatus || $sensorStatus['isConnected'] == 0) 
+            ? "Sensor $soilSensorID disconnected. Monitoring stopped." 
+            : "Sensor $soilSensorID is no longer the primary sensor.";
+            
         $stmt = $conn->prepare("INSERT INTO notification(message, createdAT) VALUES (?, NOW())");
         $stmt->bind_param("s", $notif);
         $stmt->execute();
+        $stmt->close();
 
-        // Delete the job file so we stop monitoring this dead sensor
-        unlink($jobFile);
+        // FIX: Ensure file exists before unlinking to prevent PHP warnings
+        if (file_exists($jobFile)) {
+            unlink($jobFile);
+        }
         
-        return false; // Exit immediately
+        return false;
     }
 
     // Check current baseline count and average
@@ -68,6 +85,8 @@ function process_sensor_job($conn, $jobFile, $data) {
     $checkQuery->bind_param("i", $soilSensorID);
     $checkQuery->execute();
     $sampleStats = $checkQuery->get_result()->fetch_assoc();
+    $checkQuery->close();
+    
     $count = $sampleStats['total'];
     $average = $sampleStats['avgVal'];
 
@@ -82,13 +101,18 @@ function process_sensor_job($conn, $jobFile, $data) {
         $query->execute();
         $result = $query->get_result();
 
-        if($result->num_rows < 20) return false;
+        if($result->num_rows < 20) {
+            $query->close();
+            return false;
+        }
 
+        $insert = $conn->prepare("INSERT INTO soilmoisture_samples (soilSensorID, SoilMois, is_baseline) VALUES (?, ?, 1)");
         while($row = $result->fetch_assoc()){
-            $insert = $conn->prepare("INSERT INTO soilmoisture_samples (soilSensorID, SoilMois, is_baseline) VALUES (?, ?, 1)");
             $insert->bind_param("id", $soilSensorID, $row['SoilMois']);
             $insert->execute();
         }
+        $insert->close();
+        $query->close();
         
         $data['initialized'] = true;
         file_put_contents($jobFile, json_encode($data));
@@ -100,6 +124,7 @@ function process_sensor_job($conn, $jobFile, $data) {
     $latestQuery->bind_param("i", $soilSensorID);
     $latestQuery->execute();
     $latestData = $latestQuery->get_result()->fetch_assoc();
+    $latestQuery->close();
 
     if(!$latestData || !$average) return false;
 
@@ -107,7 +132,6 @@ function process_sensor_job($conn, $jobFile, $data) {
     $deviation = (($latest - $average) / $average) * 100;
 
     if(abs($deviation) > 20){
-        // Abnormal Deviation: Log it and let the external system handle the failover
         $averageRounded = round($average, 2);
         $deviationRounded = round($deviation, 2);
         $notif = "Sensor $soilSensorID abnormal moisture: $latest (avg $averageRounded) | Deviation: $deviationRounded%";
@@ -115,15 +139,54 @@ function process_sensor_job($conn, $jobFile, $data) {
         $stmt = $conn->prepare("INSERT INTO notification(message, createdAT) VALUES (?, NOW())");
         $stmt->bind_param("s", $notif);
         $stmt->execute();
+        $stmt->close();
         
-        // NOTE: We do not switch the sensor or delete data here anymore.
-        // We assume your external hardware/system will see this abnormality, 
-        // update the deployment table to isPrimary=0, and the NEXT loop will catch it at step 1.
+        // Find another connected sensor
+        $nextStmt = $conn->prepare("
+            SELECT soilSensorID 
+            FROM deployment 
+            WHERE userID = ? AND isConnected = 1 AND soilSensorID != ? 
+            ORDER BY deploymentID ASC LIMIT 1
+        ");
+        $nextStmt->bind_param("ii", $userID, $soilSensorID);
+        $nextStmt->execute();
+        $nextResult = $nextStmt->get_result();
+        
+        if ($nextResult->num_rows > 0) {
+            $nextSensor = $nextResult->fetch_assoc();
+            $newPrimaryID = $nextSensor['soilSensorID'];
+            
+            // Demote the old sensor
+            $demoteStmt = $conn->prepare("UPDATE deployment SET isPrimary = 0 WHERE soilSensorID = ?");
+            $demoteStmt->bind_param("i", $soilSensorID);
+            $demoteStmt->execute();
+            $demoteStmt->close();
+
+            // Promote the new sensor
+            $promoteStmt = $conn->prepare("UPDATE deployment SET isPrimary = 1 WHERE soilSensorID = ?");
+            $promoteStmt->bind_param("i", $newPrimaryID);
+            $promoteStmt->execute();
+            $promoteStmt->close();
+
+            $jobPath = __DIR__ . "/../moisture_jobs/job_$newPrimaryID.json";
+            if(file_exists($jobPath)){
+                unlink($jobPath);
+            }
+
+            file_put_contents($jobPath, json_encode([
+                "soilSensorID" => $newPrimaryID,
+                "userID"       => $userID, 
+                "startTime"    => time(),
+                "triggeredBy"  => "primary_switch"
+            ]));
+        }
+        $nextStmt->close();
     } else {
         // Deviation is safe
         $insert = $conn->prepare("INSERT INTO soilmoisture_samples (soilSensorID, SoilMois, is_baseline) VALUES (?, ?, 0)");
         $insert->bind_param("id", $soilSensorID, $latest);
         $insert->execute();
+        $insert->close();
     }
 
     return true;
@@ -134,10 +197,12 @@ while(true){
     $jobFiles = glob(__DIR__ . "/../moisture_jobs/*.json");
 
     foreach ($jobFiles as $job){
-        $data = json_decode(file_get_contents($job), true);
-        if(!$data) continue;
+        $fileContents = file_get_contents($job);
+        $data = json_decode($fileContents, true);
         
-        // Process everything in one cohesive step
+        // Skip invalid JSON
+        if(!$data) continue; 
+        
         process_sensor_job($conn, $job, $data);
     }
 
