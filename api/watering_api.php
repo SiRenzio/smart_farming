@@ -8,6 +8,8 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
+$userID = $_SESSION['userID'] ?? null; // Get userID from session for authentication
+
 function sendResponse($success, $message, $data = null) {
     echo json_encode([
         'success' => $success,
@@ -235,7 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             file_put_contents(__DIR__ . "/../moisture_jobs/job_$soilSensorID.json", json_encode([
                 "soilSensorID" => $soilSensorID,
                 "startTime" => time(), // Unix timestamp makes adding 120 seconds easy in the analyzer
-                "userID" => $_SESSION['userID'] ?? null, 
+                "userID" => $userID, 
                 "triggeredBy" => "watering"
             ]));
 
