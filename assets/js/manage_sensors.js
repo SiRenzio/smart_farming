@@ -10,6 +10,7 @@ const UI_STATES = {
 function getBoxEls(box) {
     return {
         checkbox: box.querySelector('.sensor-checkbox'),
+        unregisterForm: box.querySelector('.unregister-form'), // Targeting the new form
         locationLabel: box.querySelector('.location'),
         locationSelect: box.querySelector('.location-select'),
         select: box.querySelector('select'),
@@ -36,10 +37,11 @@ function renderState(box, state) {
     switch (state) {
         case UI_STATES.CONFIGURED:
             els.checkbox.style.display = 'none';
+            if(els.unregisterForm) els.unregisterForm.style.display = 'none';
             els.locationLabel.style.display = 'block';
 
-                els.locationSelect.style.display = 'none';
-                els.select.disabled = true;
+            els.locationSelect.style.display = 'none';
+            els.select.disabled = true;
 
             els.sendBtn.style.display = 'none';
             els.disconnectBtn.style.display = 'block';
@@ -55,6 +57,7 @@ function renderState(box, state) {
 
         case UI_STATES.ONLINE_IDLE:
             els.checkbox.style.display = 'inline-block';
+            if(els.unregisterForm) els.unregisterForm.style.display = 'inline-block';
             els.checkbox.disabled = false;
             els.checkbox.checked = false;
 
@@ -78,6 +81,7 @@ function renderState(box, state) {
 
         case UI_STATES.UNREGISTERED:
             els.checkbox.style.display = 'none';
+            if(els.unregisterForm) els.unregisterForm.style.display = 'none';
             els.checkbox.disabled = true;
             els.checkbox.checked = false;
 
@@ -99,6 +103,7 @@ function renderState(box, state) {
         case UI_STATES.OFFLINE:
         default:
             els.checkbox.style.display = 'none';
+            if(els.unregisterForm) els.unregisterForm.style.display = 'inline-block';
             els.checkbox.disabled = true;
             els.checkbox.checked = false;
 
@@ -164,7 +169,7 @@ function updateSensors() {
                 data.map(s => String(s.soilSensorID))
             );
 
-            //  Remove DOM sensors not in DB anymore
+            // Remove DOM sensors not in DB anymore
             container.querySelectorAll('.sensor-box').forEach(box => {
                 const id = box.dataset.sensorId;
                 if (!serverIDs.has(id)) {
@@ -235,7 +240,7 @@ function closeRegisterModal() {
     document.getElementById('modal-backdrop').style.display = 'none';
 }
 
-function connectSensor  (btn) {
+function connectSensor(btn) {
     const box = btn.closest('.sensor-box');
     const { select, displayName } = getBoxEls(box);
 
@@ -293,5 +298,5 @@ function disconnectSensor(btn) {
     .finally(() => btn.disabled = false);
 }
 
-// Poll every 3 seconds
+// Poll every 1 second
 setInterval(updateSensors, 1000);
