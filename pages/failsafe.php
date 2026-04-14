@@ -96,7 +96,7 @@
                 <div class="card-content">
                     <form action="" method="POST" class="failsafe-form">
                         <label for="wateringTime">Set failsafe watering time (in seconds):</label>
-                        <input type="number" id="wateringTime" name="wateringTime" min="60" max="3600" value="<?php echo htmlspecialchars($settings['wateringTime']); ?>" step="any" required>
+                        <input type="number" id="wateringTime" name="wateringTime" min="60" value="<?php echo htmlspecialchars($settings['wateringTime']); ?>" step="any" required>
                         <button type="submit" class="btn btn-primary" id="wateringTimeBtn" disabled>Save</button>
                     </form>
                 </div>
@@ -114,7 +114,7 @@
                 <div class="card-content">
                     <form action="" method="POST" class="failsafe-form">
                         <label for="backOffTime">Set back-off time for watering (in seconds):</label>
-                        <input type="number" id="backOffTime" name="backOffTime" min="60" max="3600" value="<?php echo htmlspecialchars($settings['backOffTime']); ?>" step="any" required>
+                        <input type="number" id="backOffTime" name="backOffTime" min="60" value="<?php echo htmlspecialchars($settings['backOffTime']); ?>" step="any" required>
                         <button type="submit" class="btn btn-primary" id="backOffTimeBtn" disabled>Save</button>
                     </form>
                 </div>
@@ -132,7 +132,7 @@
                 <div class="card-content">
                     <form action="" method="POST" class="failsafe-form">
                         <label for="mixingTime">Set mixer/mixing time duration (in seconds):</label>
-                        <input type="number" id="mixingTime" name="mixingTime" min="60" max="3600" value="<?php echo htmlspecialchars($settings['mixingTime']); ?>" step="any" required>
+                        <input type="number" id="mixingTime" name="mixingTime" min="60" value="<?php echo htmlspecialchars($settings['mixingTime']); ?>" step="any" required>
                         <button type="submit" class="btn btn-primary" id="mixingTimeBtn" disabled>Save</button>
                     </form>
                 </div>
