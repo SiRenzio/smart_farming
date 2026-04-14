@@ -279,8 +279,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($updateType === 'handshake') {
+        $settingsPath = __DIR__ . '/../failsafe/settings.json';
+        $settingsData = null;
+        
+        if (file_exists($settingsPath)) {
+            $jsonConfig = file_get_contents($settingsPath);
+            $settingsData = json_decode($jsonConfig, true);
+        }
+
         sendResponse(true, 'Handshake successful', [
-            'liquidsensorID' => $liquidsensorID
+            'liquidsensorID' => $liquidsensorID,
+            'settings' => $settingsData
         ]);
     }
 

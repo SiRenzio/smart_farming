@@ -130,7 +130,7 @@ function getFilterParams($excludePage = true) {
                     </div>
                     <div class="failsafe_btn">
                         <a href="failsafe.php" class="fsafe-btn">
-                            <i class="fas fa-shield-alt"></i>  Failsafe Settings
+                            <i class="fa-solid fa-gear"></i>  Settings
                         </a>
                     </div>
                 </div>

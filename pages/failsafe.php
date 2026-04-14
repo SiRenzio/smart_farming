@@ -132,7 +132,7 @@
                 <div class="card-content">
                     <form action="" method="POST" class="failsafe-form">
                         <label for="mixingTime">Set mixer/mixing time duration (in seconds):</label>
-                        <input type="number" id="mixingTime" name="mixingTime" min="60" max="3600" value="<?php echo htmlspecialchars($settings['mixingTime']); ?>" step="any" required>
+                        <input type="number" id="mixingTime" name="mixingTime" min="60" value="<?php echo htmlspecialchars($settings['mixingTime']); ?>" step="any" required>
                         <button type="submit" class="btn btn-primary" id="mixingTimeBtn" disabled>Save</button>
                     </form>
                 </div>
