@@ -141,7 +141,7 @@ body {
 }
 
 .failsafe-form label {
-    align-self: flex-start;
+    align-self: center;
     margin-bottom: 0.5rem;
     font-weight: 500;
     color: #333;

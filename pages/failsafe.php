@@ -27,13 +27,13 @@
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Check which form was submitted and update the specific value
         if (isset($_POST['wateringTime'])) {
-            $settings['wateringTime'] = (float)$_POST['wateringTime'];
+            $settings['wateringTime'] = (float)$_POST['wateringTime'] * 60000;
         }
         if (isset($_POST['backOffTime'])) {
-            $settings['backOffTime'] = (float)$_POST['backOffTime'];
+            $settings['backOffTime'] = (float)$_POST['backOffTime'] * 60000;
         }
         if (isset($_POST['mixingTime'])) {
-            $settings['mixingTime'] = (float)$_POST['mixingTime'];
+            $settings['mixingTime'] = (float)$_POST['mixingTime'] * 1000;
         }
 
         // Save to JSON and trigger the success message
@@ -95,8 +95,8 @@
                 </div>
                 <div class="card-content">
                     <form action="" method="POST" class="failsafe-form">
-                        <label for="wateringTime">Set failsafe watering time (in seconds):</label>
-                        <input type="number" id="wateringTime" name="wateringTime" min="60" max="3600" value="<?php echo htmlspecialchars($settings['wateringTime']); ?>" step="any" required>
+                        <label for="wateringTime">Set failsafe watering time <br>(in minutes):</label>
+                        <input type="number" id="wateringTime" name="wateringTime" min="1" max="60" value="<?php echo htmlspecialchars($settings['wateringTime']); ?>" step="any" required>
                         <button type="submit" class="btn btn-primary" id="wateringTimeBtn" disabled>Save</button>
                     </form>
                 </div>
@@ -113,8 +113,8 @@
                 </div>
                 <div class="card-content">
                     <form action="" method="POST" class="failsafe-form">
-                        <label for="backOffTime">Set back-off time for watering (in seconds):</label>
-                        <input type="number" id="backOffTime" name="backOffTime" min="60" max="3600" value="<?php echo htmlspecialchars($settings['backOffTime']); ?>" step="any" required>
+                        <label for="backOffTime">Set back-off time for watering <br>(in minutes):</label>
+                        <input type="number" id="backOffTime" name="backOffTime" min="1" max="60" value="<?php echo htmlspecialchars($settings['backOffTime']); ?>" step="any" required>
                         <button type="submit" class="btn btn-primary" id="backOffTimeBtn" disabled>Save</button>
                     </form>
                 </div>
