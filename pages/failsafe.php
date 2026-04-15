@@ -1,4 +1,6 @@
 <?php
+    require_once '../includes/notification.php';
+    require_once '../includes/sensor_data_includes.php';
     session_start();
 
     // Define the path to the JSON file
@@ -73,8 +75,8 @@
             <div class="icon">
                 <i class="fas fa-shield-alt"></i>
             </div>
-            <h1>Failsafe Settings</h1>
-            <p>Monitoring sensor connectivity and primary status to ensure accurate moisture analysis</p>
+            <h1>Settings</h1>
+            <p>Set timer for fail-safe and system operations</p>
         </div>
 
         <div class="nav-links">
@@ -96,7 +98,7 @@
                 <div class="card-content">
                     <form action="" method="POST" class="failsafe-form">
                         <label for="wateringTime">Set failsafe watering time <br>(in minutes):</label>
-                        <input type="number" id="wateringTime" name="wateringTime" min="1" max="60" value="<?php echo htmlspecialchars($settings['wateringTime']); ?>" step="any" required>
+                        <input type="number" id="wateringTime" name="wateringTime" min="1" value="<?php echo htmlspecialchars($settings['wateringTime']) / 60000; ?>" step="any" required>
                         <button type="submit" class="btn btn-primary" id="wateringTimeBtn" disabled>Save</button>
                     </form>
                 </div>
@@ -114,7 +116,7 @@
                 <div class="card-content">
                     <form action="" method="POST" class="failsafe-form">
                         <label for="backOffTime">Set back-off time for watering <br>(in minutes):</label>
-                        <input type="number" id="backOffTime" name="backOffTime" min="1" max="60" value="<?php echo htmlspecialchars($settings['backOffTime']); ?>" step="any" required>
+                        <input type="number" id="backOffTime" name="backOffTime" min="5" value="<?php echo htmlspecialchars($settings['backOffTime']) / 60000; ?>" step="any" required>
                         <button type="submit" class="btn btn-primary" id="backOffTimeBtn" disabled>Save</button>
                     </form>
                 </div>
@@ -132,7 +134,7 @@
                 <div class="card-content">
                     <form action="" method="POST" class="failsafe-form">
                         <label for="mixingTime">Set mixer/mixing time duration (in seconds):</label>
-                        <input type="number" id="mixingTime" name="mixingTime" min="60" value="<?php echo htmlspecialchars($settings['mixingTime']); ?>" step="any" required>
+                        <input type="number" id="mixingTime" name="mixingTime" min="5" value="<?php echo htmlspecialchars($settings['mixingTime']) / 1000; ?>" step="any" required>
                         <button type="submit" class="btn btn-primary" id="mixingTimeBtn" disabled>Save</button>
                     </form>
                 </div>

@@ -72,10 +72,13 @@ const unsigned long levelSendInterval = 1100;
 unsigned long lastHandshakeTime = 0;
 const unsigned long handshakeInterval = 2000;
 
+unsigned long lastSettingsCheck = 0;
+const unsigned long settingsInterval = 15000; // 30 seconds
+
 unsigned long lastIntelCheck = 0;
 const unsigned long intelInterval = 1000;
 
-const unsigned long mixingDuration = 5000;
+unsigned long mixingDuration = 5000;
 
 // Serial watchdog
 unsigned long lastSerialReceiveTime = 0;
@@ -112,7 +115,7 @@ float currentVolumeML = 0;
 float targetVolumeML = 0;
 //Flow Sensor fail safe
 unsigned long lastFlowPulseTime = 0;
-const unsigned long flowTimeout = 60000; // 3 minutes (180,000 ms)
+unsigned long flowTimeout = 60000; // 3 minutes (180,000 ms)
 
 bool wateringActive = false;
 int activeTank = 0;
@@ -125,7 +128,7 @@ const unsigned long flowPrintInterval = 500;
 
 // waiting cycle
 unsigned long cycleCompleteTime = 0;
-const unsigned long cycleWaitInterval = 60000;  // 15 minutes = 900000 ms | 30 minutes = 1800000 ms
+unsigned long cycleWaitInterval = 60000;  // 15 minutes = 900000 ms | 30 minutes = 1800000 ms
 bool waitingAfterCycle = false;
 
 // Pre-watering mixing flags (from Intel command)
@@ -294,7 +297,7 @@ bool initialHandshake(int id) {
   if (WiFi.status() != WL_CONNECTED) return false;
 
   HTTPClient http;
-  StaticJsonDocument<200> doc;
+  StaticJsonDocument<200> doc; // For sending
 
   doc["liquidsensorID"] = id;
   doc["updateType"] = "handshake";
@@ -316,7 +319,8 @@ bool initialHandshake(int id) {
   String response = http.getString();
   http.end();
 
-  StaticJsonDocument<200> resDoc;
+  // Increased size to 512 to safely hold the added settings payload
+  StaticJsonDocument<512> resDoc; 
 
   if (deserializeJson(resDoc, response) != DeserializationError::Ok)
     return false;
@@ -324,6 +328,28 @@ bool initialHandshake(int id) {
   if (resDoc["success"] == true ||
       resDoc["success"] == 1 ||
       resDoc["status"] == "ok") {
+        
+    // --- FETCH AND APPLY SETTINGS FROM API ---
+    if (resDoc["data"]["settings"].is<JsonObject>()) {
+      JsonObject settings = resDoc["data"]["settings"];
+      
+      if (settings.containsKey("wateringTime")) {
+        flowTimeout = settings["wateringTime"].as<unsigned long>();
+      }
+      if (settings.containsKey("backOffTime")) {
+        cycleWaitInterval = settings["backOffTime"].as<unsigned long>();
+      }
+      if (settings.containsKey("mixingTime")) {
+        mixingDuration = settings["mixingTime"].as<unsigned long>();
+      }
+      
+      Serial.print("[HANDSHAKE] Updated timings for system -> ");
+      Serial.print("Flow Timeout: "); Serial.print(flowTimeout);
+      Serial.print(" ms | Wait Interval: "); Serial.print(cycleWaitInterval);
+      Serial.print(" ms | Mix Duration: "); Serial.print(mixingDuration);
+      Serial.println(" ms");
+    }
+
     return true;
   }
 
@@ -532,6 +558,79 @@ void solenoidWateringEvent(int tank, float dispensedML) {
   http.end();
 }
 
+/* ===================== CHECK SETTINGS (EVERY 30s) ===================== */
+void checkSettingsUpdate() {
+  if (!apiReady || WiFi.status() != WL_CONNECTED) return;
+
+  HTTPClient http;
+  StaticJsonDocument<200> doc;
+
+  // We only need to check Tank 1, since settings apply to the whole system
+  doc["liquidsensorID"] = liquidsensorID1;
+  doc["updateType"] = "handshake"; 
+
+  String payload;
+  serializeJson(doc, payload);
+
+  http.begin(sendWateringURL);
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(3000);
+
+  int httpCode = http.POST(payload);
+
+  if (httpCode > 0) {
+    String response = http.getString();
+    StaticJsonDocument<512> resDoc; 
+
+    if (deserializeJson(resDoc, response) == DeserializationError::Ok) {
+      if (resDoc["success"] == true || resDoc["success"] == 1 || resDoc["status"] == "ok") {
+        
+        if (resDoc["data"]["settings"].is<JsonObject>()) {
+          JsonObject settings = resDoc["data"]["settings"];
+          bool isChanged = false; // Flag to track if anything is different
+
+          // Check Flow Timeout
+          if (settings.containsKey("wateringTime")) {
+            unsigned long newFlowTimeout = settings["wateringTime"].as<unsigned long>();
+            if (newFlowTimeout != flowTimeout && newFlowTimeout > 0) {
+              flowTimeout = newFlowTimeout;
+              isChanged = true;
+            }
+          }
+          
+          // Check Wait Interval
+          if (settings.containsKey("backOffTime")) {
+            unsigned long newWaitInterval = settings["backOffTime"].as<unsigned long>();
+            if (newWaitInterval != cycleWaitInterval && newWaitInterval > 0) {
+              cycleWaitInterval = newWaitInterval;
+              isChanged = true;
+            }
+          }
+          
+          // Check Mixing Duration
+          if (settings.containsKey("mixingTime")) {
+            unsigned long newMixDuration = settings["mixingTime"].as<unsigned long>();
+            if (newMixDuration != mixingDuration && newMixDuration > 0) {
+              mixingDuration = newMixDuration;
+              isChanged = true;
+            }
+          }
+
+          // Only print to serial if changes actually happened
+          if (isChanged) {
+            Serial.print("[SETTINGS BACKGROUND UPDATE] New timings applied -> ");
+            Serial.print("Flow: "); Serial.print(flowTimeout);
+            Serial.print("ms | Wait: "); Serial.print(cycleWaitInterval);
+            Serial.print("ms | Mix: "); Serial.print(mixingDuration);
+            Serial.println("ms");
+          }
+        }
+      }
+    }
+  }
+  http.end();
+}
+
 /* ===================== SETUP ===================== */
 
 void setup() {
@@ -635,6 +734,12 @@ void loop() {
 
     lastIntelCheck = currentMillis;
     checkIntelConnection();
+  }
+
+  /* ================= SETTINGS UPDATE HEARTBEAT ================= */
+  if (apiReady && currentMillis - lastSettingsCheck >= settingsInterval) {
+    lastSettingsCheck = currentMillis;
+    checkSettingsUpdate();
   }
 
 /* ================= MANUAL API HEARTBEAT & TIMER ================= */
