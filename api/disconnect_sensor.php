@@ -24,6 +24,13 @@ $stateStmt->bind_param("ii", $sensorID, $userID);
 $stateStmt->execute();
 $stateResult = $stateStmt->get_result();
 
+$sNameQuery = $conn->prepare("SELECT sensorName FROM sensorinfo WHERE soilSensorID = ?");
+$sNameQuery->bind_param("i", $sensorID);
+$sNameQuery->execute();
+$sensorRow = $sNameQuery->get_result()->fetch_assoc();
+$sensorName = $sensorRow ? $sensorRow['sensorName'] : "Unknown Sensor";
+$sNameQuery->close();
+
 if ($stateResult->num_rows === 0) {
     echo json_encode(['success' => false, 'message' => 'Sensor not found in your deployment']);
     exit;
@@ -57,6 +64,21 @@ if ($wasPrimary) {
         $promoteStmt->bind_param("i", $newPrimaryID);
         $promoteStmt->execute();
         $promoteStmt->close();
+
+        // --- NEW: Fetch the NEW sensor's name for the notification ---
+        $newNameQuery = $conn->prepare("SELECT sensorName FROM sensorinfo WHERE soilSensorID = ?");
+        $newNameQuery->bind_param("i", $newPrimaryID);
+        $newNameQuery->execute();
+        $newNameRow = $newNameQuery->get_result()->fetch_assoc();
+        $newSensorName = $newNameRow ? $newNameRow['sensorName'] : "Another sensor";
+        $newNameQuery->close();
+
+        // --- NEW: Insert the notification ---
+        $notifMessage = "$sensorName disconnected. $newSensorName is now the primary sensor.";
+        $notifStmt = $conn->prepare("INSERT INTO notification(message, createdAT) VALUES (?, NOW())");
+        $notifStmt->bind_param("s", $notifMessage);
+        $notifStmt->execute();
+        $notifStmt->close();
 
         $jobPath = __DIR__ . "/../moisture_jobs/job_$newPrimaryID.json";
 

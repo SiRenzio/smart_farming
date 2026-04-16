@@ -69,5 +69,5 @@ function markAsRead() {
 }
 
 // Auto refresh every 5 seconds
-setInterval(loadNotifications, 5000);
+setInterval(loadNotifications, 3000);
 loadNotifications();

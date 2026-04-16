@@ -11,12 +11,20 @@ function process_sensor_job($conn, $jobFile, $data) {
 
     $soilSensorID = $data['soilSensorID'];
 
+    //sensor name
+    $sNameQuery = $conn->prepare("SELECT sensorName FROM sensorinfo WHERE soilSensorID = ?");
+    $sNameQuery->bind_param("i", $soilSensorID);
+    $sNameQuery->execute();
+    $sensorRow = $sNameQuery->get_result()->fetch_assoc();
+    $sensorName = $sensorRow ? $sensorRow['sensorName'] : "Unknown Sensor";
+    $sNameQuery->close();
+
     // Fetch userID for the sensor to find another connected sensor
-        $userQuery = $conn->prepare("SELECT userID FROM deployment WHERE soilSensorID = ? LIMIT 1");
-        $userQuery->bind_param("i", $soilSensorID);
-        $userQuery->execute();
-        $userResult = $userQuery->get_result()->fetch_assoc();
-        $userQuery->close();
+    $userQuery = $conn->prepare("SELECT userID FROM deployment WHERE soilSensorID = ? LIMIT 1");
+    $userQuery->bind_param("i", $soilSensorID);
+    $userQuery->execute();
+    $userResult = $userQuery->get_result()->fetch_assoc();
+    $userQuery->close();
 
     // FIX: Scope the baseline check to the user so you don't wipe the whole table
     $existingQuery = $conn->prepare("
@@ -64,8 +72,8 @@ function process_sensor_job($conn, $jobFile, $data) {
         $clearQuery->close();
 
         $notif = (!$sensorStatus || $sensorStatus['isConnected'] == 0) 
-            ? "Sensor $soilSensorID disconnected. Monitoring stopped." 
-            : "Sensor $soilSensorID is no longer the primary sensor.";
+            ? "$sensorName disconnected. Monitoring stopped." 
+            : "$sensorName is no longer the primary sensor.";
             
         $stmt = $conn->prepare("INSERT INTO notification(message, createdAT) VALUES (?, NOW())");
         $stmt->bind_param("s", $notif);
@@ -134,7 +142,9 @@ function process_sensor_job($conn, $jobFile, $data) {
     if(abs($deviation) > 20){
         $averageRounded = round($average, 2);
         $deviationRounded = round($deviation, 2);
-        $notif = "Sensor $soilSensorID abnormal moisture: $latest (avg $averageRounded) | Deviation: $deviationRounded%";
+
+
+        $notif = "$sensorName abnormal moisture: $latest (avg $averageRounded) | Deviation: $deviationRounded%";
 
         $stmt = $conn->prepare("INSERT INTO notification(message, createdAT) VALUES (?, NOW())");
         $stmt->bind_param("s", $notif);

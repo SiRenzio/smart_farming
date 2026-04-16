@@ -287,6 +287,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $settingsData = json_decode($jsonConfig, true);
         }
 
+        // Notif if Tank Controller is connected
+        $statusPath = __DIR__ . "/../failsafe/tank_status.json";
+        $lastSeen = 0;
+        if (file_exists($statusPath)) {
+            $statusData = json_decode(file_get_contents($statusPath), true);
+            $lastSeen = $statusData['last_seen'] ?? 0;
+        }
+        $timeSinceLastHandshake = time() - $lastSeen;
+        
+        // 5 mins
+        $disconnectThreshold = 300; 
+        if ($timeSinceLastHandshake > $disconnectThreshold) {
+            // It has been offline longer than the threshold, so it just reconnected!
+            $notifMessage = "Tank Controller is now connected.";
+            $notifSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
+            $notifStmt = $conn->prepare($notifSql);
+            $notifStmt->bind_param("s", $notifMessage);
+            $notifStmt->execute();
+            $notifStmt->close();
+        }
+
+        // Update the last seen time 
+        file_put_contents($statusPath, json_encode(['last_seen' => time()]));
+
         sendResponse(true, 'Handshake successful', [
             'liquidsensorID' => $liquidsensorID,
             'settings' => $settingsData
