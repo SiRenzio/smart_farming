@@ -297,7 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $timeSinceLastHandshake = time() - $lastSeen;
         
         // 5 mins
-        $disconnectThreshold = 300; 
+        $disconnectThreshold = 60; 
         if ($timeSinceLastHandshake > $disconnectThreshold) {
             // It has been offline longer than the threshold, so it just reconnected!
             $notifMessage = "Tank Controller is now connected.";
