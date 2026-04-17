@@ -1,50 +1,36 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Default center: Iloilo City
-    const defaultCoords = ol.proj.fromLonLat([122.565986, 10.715266]); 
+    // Default center
+    const defaultLat = 10.715183;
+    const defaultLon = 122.566076;
+    const map = L.map('map').setView([defaultLat, defaultLon], 17);
     
-    const map = new ol.Map({
-        target: 'map',
-        layers: [
-            new ol.layer.Tile({
-                source: new ol.source.OSM()
-            })
-        ],
-        view: new ol.View({
-            center: defaultCoords,
-            zoom: 17
-        })
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Use a custom red marker to match your previous UI
+    const redIcon = new L.Icon({
+        iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
     });
 
-    // Layer for the Pin
-    const markerSource = new ol.source.Vector();
-    const markerLayer = new ol.layer.Vector({
-        source: markerSource,
-        style: new ol.style.Style({
-            image: new ol.style.Icon({
-                anchor: [0.5, 1],
-                src: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                scale: 0.7
-            })
-        })
-    });
-    map.addLayer(markerLayer);
-
-    let currentPin = null;
+    // Initialize Marker (Draggable!)
+    let currentMarker = L.marker([defaultLat, defaultLon], {
+        icon: redIcon,
+        draggable: true 
+    }).addTo(map);
 
     // --- Core Functions ---
 
-    // Function to set/move the pin
-    function setPin(coords) {
-        markerSource.clear(); // Remove old pin
-        currentPin = new ol.Feature({
-            geometry: new ol.geom.Point(coords)
-        });
-        markerSource.addFeature(currentPin);
-
-        const lonLat = ol.proj.toLonLat(coords);
-        document.getElementById('coord-display').textContent = `Lat: ${lonLat[1].toFixed(6)}, Lon: ${lonLat[0].toFixed(6)}`;
-
-        // Reset confirmation status whenever pin is moved
+    // Function to update the UI when the pin moves
+    function setPin(latlng) {
+        document.getElementById('coord-display').textContent = `Lat: ${latlng.lat.toFixed(6)}, Lon: ${latlng.lng.toFixed(6)}`;
         resetConfirmation();
     }
 
@@ -59,14 +45,20 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('submit-btn').disabled = true;
     }
 
-    // Initialize map with default pin
-    setPin(defaultCoords);
+    // Initial load
+    setPin(currentMarker.getLatLng());
 
     // --- Map Interactions ---
 
     // Click on map to move pin
-    map.on('singleclick', function(evt) {
-        setPin(evt.coordinate);
+    map.on('click', function(e) {
+        currentMarker.setLatLng(e.latlng);
+        setPin(e.latlng);
+    });
+
+    // Update coordinates when user drags and drops the pin
+    currentMarker.on('dragend', function(e) {
+        setPin(currentMarker.getLatLng());
     });
 
     // "Pin my location" Button (Geolocation)
@@ -77,9 +69,15 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Locating...';
 
             navigator.geolocation.getCurrentPosition(position => {
-                const coords = ol.proj.fromLonLat([position.coords.longitude, position.coords.latitude]);
-                map.getView().animate({ center: coords, zoom: 17 });
-                setPin(coords);
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                const latlng = L.latLng(lat, lon);
+                
+                // Fly to user location and place pin
+                map.flyTo(latlng, 17);
+                currentMarker.setLatLng(latlng);
+                setPin(latlng);
+                
                 btn.innerHTML = originalText;
             }, error => {
                 alert("Could not access your location. Please ensure location services are enabled.");
@@ -92,24 +90,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // "Confirm Location" Button
     document.getElementById('btn-confirm').addEventListener('click', function() {
-        if (currentPin) {
-            const coords = currentPin.getGeometry().getCoordinates();
-            const lonLat = ol.proj.toLonLat(coords);
-            
-            // Set hidden inputs for the form
-            document.getElementById('latitude').value = lonLat[1].toFixed(8);
-            document.getElementById('longitude').value = lonLat[0].toFixed(8);
+        const latlng = currentMarker.getLatLng();
+        
+        // Set hidden inputs for the form
+        document.getElementById('latitude').value = latlng.lat.toFixed(8);
+        document.getElementById('longitude').value = latlng.lng.toFixed(8);
 
-            // Update UI states
-            this.textContent = "Location Confirmed!";
-            this.classList.add('confirmed');
-            
-            // Enable the main submit button
-            document.getElementById('submit-btn').disabled = false;
-        }
+        // Update UI states
+        this.textContent = "Location Confirmed!";
+        this.classList.add('confirmed');
+        
+        // Enable the main submit button
+        document.getElementById('submit-btn').disabled = false;
     });
+
+    // --- Search Bar and Autocomplete (Nominatim API) ---
     
-    // search bar suggestions
     const searchInput = document.getElementById('map-search');
     const suggestionsBox = document.getElementById('suggestions');
     let searchTimeout;
@@ -125,7 +121,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Debounce search to prevent API spam
         searchTimeout = setTimeout(() => {
-            // Using OpenStreetMap Nominatim Free API
             fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`)
                 .then(response => response.json())
                 .then(data => {
@@ -139,13 +134,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             // Handle clicking a suggestion
                             div.addEventListener('click', () => {
-                                const lon = parseFloat(place.lon);
                                 const lat = parseFloat(place.lat);
-                                const coords = ol.proj.fromLonLat([lon, lat]);
+                                const lon = parseFloat(place.lon);
+                                const latlng = L.latLng(lat, lon);
                                 
                                 // Center map and place pin
-                                map.getView().animate({ center: coords, zoom: 15 });
-                                setPin(coords);
+                                map.flyTo(latlng, 15);
+                                currentMarker.setLatLng(latlng);
+                                setPin(latlng);
                                 
                                 // Update search box and hide suggestions
                                 searchInput.value = place.name || place.display_name.split(',')[0];
@@ -160,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 })
                 .catch(err => console.error("Search error:", err));
-        }, 500); // Wait 500ms after user stops typing
+        }, 500);
     });
 
     // Hide suggestions when clicking outside
