@@ -67,6 +67,31 @@ if ($row = $result->fetch_assoc()) {
 }
 $depPlants->close();
 
+// Fetch map data for ALL deployed sensors (all users)
+$mapSql = "SELECT 
+            d.isConnected, 
+            s.sensorName, 
+            f.latitude, 
+            f.longitude, 
+            u.username
+           FROM deployment d
+           JOIN sensorinfo s ON d.soilSensorID = s.soilSensorID
+           JOIN farmlocation f ON d.locationID = f.locationID
+           JOIN users u ON d.userID = u.userID
+           WHERE s.sensorStatus = 1 
+           AND s.isRegistered = 1
+           AND f.latitude IS NOT NULL 
+           AND f.longitude IS NOT NULL";
+
+$mapResult = $conn->query($mapSql);
+$mapData = [];
+if ($mapResult) {
+    while ($row = $mapResult->fetch_assoc()) {
+        $mapData[] = $row;
+    }
+}
+$mapDataJSON = json_encode($mapData); // Convert to JSON for Javascript
+
 // Helper to keep filters in URL
 function getFilterParams($excludePage = true) {
     $params = $_GET;
@@ -82,6 +107,9 @@ function getFilterParams($excludePage = true) {
     <title>Dashboard - Smart Farming</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
     <link href="../assets/css/dashboard.css" rel="stylesheet">
 </head>
 <body>
@@ -310,7 +338,7 @@ function getFilterParams($excludePage = true) {
 
                         <a href="?<?php echo $queryParams; ?>&page=<?php echo min($totalPages, $page + 1); ?>" 
                             class="pagination-link <?php echo ($page >= $totalPages) ? 'disabled' : ''; ?>">
-                            <i class="	fa fa-chevron-circle-right"></i>
+                            <i class="  fa fa-chevron-circle-right"></i>
                         </a>
                     </div>
                     <div class="pagination-info">
@@ -319,6 +347,30 @@ function getFilterParams($excludePage = true) {
                 <?php endif; ?>
             <?php endif; ?>
         </div>
+        
+        <div class="map-deployment-section">
+            <div class="card-header">
+                <div class="card-icon icon-view">
+                    <i class="fas fa-globe-asia"></i>
+                </div>
+                <div class="card-content">
+                    <h3>Global Sensor Network</h3>
+                    <p>Live locations of all deployed sensors.</p>
+                </div>
+            </div>
+
+            <div class="map-legend">
+                <span class="legend-connected"><i class="fas fa-map-marker-alt"></i> Connected</span>
+                <span class="legend-disconnected"><i class="fas fa-map-marker-alt"></i> Disconnected</span>
+            </div>
+
+            <div id="dashboard-map" class="dashboard-map"></div>
+        </div>
+
+        <script>
+            // Inject PHP Data into Global Window Object for JS
+            window.sensorMapData = <?php echo $mapDataJSON; ?>;
+        </script>
 
         <div class="stats-section">
             <h2 style="text-align: center; margin-bottom: 2rem; color: #333; font-weight: 600;">
@@ -344,6 +396,9 @@ function getFilterParams($excludePage = true) {
             </div>
         </div>
     </div>
-<script src="../assets/js/dashboard.js"></script>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <script src="../assets/js/dashboard.js"></script>
 </body>
 </html>
