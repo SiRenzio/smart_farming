@@ -15,23 +15,26 @@ if (!isset($_SESSION['userID'])) {
 $errors = [];
 $success = '';
 
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
     $sensorLocation = trim($_POST['sensorLocation'] ?? '');
+    $latitude = $_POST['latitude'] ?? '';
+    $longitude = $_POST['longitude'] ?? '';
 
     // Validate
     if (!$sensorLocation) {
-        $errors[] = 'Sensor location is required.';
+        $errors[] = 'Sensor location name is required.';
+    }
+    if ($latitude === '' || $longitude === '') {
+        $errors[] = 'Please pin and confirm a location on the map.';
     }
 
     if (!$errors) {
-        // Insert sensor location to farmlocation table
-        $sensorlocstmt= $conn->prepare('INSERT INTO farmlocation (userID, farmName, dateAdded) VALUES (?, ?, NOW())');
-        $sensorlocstmt->bind_param('is', $_SESSION['userID'], $sensorLocation);
+        // Insert sensor location to farmlocation table with coordinates
+        $sensorlocstmt = $conn->prepare('INSERT INTO farmlocation (userID, farmName, latitude, longitude, dateAdded) VALUES (?, ?, ?, ?, NOW())');
+        $sensorlocstmt->bind_param('isdd', $_SESSION['userID'], $sensorLocation, $latitude, $longitude);
+        
         if ($sensorlocstmt->execute()) {
-            $sensorLocationID = $conn->insert_id;
-            $success = 'Sensor location added successfully.';
+            $success = 'Sensor location and coordinates added successfully.';
         } else {
             $errors[] = 'Failed to add location: ' . $conn->error . ' (Error Code: ' . $conn->errno . ')';
         }
@@ -46,14 +49,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Sensor Location - Smart Farming</title>
+    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v8.2.0/ol.css">
+    
     <link href="../assets/css/add_sensor_location.css" rel="stylesheet">
 </head>
 <body>
     <div class="page-container">
-        <!-- Page Header -->
-         <div class="page-header">
+        <div class="page-header">
             <div class="icon">
                 <i class="fas fa-map-marker-alt"></i>
             </div>
@@ -61,33 +67,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p>Indicate the location of your new sensor</p>
         </div>
 
-        <!-- Form Card -->
+        <?php if ($errors): ?>
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i> 
+                <?php foreach ($errors as $e) echo htmlspecialchars($e) . '<br>'; ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($success): ?>
+            <div class="success-message">
+                <i class="fas fa-check-circle"></i> <?php echo $success; ?>
+            </div>
+        <?php endif; ?>
+
         <div class="form-card">
-            <?php if ($errors): ?>
-                <div class="error-message">
-                    <i class="fas fa-exclamation-triangle"></i> 
-                    <?php foreach ($errors as $e) echo htmlspecialchars($e) . '<br>'; ?>
-                </div>
-            <?php endif; ?>
-
-            <?php if ($success): ?>
-                <div class="success-message">
-                    <i class="fas fa-check-circle"></i> <?php echo $success; ?>
-                </div>
-            <?php endif; ?>
-
-            <form method="post" action="add_sensor_location.php">
+            <form method="post" action="add_sensor_location.php" id="locationForm">
+                
                 <div class="form-group">
-                    <label for="sensorLocation">Sensor Location *</label>
+                    <label for="sensorLocation">Sensor Location Name *</label>
                     <input type="text" 
                            id="sensorLocation"
                            name="sensorLocation" 
                            class="form-input"
                            placeholder="Enter sensor location (e.g., Field 1, Plot 1)" 
-                           value="<?php echo htmlspecialchars($_POST['sensorLocation'] ?? ''); ?>">
+                           value="<?php echo htmlspecialchars($_POST['sensorLocation'] ?? ''); ?>"
+                           required>
                 </div>
 
-                <button type="submit" class="submit-btn">
+                <input type="hidden" id="latitude" name="latitude" value="">
+                <input type="hidden" id="longitude" name="longitude" value="">
+
+                <div class="form-group">
+                    <label>Pin Location *</label>
+                    
+                    <div class="map-container">
+                        
+                        <div class="map-header search-pin-row">
+                            <div class="search-container">
+                                <input type="text" id="map-search" class="search-input" placeholder="Search for a place (e.g., Iloilo)..." autocomplete="off">
+                                <div id="suggestions" class="suggestions-list"></div>
+                            </div>
+                            <button type="button" id="btn-pin-me" class="btn-pin-me">
+                                <i class="fas fa-location-arrow"></i> Pin my location
+                            </button>
+                        </div>
+
+                        <div id="map"></div>
+                        
+                        <div class="map-footer">
+                            <div class="coord-display" id="coord-display">Lat: -, Lon: -</div>
+                            <button type="button" id="btn-confirm" class="btn-confirm">
+                                Confirm Location
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submit-btn" disabled>
                     <i class="fas fa-plus"></i> Add Sensor Location
                 </button>
             </form>
@@ -96,12 +132,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a href="manage_sensors.php">
                     <i class="fas fa-arrow-left"></i> Back to Sensors
                 </a>
-
                 <a href="dashboard.php">
                     <i class="fas fa-tachometer-alt"></i> Back to Dashboard
                 </a>
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ol@v8.2.0/dist/ol.js"></script>
+    <script src="../assets/js/add_farm_location.js"></script>
 </body>
 </html>
