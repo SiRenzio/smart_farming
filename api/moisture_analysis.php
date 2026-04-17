@@ -56,8 +56,8 @@ function process_sensor_job($conn, $jobFile, $data) {
         ? date('Y-m-d H:i:s', $data['startTime'] + 120) 
         : date('Y-m-d H:i:s', $data['startTime']);
 
-    // Check primary status and connectivity of the sensor
-    $statusQuery = $conn->prepare("SELECT isConnected, isPrimary FROM deployment WHERE soilSensorID = ? LIMIT 1");
+    // Check primary status, connectivity, and current nutrition stage
+    $statusQuery = $conn->prepare("SELECT isConnected, isPrimary, nutritionID FROM deployment WHERE soilSensorID = ? LIMIT 1");
     $statusQuery->bind_param("i", $soilSensorID);
     $statusQuery->execute();
     $sensorStatus = $statusQuery->get_result()->fetch_assoc();
@@ -85,6 +85,37 @@ function process_sensor_job($conn, $jobFile, $data) {
             unlink($jobFile);
         }
         
+        return false;
+    }
+
+    $currentNutritionID = $sensorStatus['nutritionID'];
+
+    // If we haven't saved a nutritionID to the JSON job file yet, save it now.
+    if (!array_key_exists('nutritionID', $data)) {
+        $data['nutritionID'] = $currentNutritionID;
+        file_put_contents($jobFile, json_encode($data));
+    } // If the database nutritionID differs from the one saved in our JSON job file
+    else if ($data['nutritionID'] !== $currentNutritionID) {
+        // Wipe the current samples so the baseline triggers a reset
+        $wipeQuery = $conn->prepare("DELETE FROM soilmoisture_samples WHERE soilSensorID = ?");
+        $wipeQuery->bind_param("i", $soilSensorID);
+        $wipeQuery->execute();
+        $wipeQuery->close();
+
+        // Log and Notify
+        $notif = "$sensorName entered a new growth stage. Resetting moisture baselines.";
+        $stmt = $conn->prepare("INSERT INTO notification(message, createdAT) VALUES (?, NOW())");
+        $stmt->bind_param("s", $notif);
+        $stmt->execute();
+        $stmt->close();
+        error_log("Nutrition ID changed to $currentNutritionID for sensor $soilSensorID. Baseline reset.");
+
+        // Update the job file with the new nutritionID and force re-initialization
+        $data['nutritionID'] = $currentNutritionID;
+        $data['initialized'] = false;
+        file_put_contents($jobFile, json_encode($data));
+
+        // Return false so the next loop cycle starts fresh and gathers the new 20 samples
         return false;
     }
 
