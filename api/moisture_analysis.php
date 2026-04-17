@@ -26,7 +26,7 @@ function process_sensor_job($conn, $jobFile, $data) {
     $userResult = $userQuery->get_result()->fetch_assoc();
     $userQuery->close();
 
-    // FIX: Scope the baseline check to the user so you don't wipe the whole table
+    // Scope the baseline check to the user so you don't wipe the whole table
     $existingQuery = $conn->prepare("
         SELECT sms.soilSensorID 
         FROM soilmoisture_samples sms
@@ -40,7 +40,6 @@ function process_sensor_job($conn, $jobFile, $data) {
     $existingQuery->close();
 
     if($existingBaseline && $existingBaseline['soilSensorID'] != $soilSensorID){
-        // FIX: Only delete baselines for sensors belonging to this specific user
         $wipeQuery = $conn->prepare("
             DELETE sms FROM soilmoisture_samples sms
             JOIN deployment d ON sms.soilSensorID = d.soilSensorID
@@ -63,7 +62,6 @@ function process_sensor_job($conn, $jobFile, $data) {
     $sensorStatus = $statusQuery->get_result()->fetch_assoc();
     $statusQuery->close();
 
-    // If the sensor was removed, disconnected, or is no longer primary
     if (!$sensorStatus || $sensorStatus['isPrimary'] == 0 || $sensorStatus['isConnected'] == 0) {
         
         $clearQuery = $conn->prepare("DELETE FROM soilmoisture_samples WHERE soilSensorID = ?");
@@ -80,7 +78,6 @@ function process_sensor_job($conn, $jobFile, $data) {
         $stmt->execute();
         $stmt->close();
 
-        // FIX: Ensure file exists before unlinking to prevent PHP warnings
         if (file_exists($jobFile)) {
             unlink($jobFile);
         }
@@ -90,32 +87,25 @@ function process_sensor_job($conn, $jobFile, $data) {
 
     $currentNutritionID = $sensorStatus['nutritionID'];
 
-    // If we haven't saved a nutritionID to the JSON job file yet, save it now.
     if (!array_key_exists('nutritionID', $data)) {
         $data['nutritionID'] = $currentNutritionID;
         file_put_contents($jobFile, json_encode($data));
-    } // If the database nutritionID differs from the one saved in our JSON job file
+    } 
+    // --- MODIFIED: Nutrition Change Logic ---
     else if ($data['nutritionID'] !== $currentNutritionID) {
-        // Wipe the current samples so the baseline triggers a reset
-        $wipeQuery = $conn->prepare("DELETE FROM soilmoisture_samples WHERE soilSensorID = ?");
-        $wipeQuery->bind_param("i", $soilSensorID);
-        $wipeQuery->execute();
-        $wipeQuery->close();
-
-        // Log and Notify
-        $notif = "$sensorName entered a new growth stage. Resetting moisture baselines.";
+        // Notify that monitoring is paused
+        $notif = "$sensorName entered a new growth stage. Monitoring paused until next watering cycle to record accurate baselines.";
         $stmt = $conn->prepare("INSERT INTO notification(message, createdAT) VALUES (?, NOW())");
         $stmt->bind_param("s", $notif);
         $stmt->execute();
         $stmt->close();
-        error_log("Nutrition ID changed to $currentNutritionID for sensor $soilSensorID. Baseline reset.");
 
-        // Update the job file with the new nutritionID and force re-initialization
+        // Update the job file with the new state flag
         $data['nutritionID'] = $currentNutritionID;
         $data['initialized'] = false;
+        $data['waitingForWatering'] = true; // Tell the script to hold off
         file_put_contents($jobFile, json_encode($data));
 
-        // Return false so the next loop cycle starts fresh and gathers the new 20 samples
         return false;
     }
 
@@ -131,6 +121,21 @@ function process_sensor_job($conn, $jobFile, $data) {
 
     // Capture baseline data if we have less than 20 samples
     if($count < 20){
+        
+        // Defer baseline collection until watering ---
+        if (isset($data['waitingForWatering']) && $data['waitingForWatering'] === true) {
+            // If the script has NOT been triggered by watering yet, abort and stay paused.
+            if (!isset($data['triggeredBy']) || $data['triggeredBy'] !== "watering") {
+                return false; 
+            }
+            // If it HAS been triggered by watering, it passes through here
+            // Wipe the current samples
+            $wipeQuery = $conn->prepare("DELETE FROM soilmoisture_samples WHERE soilSensorID = ?");
+            $wipeQuery->bind_param("i", $soilSensorID);
+            $wipeQuery->execute();
+            $wipeQuery->close();
+        }
+
         $query = $conn->prepare("
             SELECT SoilMois FROM sensordata 
             WHERE soilSensorID=? AND DateTime>=? 
@@ -153,7 +158,17 @@ function process_sensor_job($conn, $jobFile, $data) {
         $insert->close();
         $query->close();
         
+        // Baseline established. Clear the holding flags.
         $data['initialized'] = true;
+        if (isset($data['waitingForWatering'])) {
+            unset($data['waitingForWatering']);
+            
+            // Clean up the watering trigger so it doesn't accidentally fire again
+            if(isset($data['triggeredBy']) && $data['triggeredBy'] === "watering"){
+                unset($data['triggeredBy']);
+            }
+        }
+
         file_put_contents($jobFile, json_encode($data));
         return true;
     }
@@ -173,7 +188,6 @@ function process_sensor_job($conn, $jobFile, $data) {
     if(abs($deviation) > 20){
         $averageRounded = round($average, 2);
         $deviationRounded = round($deviation, 2);
-
 
         $notif = "$sensorName abnormal moisture: $latest (avg $averageRounded) | Deviation: $deviationRounded%";
 
@@ -240,7 +254,6 @@ while(true){
         $fileContents = file_get_contents($job);
         $data = json_decode($fileContents, true);
         
-        // Skip invalid JSON
         if(!$data) continue; 
         
         process_sensor_job($conn, $job, $data);
