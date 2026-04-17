@@ -91,22 +91,46 @@ function process_sensor_job($conn, $jobFile, $data) {
         $data['nutritionID'] = $currentNutritionID;
         file_put_contents($jobFile, json_encode($data));
     } 
-    // --- MODIFIED: Nutrition Change Logic ---
     else if ($data['nutritionID'] !== $currentNutritionID) {
-        // Notify that monitoring is paused
-        $notif = "$sensorName entered a new growth stage. Monitoring paused until next watering cycle to record accurate baselines.";
-        $stmt = $conn->prepare("INSERT INTO notification(message, createdAT) VALUES (?, NOW())");
-        $stmt->bind_param("s", $notif);
-        $stmt->execute();
-        $stmt->close();
+        
+        // If the old state in the JSON was null or empty, this is an initial assignment, not a change.
+        if ($data['nutritionID'] === null || $data['nutritionID'] === "") {
+            $data['nutritionID'] = $currentNutritionID;
+            file_put_contents($jobFile, json_encode($data));
+        } else {
+            // It is a genuine transition between two different growth stages
+            $notif = "$sensorName entered a new growth stage. Monitoring paused until next watering cycle to record accurate baselines.";
+            $stmt = $conn->prepare("INSERT INTO notification(message, createdAT) VALUES (?, NOW())");
+            $stmt->bind_param("s", $notif);
+            $stmt->execute();
+            $stmt->close();
 
-        // Update the job file with the new state flag
-        $data['nutritionID'] = $currentNutritionID;
-        $data['initialized'] = false;
-        $data['waitingForWatering'] = true; // Tell the script to hold off
-        file_put_contents($jobFile, json_encode($data));
+            // Update the job file with the new state flag
+            $data['nutritionID'] = $currentNutritionID;
+            $data['initialized'] = false;
+            $data['waitingForWatering'] = true; 
+            file_put_contents($jobFile, json_encode($data));
 
-        return false;
+            return false;
+        }
+    }
+
+    if (isset($data['waitingForWatering']) && $data['waitingForWatering'] === true) {
+        if (!isset($data['triggeredBy']) || $data['triggeredBy'] !== "watering") {
+            // Still waiting for a watering event. Abort processing.
+            return false; 
+        } else {
+            // Watering HAS occurred! Wipe the old data now.
+            $wipeQuery = $conn->prepare("DELETE FROM soilmoisture_samples WHERE soilSensorID = ?");
+            $wipeQuery->bind_param("i", $soilSensorID);
+            $wipeQuery->execute();
+            $wipeQuery->close();
+
+            // Remove the flag so we don't wipe again
+            unset($data['waitingForWatering']); 
+            // Save state momentarily
+            file_put_contents($jobFile, json_encode($data)); 
+        }
     }
 
     // Check current baseline count and average
@@ -121,21 +145,6 @@ function process_sensor_job($conn, $jobFile, $data) {
 
     // Capture baseline data if we have less than 20 samples
     if($count < 20){
-        
-        // Defer baseline collection until watering ---
-        if (isset($data['waitingForWatering']) && $data['waitingForWatering'] === true) {
-            // If the script has NOT been triggered by watering yet, abort and stay paused.
-            if (!isset($data['triggeredBy']) || $data['triggeredBy'] !== "watering") {
-                return false; 
-            }
-            // If it HAS been triggered by watering, it passes through here
-            // Wipe the current samples
-            $wipeQuery = $conn->prepare("DELETE FROM soilmoisture_samples WHERE soilSensorID = ?");
-            $wipeQuery->bind_param("i", $soilSensorID);
-            $wipeQuery->execute();
-            $wipeQuery->close();
-        }
-
         $query = $conn->prepare("
             SELECT SoilMois FROM sensordata 
             WHERE soilSensorID=? AND DateTime>=? 
