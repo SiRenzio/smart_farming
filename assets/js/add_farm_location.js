@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
+        maxZoom: 19,
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 const latlng = L.latLng(lat, lon);
                                 
                                 // Center map and place pin
-                                map.flyTo(latlng, 15);
+                                map.flyTo(latlng, 17);
                                 currentMarker.setLatLng(latlng);
                                 setPin(latlng);
                                 

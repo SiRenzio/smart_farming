@@ -346,6 +346,99 @@ body {
     font-size: 0.9rem; 
 }
 
+/* Map Deployment Section */
+
+.map-deployment-section {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 2rem;
+}
+.map-deployment-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+/* Map Legend */
+.map-legend {
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding-left: 0.5rem;
+}
+
+.legend-connected {
+    color: #2e7d32;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-disconnected {
+    color: #e74c3c;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Leaflet Map Container */
+.dashboard-map {
+    height: 400px;
+    width: 100%;
+    border-radius: 8px;
+    z-index: 1;
+    border: 1px solid #e2e8f0;
+    background-color: #f8fafc;
+}
+
+/* Sensor Label */
+.sensor-map-label {
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 6px 10px;
+    white-space: nowrap;
+}
+
+
+.sensor-label-content {
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* Sensor Name Styling */
+.sensor-label-content strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 3px;
+}
+
+/* Username Styling */
+.sensor-label-content span {
+    display: block;
+    font-size: 11px; 
+    color: #64748b;
+    font-weight: 400;
+}
+
 /* --- WATER TANK LAYOUT --- */
 .tank-container {
     background: rgba(255, 255, 255, 0.95);
