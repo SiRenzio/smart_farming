@@ -116,7 +116,7 @@
                 <div class="card-content">
                     <form action="" method="POST" class="failsafe-form">
                         <label for="backOffTime">Set back-off time for watering <br>(in minutes):</label>
-                        <input type="number" id="backOffTime" name="backOffTime" min="5" value="<?php echo htmlspecialchars($settings['backOffTime']) / 60000; ?>" step="any" required>
+                        <input type="number" id="backOffTime" name="backOffTime" min="1" value="<?php echo htmlspecialchars($settings['backOffTime']) / 60000; ?>" step="any" required>
                         <button type="submit" class="btn btn-primary" id="backOffTimeBtn" disabled>Save</button>
                     </form>
                 </div>
