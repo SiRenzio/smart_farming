@@ -1084,16 +1084,19 @@ void loop() {
         digitalWrite(slIndicator1, LOW);
         trig_tsl1 = 0;
         wateringstatus1 = -1; 
+        wateringflag1 = -1;
       }
       if (activeTank == 2) {
         digitalWrite(slIndicator2, LOW);
         trig_tsl2 = 0;
         wateringstatus2 = -1; 
+        wateringflag2 = -1;
       }
       if (activeTank == 3) {
         digitalWrite(slIndicator3, LOW);
         trig_tsl3 = 0;
         wateringstatus3 = -1; 
+        wateringflag3 = -1;
       }
       
       wateringActive = false;

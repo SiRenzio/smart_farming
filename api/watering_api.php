@@ -102,17 +102,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // event
     if ($updateType === 'event') {
 
+        $stateQuery = "SELECT fertFlag, isActive FROM tankpumpevent WHERE liquidsensorID = ? ORDER BY tankPumpEventID DESC LIMIT 1";
+        $stateStmt = $conn->prepare($stateQuery);
+        $stateStmt->bind_param("i", $liquidsensorID);
+        $stateStmt->execute();
+        $stateRes = $stateStmt->get_result();
+        $stateData = $stateRes->fetch_assoc();
+        
+        // Default to 0 if no record exists
+        $currentFertFlag = $stateData['fertFlag'] ?? 0;
+        $currentIsActive = $stateData['isActive'] ?? 0;
+        $stateStmt->close();
+
         $stmt = $conn->prepare(
             'INSERT INTO tankpumpevent 
-            (liquidsensorID, wateringstatus, wateringFlag, waterlevel, wateringvolume, dateandtime) 
-            VALUES (?, ?, ?, ?, ?, NOW())'
+            (liquidsensorID, wateringstatus, wateringFlag, isActive, fertFlag, waterlevel, wateringvolume, dateandtime) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())'
         );
 
         $stmt->bind_param(
-            'iiiii',
+            'iiiiiii',
             $liquidsensorID,
             $wateringstatus,
             $wateringFlag,
+            $currentIsActive,
+            $currentFertFlag,
             $currentliquidlevel,
             $wateringvolume
         );
