@@ -91,7 +91,7 @@ function process_sensor_job($conn, $jobFile, $data) {
         $data['nutritionID'] = $currentNutritionID;
         file_put_contents($jobFile, json_encode($data));
     } 
-    else if ($data['nutritionID'] !== $currentNutritionID) {
+    else if ($data['nutritionID'] != $currentNutritionID) {
         
         // If the old state in the JSON was null or empty, this is an initial assignment, not a change.
         if ($data['nutritionID'] === null || $data['nutritionID'] === "") {
@@ -117,7 +117,7 @@ function process_sensor_job($conn, $jobFile, $data) {
 
     if (isset($data['waitingForWatering']) && $data['waitingForWatering'] === true) {
         if (!isset($data['triggeredBy']) || $data['triggeredBy'] !== "watering") {
-            // Still waiting for a watering event. Abort processing.
+            // Still waiting for the water pump. Abort processing.
             return false; 
         } else {
             // Watering HAS occurred! Wipe the old data now.
@@ -126,9 +126,7 @@ function process_sensor_job($conn, $jobFile, $data) {
             $wipeQuery->execute();
             $wipeQuery->close();
 
-            // Remove the flag so we don't wipe again
             unset($data['waitingForWatering']); 
-            // Save state momentarily
             file_put_contents($jobFile, json_encode($data)); 
         }
     }
@@ -145,6 +143,16 @@ function process_sensor_job($conn, $jobFile, $data) {
 
     // Capture baseline data if we have less than 20 samples
     if($count < 20){
+        // Only restrict by Target Time if we are actively collecting a post-watering baseline
+        if (isset($data['triggeredBy']) && $data['triggeredBy'] === "watering") {
+            $targetTime = date('Y-m-d H:i:s', $data['startTime'] + 120);
+            $query = $conn->prepare("SELECT SoilMois FROM sensordata WHERE soilSensorID=? AND DateTime>=? ORDER BY DateTime DESC LIMIT 20");
+            $query->bind_param("is", $soilSensorID, $targetTime);
+        } else {
+            $query = $conn->prepare("SELECT SoilMois FROM sensordata WHERE soilSensorID=? ORDER BY DateTime DESC LIMIT 20");
+            $query->bind_param("i", $soilSensorID);
+        }
+
         $query = $conn->prepare("
             SELECT SoilMois FROM sensordata 
             WHERE soilSensorID=? AND DateTime>=? 
@@ -190,6 +198,12 @@ function process_sensor_job($conn, $jobFile, $data) {
     $latestQuery->close();
 
     if(!$latestData || !$average) return false;
+
+    // Make sure we haven't already processed this exact reading on a previous 5-second loop
+    $latestTime = strtotime($latestData['DateTime']);
+    if (isset($data['lastProcessedTime']) && $data['lastProcessedTime'] >= $latestTime) {
+        return true; // We already have this reading. Do nothing.
+    }
 
     $latest = $latestData['SoilMois'];
     $deviation = (($latest - $average) / $average) * 100;
@@ -251,6 +265,10 @@ function process_sensor_job($conn, $jobFile, $data) {
         $insert->execute();
         $insert->close();
     }
+
+    // Save the timestamp of this reading so we don't duplicate it in 5 seconds
+    $data['lastProcessedTime'] = $latestTime;
+    file_put_contents($jobFile, json_encode($data));
 
     return true;
 }
