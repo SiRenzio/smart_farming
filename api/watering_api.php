@@ -233,12 +233,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($wateringStmt->execute()) {
             $soilSensorID = $conn->query("SELECT soilSensorID FROM deployment WHERE isPrimary = 1 LIMIT 1")->fetch_assoc()['soilSensorID'];
 
-            // Schedule moisture analysis and log accurate Unix time. Also fixed the directory string missing a slash
-            file_put_contents(__DIR__ . "/../moisture_jobs/job_$soilSensorID.json", json_encode([
-                "soilSensorID" => $soilSensorID,
-                "startTime" => time(), // Unix timestamp makes adding 120 seconds easy in the analyzer
-                "triggeredBy" => "watering"
-            ]));
+            $jobPath = __DIR__ . "/../moisture_jobs/job_$soilSensorID.json";
+            $jobData = [];
+
+            // Read existing data so we don't wipe out tracking variables
+            if (file_exists($jobPath)) {
+                $existingData = file_get_contents($jobPath);
+                $jobData = json_decode($existingData, true) ?: [];
+            }
+
+            // Update only the watering trigger fields
+            $jobData["soilSensorID"] = $soilSensorID;
+            $jobData["startTime"] = time();
+            $jobData["triggeredBy"] = "watering";
+
+            // Save it back
+            file_put_contents($jobPath, json_encode($jobData));
 
             error_log("Creating job file for event $soilSensorID");
 

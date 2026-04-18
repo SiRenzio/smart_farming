@@ -191,7 +191,7 @@ function process_sensor_job($conn, $jobFile, $data) {
     }
 
     // Monitoring and deviation check
-    $latestQuery = $conn->prepare("SELECT SoilMois FROM sensordata WHERE soilSensorID=? ORDER BY DateTime DESC LIMIT 1");
+    $latestQuery = $conn->prepare("SELECT SoilMois, DateTime FROM sensordata WHERE soilSensorID=? ORDER BY DateTime DESC LIMIT 1");
     $latestQuery->bind_param("i", $soilSensorID);
     $latestQuery->execute();
     $latestData = $latestQuery->get_result()->fetch_assoc();
