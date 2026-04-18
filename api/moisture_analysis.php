@@ -51,9 +51,10 @@ function process_sensor_job($conn, $jobFile, $data) {
         error_log("Primary sensor changed for user $userResult[userID]. Baseline reset.");
     }
 
-    $targetTime = isset($data['triggeredBy']) && $data['triggeredBy'] === "watering" 
-        ? date('Y-m-d H:i:s', $data['startTime'] + 120) 
-        : date('Y-m-d H:i:s', $data['startTime']);
+    $targetTime = null;
+    if (isset($data['triggeredBy']) && $data['triggeredBy'] === "watering" && isset($data['startTime'])) {
+        $targetTime = date('Y-m-d H:i:s', $data['startTime'] + 120);
+    }
 
     // Check primary status, connectivity, and current nutrition stage
     $statusQuery = $conn->prepare("SELECT isConnected, isPrimary, nutritionID FROM deployment WHERE soilSensorID = ? LIMIT 1");
@@ -109,6 +110,11 @@ function process_sensor_job($conn, $jobFile, $data) {
             $data['nutritionID'] = $currentNutritionID;
             $data['initialized'] = false;
             $data['waitingForWatering'] = true; 
+            
+            if (isset($data['triggeredBy'])) {
+                unset($data['triggeredBy']);
+            }
+            
             file_put_contents($jobFile, json_encode($data));
 
             return false;
@@ -144,8 +150,7 @@ function process_sensor_job($conn, $jobFile, $data) {
     // Capture baseline data if we have less than 20 samples
     if($count < 20){
         // Only restrict by Target Time if we are actively collecting a post-watering baseline
-        if (isset($data['triggeredBy']) && $data['triggeredBy'] === "watering") {
-            $targetTime = date('Y-m-d H:i:s', $data['startTime'] + 120);
+        if ($targetTime) {
             $query = $conn->prepare("SELECT SoilMois FROM sensordata WHERE soilSensorID=? AND DateTime>=? ORDER BY DateTime DESC LIMIT 20");
             $query->bind_param("is", $soilSensorID, $targetTime);
         } else {
@@ -153,18 +158,12 @@ function process_sensor_job($conn, $jobFile, $data) {
             $query->bind_param("i", $soilSensorID);
         }
 
-        $query = $conn->prepare("
-            SELECT SoilMois FROM sensordata 
-            WHERE soilSensorID=? AND DateTime>=? 
-            ORDER BY DateTime DESC LIMIT 20
-        ");
-        $query->bind_param("is", $soilSensorID, $targetTime);
         $query->execute();
         $result = $query->get_result();
 
         if($result->num_rows < 20) {
             $query->close();
-            return false;
+            return false; // Wait until 20 samples exist
         }
 
         $insert = $conn->prepare("INSERT INTO soilmoisture_samples (soilSensorID, SoilMois, is_baseline) VALUES (?, ?, 1)");
@@ -179,11 +178,9 @@ function process_sensor_job($conn, $jobFile, $data) {
         $data['initialized'] = true;
         if (isset($data['waitingForWatering'])) {
             unset($data['waitingForWatering']);
-            
-            // Clean up the watering trigger so it doesn't accidentally fire again
-            if(isset($data['triggeredBy']) && $data['triggeredBy'] === "watering"){
-                unset($data['triggeredBy']);
-            }
+        }
+        if(isset($data['triggeredBy']) && $data['triggeredBy'] === "watering"){
+            unset($data['triggeredBy']);
         }
 
         file_put_contents($jobFile, json_encode($data));
@@ -191,7 +188,7 @@ function process_sensor_job($conn, $jobFile, $data) {
     }
 
     // Monitoring and deviation check
-    $latestQuery = $conn->prepare("SELECT SoilMois, DateTime FROM sensordata WHERE soilSensorID=? ORDER BY DateTime DESC LIMIT 1");
+    $latestQuery = $conn->prepare("SELECT SoilMois, DateTime AS reading_time FROM sensordata WHERE soilSensorID=? ORDER BY DateTime DESC LIMIT 1");
     $latestQuery->bind_param("i", $soilSensorID);
     $latestQuery->execute();
     $latestData = $latestQuery->get_result()->fetch_assoc();
@@ -199,8 +196,8 @@ function process_sensor_job($conn, $jobFile, $data) {
 
     if(!$latestData || !$average) return false;
 
-    // Make sure we haven't already processed this exact reading on a previous 5-second loop
-    $latestTime = strtotime($latestData['DateTime']);
+    // Use the reliable alias
+    $latestTime = strtotime($latestData['reading_time']);
     if (isset($data['lastProcessedTime']) && $data['lastProcessedTime'] >= $latestTime) {
         return true; // We already have this reading. Do nothing.
     }
