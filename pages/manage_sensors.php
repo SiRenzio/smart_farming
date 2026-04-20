@@ -93,28 +93,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     header("Location: manage_sensors.php");
     exit;
 }
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['primarySensorID'])) {
-    $primarySensorID = trim($_POST['primarySensorID']);
-
-    $jobPath = __DIR__ . "/../moisture_jobs/job_$primarySensorID.json";
-
-    if(file_exists($jobPath)){
-        unlink($jobPath);
-    }
-
-    file_put_contents($jobPath, json_encode([
-        "soilSensorID" => $primarySensorID,
-        "startTime" => time(),
-        "triggeredBy" => "primary_switch"
-    ]));
-    
-    $_SESSION['success'] = "Primary sensor switched successfully.";
-    
-    // Redirect to prevent form resubmission on page refresh
-    header("Location: manage_sensors.php");
-    exit;
-}
 ?>
 
 <!DOCTYPE html>
@@ -272,13 +250,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['primarySensorID'])) {
                     </div>
 
                     <div class="primary-btn">
-                        <form action="manage_sensors.php" method="post">
-                            <input type="hidden" valu?e="<?= $sensor['soilSensorID'] ?>" name="primarySensorID">
-                            <button type="submit">
-                                <i class="fas fa-arrow-right-arrow-left"></i>
-                                <h3>Switch to Primary</h3>
-                            </button>
-                        </form>
+                        <button data-id="<?= htmlspecialchars($sensor['soilSensorID'] ?? '') ?>" onclick="switchPrimary(this)">
+                            <i class="fas fa-arrow-right-arrow-left"></i>
+                            Switch to Primary
+                        </button>
                     </div>
                 </div>
             <?php endwhile; ?>

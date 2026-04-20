@@ -319,5 +319,30 @@ function disconnectSensor(btn) {
     .finally(() => btn.disabled = false);
 }
 
+function switchPrimary(btn) {
+    const sensorID = btn.dataset.id;
+
+    const box = btn.closest('.sensor-box');
+    const { primary, primaryBtn } = getBoxEls(box);
+
+    fetch('../api/switch_primary.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ primarySensorID: sensorID })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            throw new Error(data.message);
+        }
+        else {
+            alert(data.message);
+            primary.style.display = 'flex';
+            primaryBtn.style.display = 'none';
+        }
+    })
+    .catch(err => alert(err.message || 'Server error'));
+}
+
 // Poll every 1 second
 setInterval(updateSensors, 1000);
