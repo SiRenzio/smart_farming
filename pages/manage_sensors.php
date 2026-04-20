@@ -109,13 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['primarySensorID'])) {
         "triggeredBy" => "primary_switch"
     ]));
     
-    if ($setPrimaryStmt->execute()) {
-        $_SESSION['success'] = "Primary sensor switched successfully.";
-    } else {
-        $error = "Error switching primary sensor: " . $conn->error;
-    }
-
-    $setPrimaryStmt->close();
+    $_SESSION['success'] = "Primary sensor switched successfully.";
     
     // Redirect to prevent form resubmission on page refresh
     header("Location: manage_sensors.php");
