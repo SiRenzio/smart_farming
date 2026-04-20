@@ -438,6 +438,21 @@ a:hover {
 .sensor-title {
     margin: 0;
     color: #333;
+    display: flex;
+    Align-items: center;
+    gap: 10px;
+}
+
+.primary-indicator {
+    background: #4CAF50;
+    color: white;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 
 .sensor-location {

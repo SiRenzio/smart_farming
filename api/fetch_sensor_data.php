@@ -51,10 +51,11 @@ if ($type === 'visual') {
 
     $sql = "
         SELECT sd.DateTime, sd.SoilN, sd.SoilP, sd.SoilK, sd.SoilEC, sd.SoilPH, sd.SoilT, sd.SoilMois, 
-               si.soilSensorID, si.sensorName, fl.farmName 
+               si.soilSensorID, si.sensorName, fl.farmName, d.isPrimary 
         FROM sensordata sd 
         INNER JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID 
         LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID
+        LEFT JOIN deployment d ON sd.SoilSensorID = d.soilSensorID
         $whereSQL
         ORDER BY sd.DateTime DESC
     ";

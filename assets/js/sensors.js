@@ -26,6 +26,7 @@ function reloadVisuals() {
                 if (!groupedData[sid]) {
                     groupedData[sid] = {
                         sensorName: row.sensorName,
+                        sensorPrimary: row.isPrimary === 1,
                         farmName: row.farmName || 'Unknown Location',
                         readings: []
                     };
@@ -53,6 +54,7 @@ function reloadVisuals() {
                             <div class="header-title-wrapper">
                                 <h3 class="sensor-title">
                                     <i class="fas fa-satellite-dish"></i> ${group.sensorName} 
+                                    ${group.sensorPrimary ? `<span class="primary-indicator" title="Primary Sensor">Primary</span>` : ''} 
                                 </h3>
                                 <span class="sensor-location">
                                     <i class="fas fa-map-marker-alt"></i> ${group.farmName}
