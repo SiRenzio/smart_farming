@@ -9,6 +9,7 @@ $stmt = $conn->prepare("
         s.sensorStatus,
         d.isConnected,
         s.isRegistered,
+        d.isPrimary,
         d.locationID,
         fl.farmName,
         u.username

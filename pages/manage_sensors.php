@@ -93,6 +93,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     header("Location: manage_sensors.php");
     exit;
 }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['primarySensorID'])) {
+    $primarySensorID = trim($_POST['primarySensorID']);
+
+    $jobPath = __DIR__ . "/../moisture_jobs/job_$newPrimaryID.json";
+
+    if(file_exists($jobPath)){
+        unlink($jobPath);
+    }
+
+    file_put_contents($jobPath, json_encode([
+        "soilSensorID" => $newPrimaryID,
+        "startTime" => time(),
+        "triggeredBy" => "primary_switch"
+    ]));
+    
+    if ($setPrimaryStmt->execute()) {
+        $_SESSION['success'] = "Primary sensor switched successfully.";
+    } else {
+        $error = "Error switching primary sensor: " . $conn->error;
+    }
+
+    $setPrimaryStmt->close();
+    
+    // Redirect to prevent form resubmission on page refresh
+    header("Location: manage_sensors.php");
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -160,6 +188,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <label class="sensor-label">
                         <span class="sensor-name"><?= htmlspecialchars($sensor['sensorName'] ?? 'Unknown') ?></span>
                     </label>
+                    <div class="primary-indicator">
+                        <i class="fas fa-star"></i>
+                        <span>Primary Sensor</span>
+                    </div>
 
                     <form action="manage_sensors.php" method="POST" class="unregister-form" style="display: none; margin-bottom: 10px;">
                         <input type="hidden" name="action" value="unregister">
@@ -241,6 +273,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                             <input type="hidden" value="<?= $sensor['soilSensorID'] ?>" name="modalSensorID">
                             <button type="submit" class="submit-btn">
                                 <i class="fas fa-plus"></i> Register Sensor
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="primary-btn">
+                        <form action="manage_sensors.php" method="post">
+                            <input type="hidden" valu?e="<?= $sensor['soilSensorID'] ?>" name="primarySensorID">
+                            <button type="submit">
+                                <i class="fas fa-arrow-right-arrow-left"></i>
+                                <h3>Switch to Primary</h3>
                             </button>
                         </form>
                     </div>

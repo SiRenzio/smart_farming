@@ -82,6 +82,44 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
     font-style: italic;
 }
 
+.primary-btn {
+    position: absolute;
+    top: 1.8rem;
+    right: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.primary-btn button {
+    background: #2196F3;
+    display: inline-block;
+    color: white;
+    border: none;
+    padding: 0.5rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(33, 150, 243, 0.1);
+}
+
+.primary-indicator {
+    position: absolute;
+    top: 2rem;
+    right: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: bold;
+    color: #ff9800;
+    background: rgba(255, 152, 0, 0.1);
+    /* border: 1px solid #ff9800; */
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+}
+
 .sensor-box {
     padding: 1.8rem;
     border: 1px solid #ccc;

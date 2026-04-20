@@ -27,7 +27,9 @@ function getBoxEls(box) {
         registerBtn: box.querySelector('.register'),
         addSensorModal: box.querySelector('.add-sensor-modal'),
         formSensorName: box.querySelector('.form-input'),
-        sensorNameLabel: box.querySelector('.sensor-name')
+        sensorNameLabel: box.querySelector('.sensor-name'),
+        primaryBtn: box.querySelector('.primary-btn'),
+        primary: box.querySelector('.primary-indicator')
     };
 }
 
@@ -53,6 +55,8 @@ function renderState(box, state) {
             els.onlineText.style.display = 'none';
             els.unregisteredText.style.display = 'none';
             els.registerBtn.style.display = 'none';
+
+            els.primaryBtn.style.display = 'block';
             break;
 
         case UI_STATES.ONLINE_IDLE:
@@ -77,6 +81,8 @@ function renderState(box, state) {
             els.onlineText.style.display = 'block';
             els.unregisteredText.style.display = 'none';
             els.registerBtn.style.display = 'none';
+
+            els.primaryBtn.style.display = 'none';
             break;
 
         case UI_STATES.UNREGISTERED:
@@ -98,6 +104,8 @@ function renderState(box, state) {
             els.onlineText.style.display = 'none';
             els.unregisteredText.style.display = 'block';
             els.registerBtn.style.display = 'block';
+
+            els.primaryBtn.style.display = 'none';
             break;  
 
         case UI_STATES.OFFLINE:
@@ -120,6 +128,8 @@ function renderState(box, state) {
             els.onlineText.style.display = 'none';
             els.unregisteredText.style.display = 'none';
             els.registerBtn.style.display = 'none';
+
+            els.primaryBtn.style.display = 'none';
             break;
     }
 }
@@ -218,6 +228,17 @@ function updateSensors() {
                     if (els.displayUser) {
                         els.displayUser.textContent = sensor.username || 'Unknown';
                     }
+                }
+
+                if (sensor.isPrimary == 1) {
+                    if (els.primary) {
+                        els.primary.style.display = 'flex';
+                        els.primaryBtn.style.display = 'none';
+                    }
+                }
+                else {
+                    els.primary.style.display = 'none';
+                    els.primaryBtn.style.display = 'else';
                 }
             });
         })
