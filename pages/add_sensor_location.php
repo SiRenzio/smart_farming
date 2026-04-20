@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <button type="submit" class="submit-btn" id="submit-btn" disabled>
-                    <i class="fas fa-plus"></i> Add Sensor Location
+                    <i class="fas fa-arrow-right-to-bracket"></i> Submit
                 </button>
             </form>
 

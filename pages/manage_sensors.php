@@ -199,12 +199,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <span class="location" style="display: none;"></span>
                     <div class="location-select">
                         <select name="location[<?= $sensor['soilSensorID'] ?>]">
-                            <option value="">Select Farm Location</option>
-                            <?php foreach ($locations as $loc): ?>
-                                <option value="<?= $loc['locationID'] ?>">
-                                    <?= htmlspecialchars($loc['farmName']) ?>
-                                </option>
-                            <?php endforeach; ?>
+                            <?php if (!empty($locations)): ?>
+                                <option value="">Select Farm Location</option>
+                                <?php foreach ($locations as $loc): ?>
+                                    <option value="<?= $loc['locationID'] ?>">
+                                        <?= htmlspecialchars($loc['farmName']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <option value="">No locations available. Please add a location first.</option>
+                            <?php endif; ?>
                         </select>
                     </div>
                     <button type="button" class="send-button" onclick="connectSensor(this)" disabled>Connect</button>
