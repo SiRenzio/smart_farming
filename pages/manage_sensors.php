@@ -97,14 +97,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['primarySensorID'])) {
     $primarySensorID = trim($_POST['primarySensorID']);
 
-    $jobPath = __DIR__ . "/../moisture_jobs/job_$newPrimaryID.json";
+    $jobPath = __DIR__ . "/../moisture_jobs/job_$primarySensorID.json";
 
     if(file_exists($jobPath)){
         unlink($jobPath);
     }
 
     file_put_contents($jobPath, json_encode([
-        "soilSensorID" => $newPrimaryID,
+        "soilSensorID" => $primarySensorID,
         "startTime" => time(),
         "triggeredBy" => "primary_switch"
     ]));
