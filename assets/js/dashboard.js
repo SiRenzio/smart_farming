@@ -48,6 +48,58 @@ function fetchLiquidLevel() {
         .catch(err => console.error(err));
 }
 
+// Function to handle opening the nutrition modal
+function showNutritionModal(sensorsData) {
+    const modal = document.getElementById('nutritionModal');
+    const modalContent = document.getElementById('nutritionModalContent');
+    
+    let htmlContent = '';
+
+    sensorsData.forEach(sensor => {
+        // Fallback for null values
+        const nName = sensor.nutritionSetName || 'Not Set';
+        const sType = sensor.soilType || 'N/A';
+        const gStage = sensor.growthStage || 'N/A';
+        const mMoisture = sensor.meanMoistureThreshold ? sensor.meanMoistureThreshold : 'N/A';
+        const pCount = sensor.numberOfPlants || '0';
+        const nitrogen = sensor.soilN || 'N/A';
+        const phosphorus = sensor.soilP || 'N/A';
+        const potassium = sensor.soilK || 'N/A';
+        const ec = sensor.soilEC || 'N/A';
+        const ph = sensor.soilPH || 'N/A';
+        const lVolume = sensor.liquidVolume ? sensor.liquidVolume + ' L' : 'N/A';
+        const fertilizer = sensor.fertilizerNames || 'N/A';
+
+        htmlContent += `
+            <div class="nutrition-item">
+                <div class="deployment-header">
+                    <h4><i class="fas fa-microchip"></i> Sensor: ${sensor.sensorName}</h4>
+                    <span>Owner: ${sensor.username}</span>
+                </div>
+                <div class="nutrition-grid">
+                    <div><strong>Nutrition Set:</strong> ${nName}</div>
+                    <div><strong>Soil Type:</strong> ${sType}</div>
+                    <div><strong>Growth Stage:</strong> ${gStage}</div>
+                    <div><strong>Mean Moisture:</strong> ${mMoisture} | ${parseInt(mMoisture) + 5} | ${parseInt(mMoisture) + 10}</div>
+                    <div><strong>No. of Plants:</strong> ${pCount}</div>
+                    <div><strong>N:</strong> ${nitrogen} &nbsp;&nbsp;  <strong>P:</strong> ${phosphorus}, &nbsp;&nbsp;  <strong>K:</strong> ${potassium}</div>
+                    <div><strong>EC:</strong> ${ec}</div>
+                    <div><strong>pH:</strong> ${ph}</div>
+                    <div><strong>Liquid Volume:</strong> ${lVolume}</div>
+                    <div><strong>Fertilizer:</strong> ${fertilizer}</div>
+                </div>
+            </div>
+        `;
+    });
+
+    if(htmlContent === '') {
+        htmlContent = '<p>No nutrition data available for this location.</p>';
+    }
+
+    modalContent.innerHTML = htmlContent;
+    modal.style.display = "block";
+}
+
 // Map initialization function
 function initDashboardMap() {
     const mapElement = document.getElementById('dashboard-map');
@@ -78,7 +130,7 @@ function initDashboardMap() {
         const bounds = [];
         const groupedLocations = {};
 
-        // 1. Group sensors by their latitude and longitude
+        // Group sensors by their latitude and longitude
         window.sensorMapData.forEach(sensor => {
             const lat = parseFloat(sensor.latitude);
             const lng = parseFloat(sensor.longitude);
@@ -96,7 +148,7 @@ function initDashboardMap() {
             groupedLocations[locationKey].sensors.push(sensor);
         });
 
-        // grouped locations
+        // Iterate grouped locations
         Object.values(groupedLocations).forEach(group => {
             const { lat, lng, sensors } = group;
             const allConnected = sensors.every(s => parseInt(s.isConnected) === 1);
@@ -104,15 +156,17 @@ function initDashboardMap() {
 
             // Combine sensor names
             const combinedSensorNames = sensors.map(s => s.sensorName).join(' & ');
-            // Combine owner names but
+            // Combine owner names
             const uniqueOwners = [...new Set(sensors.map(s => s.username))].join(' & ');
+            
             const marker = L.marker([lat, lng], { icon: currentIcon }).addTo(map);
             
             // Show combined sensor data in tooltip
             marker.bindTooltip(`
                 <div class="sensor-label-content">
                     <strong>${combinedSensorNames}</strong><br>
-                    <span>Owner: ${uniqueOwners}</span>
+                    <span>Owner: ${uniqueOwners}</span><br>
+                    <span style="font-size: 0.7rem; color: #555;">(Click to view nutrition data)</span>
                 </div>
             `, { 
                 permanent: true, 
@@ -121,12 +175,17 @@ function initDashboardMap() {
                 offset: [0, -35]
             });
 
+            // Make the marker clickable to open the Modal
+            marker.on('click', function() {
+                showNutritionModal(sensors);
+            });
+
             bounds.push([lat, lng]);
         });
 
         // Automatically zoom and pan the map to fit all pins
         if (bounds.length > 0) {
-            map.fitBounds(bounds, { padding: [30, 30] });
+            map.fitBounds(bounds, { padding: [80, 80] });
         }
     }
 }
@@ -135,6 +194,23 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchLiquidLevel();
     setInterval(fetchLiquidLevel, 1000);
     initDashboardMap(); // Initialize map when DOM is fully loaded
+
+    // Modal Close Logic
+    const modal = document.getElementById('nutritionModal');
+    const closeBtn = document.querySelector('.close-modal');
+
+    if (closeBtn && modal) {
+        // Close on X click
+        closeBtn.onclick = function() {
+            modal.style.display = "none";
+        }
+        // Close on outside click
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    }
 });
 
 const params = new URLSearchParams(window.location.search);

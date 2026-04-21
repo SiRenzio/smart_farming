@@ -73,15 +73,30 @@ $mapSql = "SELECT
             s.sensorName, 
             f.latitude, 
             f.longitude, 
-            u.username
+            u.username,
+            pn.nutritionSetName,
+            pn.soilType,
+            pn.growthStage,
+            pn.meanMoistureThreshold,
+            pn.numberOfPlants,
+            pn.soilN,
+            pn.soilP,
+            pn.soilK, 
+            pn.soilEC,
+            pn.soilPH,
+            pn.liquidVolume,
+            GROUP_CONCAT(fert.fertilizerName SEPARATOR ' & ') AS fertilizerNames
            FROM deployment d
            JOIN sensorinfo s ON d.soilSensorID = s.soilSensorID
            JOIN farmlocation f ON d.locationID = f.locationID
            JOIN users u ON d.userID = u.userID
+           LEFT JOIN plantnutrionneed pn ON d.nutritionID = pn.nutritionID
+           LEFT JOIN fertilizer fert ON pn.nutritionID = fert.nutritionID
            WHERE s.sensorStatus = 1 
            AND s.isRegistered = 1
            AND f.latitude IS NOT NULL 
-           AND f.longitude IS NOT NULL";
+           AND f.longitude IS NOT NULL
+           GROUP BY d.deploymentID";
 
 $mapResult = $conn->query($mapSql);
 $mapData = [];
@@ -90,7 +105,8 @@ if ($mapResult) {
         $mapData[] = $row;
     }
 }
-$mapDataJSON = json_encode($mapData); // Convert to JSON for Javascript
+$mapDataJSON = json_encode($mapData); // Convert to JSON for Javascript use
+
 
 // Helper to keep filters in URL
 function getFilterParams($excludePage = true) {
@@ -400,5 +416,16 @@ function getFilterParams($excludePage = true) {
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     
     <script src="../assets/js/dashboard.js"></script>
+
+    <div id="nutritionModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div class="modal-header">
+                <h2><i class="fas fa-leaf" style="color: #2e7d32;"></i> Deployed Plant Nutrition</h2>
+            </div>
+            <div id="nutritionModalContent">
+                </div>
+        </div>
+    </div>
 </body>
 </html>
