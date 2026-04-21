@@ -128,6 +128,22 @@ $tankNameResult = $stmtTankName->get_result();
 $tankName = $tankNameResult->fetch_assoc()['liquidtankname'] ?? 'Unknown Tank';
 $stmtTankName->close();
 
+//check status
+$tankStatusSQL = "SELECT isActive FROM tankpumpevent WHERE liquidsensorID = ? ORDER BY dateandtime DESC LIMIT 1";
+$stmtTankStatus = $conn->prepare($tankStatusSQL);
+$stmtTankStatus->bind_param("i", $tankID);
+$stmtTankStatus->execute();
+$tankStatusResult = $stmtTankStatus->get_result();
+$currentStatus = 'Unknown';
+if ($tankStatusResult->num_rows > 0) {
+    $isActive = $tankStatusResult->fetch_assoc()['isActive'];
+    if ($isActive == 1) {
+        $currentStatus = 'Active';
+    } else {
+        $currentStatus = 'Idle';
+    }
+}
+
 function getFilterParams($excludePage = true) {
     $params = $_GET;
     if ($excludePage) unset($params['page']);
@@ -200,6 +216,9 @@ function getFilterParams($excludePage = true) {
 
                 </div>
             </form>
+        <div class="tank-status">
+            <h3>Tank Status: `<span class="indicator"><?php echo $currentStatus; ?></span></h3>
+        </div>
         <div id="data-wrapper">
             <?php if (empty($data)): ?>
             <div class="empty-state">
