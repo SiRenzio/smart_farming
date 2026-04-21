@@ -52,9 +52,7 @@ function fetchLiquidLevel() {
 function initDashboardMap() {
     const mapElement = document.getElementById('dashboard-map');
     if (!mapElement) return;
-
-    // Default center (Iloilo City)
-    const map = L.map('dashboard-map').setView([10.7202, 122.5621], 10);
+    const map = L.map('dashboard-map').setView([10.7202, 122.5621], 10); // map center
     
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -77,24 +75,44 @@ function initDashboardMap() {
 
     // Loop through the data passed from PHP
     if (window.sensorMapData && window.sensorMapData.length > 0) {
-        // Create an array to hold marker coordinates so we can auto-zoom to fit them
         const bounds = [];
+        const groupedLocations = {};
 
+        // 1. Group sensors by their latitude and longitude
         window.sensorMapData.forEach(sensor => {
             const lat = parseFloat(sensor.latitude);
             const lng = parseFloat(sensor.longitude);
             
-            // Choose color based on connection status
-            const currentIcon = parseInt(sensor.isConnected) === 1 ? greenIcon : redIcon;
+            // Create a unique key for the location (using 5 decimal places for ~1 meter precision)
+            const locationKey = `${lat.toFixed(5)},${lng.toFixed(5)}`;
 
-            // Add marker to map
+            if (!groupedLocations[locationKey]) {
+                groupedLocations[locationKey] = {
+                    lat: lat,
+                    lng: lng,
+                    sensors: []
+                };
+            }
+            groupedLocations[locationKey].sensors.push(sensor);
+        });
+
+        // grouped locations
+        Object.values(groupedLocations).forEach(group => {
+            const { lat, lng, sensors } = group;
+            const allConnected = sensors.every(s => parseInt(s.isConnected) === 1);
+            const currentIcon = allConnected ? greenIcon : redIcon;
+
+            // Combine sensor names
+            const combinedSensorNames = sensors.map(s => s.sensorName).join(' & ');
+            // Combine owner names but
+            const uniqueOwners = [...new Set(sensors.map(s => s.username))].join(' & ');
             const marker = L.marker([lat, lng], { icon: currentIcon }).addTo(map);
             
-            // show sensor name
+            // Show combined sensor data in tooltip
             marker.bindTooltip(`
                 <div class="sensor-label-content">
-                    <strong>${sensor.sensorName}</strong>
-                    <span>Owner: ${sensor.username}</span>
+                    <strong>${combinedSensorNames}</strong><br>
+                    <span>Owner: ${uniqueOwners}</span>
                 </div>
             `, { 
                 permanent: true, 

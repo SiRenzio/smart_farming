@@ -64,11 +64,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
     }
 }
 
-// Unregister Sensor Handling (Pure PHP, No JS API needed)
+// Unregister Sensor 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'unregister' && isset($_POST['unregisterSensorID'])) {
     $sensorID = trim($_POST['unregisterSensorID']);
 
-    // Using 0 for status/registered flags to prevent the JSON/HTML database error
     $stmt = $conn->prepare("
         UPDATE sensorinfo 
         SET 
@@ -82,12 +81,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $stmt->bind_param("i", $sensorID);
 
     if ($stmt->execute()) {
-        $_SESSION['success'] = "Sensor unregistered and cleared successfully.";
+        $stmt->close();
+
+        $stmtDelete = $conn->prepare("DELETE FROM deployment WHERE soilSensorID = ?");
+        $stmtDelete->bind_param("i", $sensorID);
+
+        if ($stmtDelete->execute()) {
+            $_SESSION['success'] = "Sensor unregistered and its deployment cleared successfully.";
+        }
+        else {
+            $error = "Sensor unregistered, but error clearing deployment: " . $conn->error;
+        }
+        $stmtDelete->close();
     } else {
         $error = "Error unregistering sensor: " . $conn->error;
+        $stmt->close();
     }
-
-    $stmt->close();
     
     // Redirect to prevent form resubmission on page refresh
     header("Location: manage_sensors.php");
