@@ -80,23 +80,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ============================================================ */
     if ($updateType === 'continuous') {
 
-        $stmtLevel = $conn->prepare(
-            'INSERT INTO liquidlevelsensor (liquidsensorID, currentliquidlevel, dateandtime) VALUES (?, ?, NOW())'
-        );
-        $stmtLevel->bind_param('ii', $liquidsensorID, $currentliquidlevel);
-        
-        if ($stmtLevel->execute()) {
-            $insertId = $conn->insert_id;
-            sendResponse(true, 'Level updated successfully', [
-                'id' => $insertId,
-                'tank'=> $liquidsensorID,
-                'data'=> $currentliquidlevel,
-                'timestamp'=> $dateTime
+        $jsonFile = '../failsafe/current_tank_levels.json';
+    
+        // Initialize an empty array for our tank data
+        $tanksData = [];
+
+        // Read existing data if the file already exists
+        if (file_exists($jsonFile)) {
+            $existingJson = file_get_contents($jsonFile);
+            $decodedData = json_decode($existingJson, true);
+            
+            // Ensure it's a valid array before assigning
+            if (is_array($decodedData)) {
+                $tanksData = $decodedData;
+            }
+        }
+
+        // Update or add the data for the specific tank
+        // We use $liquidsensorID as the array key so it overwrites the old data for that tank
+        $tanksData[$liquidsensorID] = [
+            'tank' => $liquidsensorID,
+            'currentliquidlevel' => $currentliquidlevel,
+            'dateandtime' => $dateTime // Assuming $dateTime is defined earlier in your script
+        ];
+
+        // Encode back to JSON (JSON_PRETTY_PRINT makes it readable if you open the file)
+        $newJsonContent = json_encode($tanksData, JSON_PRETTY_PRINT);
+
+        // Write to the file using an exclusive lock (LOCK_EX) to prevent file corruption from concurrent writes
+        if (file_put_contents($jsonFile, $newJsonContent, LOCK_EX) !== false) {
+            sendResponse(true, 'Level updated successfully in JSON', [
+                'tank' => $liquidsensorID,
+                'currentliquidlevel' => $currentliquidlevel,
+                'dateandtime' => $dateTime
             ]);
         } else {
-            sendResponse(false, 'Failed to store data: ' . $conn->error);
+            sendResponse(false, 'Failed to update JSON file.');
         }
-        $stmtLevel->close();
     }
 
     /* ============================================================

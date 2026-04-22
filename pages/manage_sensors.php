@@ -148,6 +148,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <i class="fas fa-satellite-dish"></i> Sensor Overview
             </a>
 
+            <a href="view_nutrition.php">
+                <i class="fas fa-seedling"></i> View Nutrition Data
+            </a>
+
             <a href="add_sensor_location.php" class="btn-primary">
                 <i class="fas fa-plus"></i> Add New Location
             </a>
