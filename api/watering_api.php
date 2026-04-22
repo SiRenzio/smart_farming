@@ -98,8 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // We use $liquidsensorID as the array key so it overwrites the old data for that tank
         $tanksData[$liquidsensorID] = [
             'tank' => $liquidsensorID,
-            'data' => $currentliquidlevel,
-            'timestamp' => $dateTime // Assuming $dateTime is defined earlier in your script
+            'currentliquidlevel' => $currentliquidlevel,
+            'dateandtime' => $dateTime // Assuming $dateTime is defined earlier in your script
         ];
 
         // Encode back to JSON (JSON_PRETTY_PRINT makes it readable if you open the file)
@@ -109,8 +109,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (file_put_contents($jsonFile, $newJsonContent, LOCK_EX) !== false) {
             sendResponse(true, 'Level updated successfully in JSON', [
                 'tank' => $liquidsensorID,
-                'data' => $currentliquidlevel,
-                'timestamp' => $dateTime
+                'currentliquidlevel' => $currentliquidlevel,
+                'dateandtime' => $dateTime
             ]);
         } else {
             sendResponse(false, 'Failed to update JSON file.');
