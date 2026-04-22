@@ -14,7 +14,7 @@ function updateTank(sensorID, liters, percent) {
 }
 
 function fetchLiquidLevel() {
-    fetch('../failsafe/current_tank_levels.json' + new Date().getTime())
+    fetch('../failsafe/current_tank_levels.json?t=' + new Date().getTime())
         .then(res => res.json())
         .then(data => {
             for (const tankID in data) {
