@@ -809,10 +809,11 @@ void loop() {
   }
 
   // Transmitter serial timeout watchdog
-
-  if (dataValid && millis() - lastSerialReceiveTime > serialTimeout) {
-    Serial.println("[TIMEOUT] Transmitter disconnected");
-    dataValid = false;
+  if (millis() - lastSerialReceiveTime > serialTimeout) {
+    if (dataValid) { 
+      Serial.println("[TIMEOUT] Transmitter disconnected! Forcing actuators OFF.");
+      dataValid = false; // Toggle to false so it doesn't spam the serial monitor
+    }
 
     digitalWrite(pumpmotor1, LOW);
     digitalWrite(pumpmotor2, LOW);
@@ -841,22 +842,31 @@ void loop() {
 
   /* ================= TANK LOGIC ================= */
 
+  if (currentliquidlevel1 <= 25) digitalWrite(pumpmotor1, LOW);
+  if (currentliquidlevel2 <= 25) digitalWrite(pumpmotor2, LOW);
+  if (currentliquidlevel3 <= 25) digitalWrite(pumpmotor3, LOW);
+
   // Tank 1
-  if (apiReady && dataValid && currentliquidlevel1 > 60 && wateringflag1 != 1 && activeTank != 1) {
-    wateringflag1 = 1;
-    wateringstatus1 = 0;
-    digitalWrite(pumpmotor1, HIGH);
-    sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1, 0);
+  if (apiReady && dataValid) {
+    // START Refilling: Level drops below threshold, pump is idle, and tank isn't currently watering.
+    if (currentliquidlevel1 > 60 && wateringflag1 != 1 && activeTank != 1) {
+      wateringflag1 = 1;
+      wateringstatus1 = 0;
+      digitalWrite(pumpmotor1, HIGH);
+      sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1, 0);
+    }
+
+    
+    if (currentliquidlevel1 <= 25 && wateringflag1 == 1 && wateringstatus1 == 0) {
+      digitalWrite(pumpmotor1, LOW); // Redundant safety
+      wateringflag1 = 0;
+      wateringstatus1 = 0;
+      mixingflag1 = 1;
+      sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1, 0);
+    }
   }
 
-  if (apiReady && dataValid && currentliquidlevel1 <= 25 && wateringflag1 == 1 && wateringstatus1 == 0 && activeTank != 1) {
-    wateringflag1 = 0;
-    wateringstatus1 = 0;
-    digitalWrite(pumpmotor1, LOW);
-    mixingflag1 = 1;
-    sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1, 0);
-  }
-
+  // Tank 1 Mixing
   if (mixingflag1 == 1 && digitalRead(switch1) == LOW) {
     digitalWrite(mixermotor1, HIGH);
     wateringstatus1 = -1;
@@ -873,21 +883,25 @@ void loop() {
   }
 
   // Tank 2
-  if (apiReady && dataValid && currentliquidlevel2 > 60 && wateringflag2 != 1 && activeTank != 2) {
-    wateringflag2 = 1;
-    wateringstatus2 = 0;
-    digitalWrite(pumpmotor2, HIGH);
-    sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2, 0);
+  if (apiReady && dataValid) {
+    if (currentliquidlevel2 > 60 && wateringflag2 != 1 && activeTank != 2) {
+      wateringflag2 = 1;
+      wateringstatus2 = 0;
+      digitalWrite(pumpmotor2, HIGH);
+      sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2, 0);
+    }
+
+    // FIX: Removed 'activeTank != 2'
+    if (currentliquidlevel2 <= 25 && wateringflag2 == 1 && wateringstatus2 == 0) {
+      digitalWrite(pumpmotor2, LOW);
+      wateringflag2 = 0;
+      wateringstatus2 = 0;
+      mixingflag2 = 1;
+      sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2, 0);
+    }
   }
 
-  if (apiReady && dataValid && currentliquidlevel2 <= 25 && wateringflag2 == 1 && wateringstatus2 == 0 && activeTank != 2) {
-    wateringflag2 = 0;
-    wateringstatus2 = 0;
-    digitalWrite(pumpmotor2, LOW);
-    mixingflag2 = 1;
-    sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2, 0);
-  }
-
+  // Tank 2 Mixing
   if (mixingflag2 == 1 && digitalRead(switch2) == LOW) {
     digitalWrite(mixermotor2, HIGH);
     wateringstatus2 = -1;
@@ -904,21 +918,25 @@ void loop() {
   }
 
   // Tank 3
-  if (apiReady && dataValid && currentliquidlevel3 > 60 && wateringflag3 != 1 && activeTank != 3) {
-    wateringflag3 = 1;
-    wateringstatus3 = 0;
-    digitalWrite(pumpmotor3, HIGH);
-    sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3, 0);
+  if (apiReady && dataValid) {
+    if (currentliquidlevel3 > 60 && wateringflag3 != 1 && activeTank != 3) {
+      wateringflag3 = 1;
+      wateringstatus3 = 0;
+      digitalWrite(pumpmotor3, HIGH);
+      sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3, 0);
+    }
+
+    // FIX: Removed 'activeTank != 3'
+    if (currentliquidlevel3 <= 25 && wateringflag3 == 1 && wateringstatus3 == 0) {
+      digitalWrite(pumpmotor3, LOW);
+      wateringflag3 = 0;
+      wateringstatus3 = 0;
+      mixingflag3 = 1;
+      sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3, 0);
+    }
   }
 
-  if (apiReady && dataValid && currentliquidlevel3 <= 25 && wateringflag3 == 1 && wateringstatus3 == 0 && activeTank != 3) {
-    wateringflag3 = 0;
-    wateringstatus3 = 0;
-    digitalWrite(pumpmotor3, LOW);
-    mixingflag3 = 1;
-    sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3, 0);
-  }
-
+  // Tank 3 Mixing
   if (mixingflag3 == 1 && digitalRead(switch3) == LOW) {
     digitalWrite(mixermotor3, HIGH);
     wateringstatus3 = -1;

@@ -138,9 +138,9 @@ $currentStatus = 'Unknown';
 if ($tankStatusResult->num_rows > 0) {
     $isActive = $tankStatusResult->fetch_assoc()['isActive'];
     if ($isActive == 1) {
-        $currentStatus = 'Active';
+        $currentStatus = 'Holding Watering';
     } else {
-        $currentStatus = 'Idle';
+        $currentStatus = 'System Ready';
     }
 }
 
@@ -217,7 +217,7 @@ function getFilterParams($excludePage = true) {
                 </div>
             </form>
         <div class="tank-status">
-            <h3>Tank Status: `<span class="indicator"><?php echo $currentStatus; ?></span></h3>
+            <h3>Tank Status: <span class="indicator"><?php echo $currentStatus; ?></span></h3>
         </div>
         <div id="data-wrapper">
             <?php if (empty($data)): ?>

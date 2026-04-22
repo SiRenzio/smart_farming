@@ -36,9 +36,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         sendResponse(false, 'liquidsensorID is required');
     }
 
-    // reset for isActive
+    /* ============================================================
+       RESET FLAG LOGIC
+    ============================================================ */
     if ($updateType === 'reset') {
-        $resetQuery = "UPDATE tankpumpevent SET isActive = 0, fertFlag = 0 WHERE liquidsensorID = ? ORDER BY tankPumpEventID DESC LIMIT 1";
+        
+        $resetQuery = "UPDATE tankpumpevent SET isActive = 0, fertFlag = 0 WHERE liquidsensorID = ? AND isActive = 1";
         $resetStmt = $conn->prepare($resetQuery);
         $resetStmt->bind_param("i", $liquidsensorID);
         
@@ -46,7 +49,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $rowsChanged = $resetStmt->affected_rows;
             $resetStmt->close();
             
-            // check if rows were updated
             if ($rowsChanged > 0) {
                 sendResponse(true, 'Cycle reset complete. isActive set to 0 for Tank ' . $liquidsensorID, [
                     'liquidsensorID' => $liquidsensorID,
@@ -54,13 +56,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'timestamp' => date('Y-m-d H:i:s')
                 ]);
             } else {
-                // If 0 rows changed, either the row didn't exist, OR it was already set to 0
-                sendResponse(true, 'No update needed or record not found. isActive is already 0.', [
+                sendResponse(true, 'No update needed or record not found. All active records are already 0.', [
                     'liquidsensorID' => $liquidsensorID
                 ]);
             }
         } else {
-            // db error handling
             $errorMsg = $resetStmt->error;
             $resetStmt->close();
             sendResponse(false, 'Database Error during reset: ' . $errorMsg);
@@ -75,15 +75,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $dateTime = date('Y-m-d H:i:s');
 
-    // Currentliquid level
+    /* ============================================================
+       CONTINUOUS UPDATE LOGIC
+    ============================================================ */
     if ($updateType === 'continuous') {
 
         $stmtLevel = $conn->prepare(
-            'INSERT INTO liquidlevelsensor 
-            (liquidsensorID, currentliquidlevel, dateandtime) 
-            VALUES (?, ?, NOW())'
+            'INSERT INTO liquidlevelsensor (liquidsensorID, currentliquidlevel, dateandtime) VALUES (?, ?, NOW())'
         );
         $stmtLevel->bind_param('ii', $liquidsensorID, $currentliquidlevel);
+        
         if ($stmtLevel->execute()) {
             $insertId = $conn->insert_id;
             sendResponse(true, 'Level updated successfully', [
@@ -92,14 +93,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'data'=> $currentliquidlevel,
                 'timestamp'=> $dateTime
             ]);
-        } 
-        else {
+        } else {
             sendResponse(false, 'Failed to store data: ' . $conn->error);
         }
         $stmtLevel->close();
     }
 
-    // event
+    /* ============================================================
+       EVENT UPDATE LOGIC
+    ============================================================ */
     if ($updateType === 'event') {
 
         $stateQuery = "SELECT fertFlag, isActive FROM tankpumpevent WHERE liquidsensorID = ? ORDER BY tankPumpEventID DESC LIMIT 1";
@@ -122,13 +124,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $stmt->bind_param(
             'iiiiiii',
-            $liquidsensorID,
-            $wateringstatus,
-            $wateringFlag,
-            $currentIsActive,
-            $currentFertFlag,
-            $currentliquidlevel,
-            $wateringvolume
+            $liquidsensorID, $wateringstatus, $wateringFlag, $currentIsActive, 
+            $currentFertFlag, $currentliquidlevel, $wateringvolume
         );
 
         if ($stmt->execute()) {
@@ -166,16 +163,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $fertilizerName = $fertRow['fertilizerName'];
                         $fertilizerAmount = $fertRow['fertilizerAmount'];
                         
-                        //Fertilizer in grams and cups
+                        // Fertilizer in grams and cups
                         $fertInGrams = $liters * $fertilizerAmount;
                         $fertInCup = round($fertInGrams / 150, 2);
 
-                        //Alternatives
+                        // Alternatives
                         $alternativeAmount = $liters * 2.5; // 2.5ml/L of fermented fruit juice and fish amino acid
                         $fishaminoAmount = round($alternativeAmount / 150, 2); // for fish amino acid
                         $fermentfruitAmount = round($alternativeAmount / 150, 2); // for fermented fruit juice
 
-                        // for fertilizer amount
+                        // Fertilizer amount notification
                         $fertALert = "[Tank $liquidsensorID]: Tank is filled $liters liters of water. Mix in $fertInCup sardine-can scoops of $fertilizerName [$fertilizerAmount g/L]. [150grams sardine-can]";
                         $fertSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
                         $alertStmt = $conn->prepare($fertSql);
@@ -183,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $alertStmt->execute();
                         $alertStmt->close();
 
-                        // for alternative amount notification
+                        // Alternative amount notification
                         $alternativesAlert = "[Tank $liquidsensorID]: Tank is filled $liters liters of water. Mix in $fishaminoAmount sardine-can scoops of Fish Amino Acid and $fermentfruitAmount sardine-can scoops of Fermented Fruit Juice. [150grams sardine-can]";
                         $alternativeSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
                         $alernativeStmt = $conn->prepare($alternativeSql);
@@ -228,10 +225,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     }
 
+    /* ============================================================
+       WATERING EVENT LOGIC
+    ============================================================ */
     if ($updateType === 'watering') {
         
-        $lastFert = $conn->query("SELECT fertFlag FROM tankpumpevent WHERE liquidsensorID = $liquidsensorID ORDER BY tankPumpEventID DESC LIMIT 1")->fetch_assoc();
+        $fertQuery = "SELECT fertFlag FROM tankpumpevent WHERE liquidsensorID = ? ORDER BY tankPumpEventID DESC LIMIT 1";
+        $fertStmt = $conn->prepare($fertQuery);
+        $fertStmt->bind_param("i", $liquidsensorID);
+        $fertStmt->execute();
+        $fertRes = $fertStmt->get_result();
+        $lastFert = $fertRes->fetch_assoc();
         $currentFertFlag = $lastFert['fertFlag'] ?? 0;
+        $fertStmt->close();
 
         $wateringStmt = $conn->prepare(
             'INSERT INTO tankpumpevent 
@@ -245,26 +251,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
 
         if ($wateringStmt->execute()) {
-            $soilSensorID = $conn->query("SELECT soilSensorID FROM deployment WHERE isPrimary = 1 LIMIT 1")->fetch_assoc()['soilSensorID'];
+            
+            $soilQuery = $conn->query("SELECT soilSensorID FROM deployment WHERE isPrimary = 1 LIMIT 1");
+            $soilRow = $soilQuery->fetch_assoc();
+            $soilSensorID = $soilRow ? $soilRow['soilSensorID'] : null;
 
-            $jobPath = __DIR__ . "/../moisture_jobs/job_$soilSensorID.json";
-            $jobData = [];
+            if ($soilSensorID) {
+                $jobPath = __DIR__ . "/../moisture_jobs/job_$soilSensorID.json";
+                $jobData = [];
 
-            // Read existing data so we don't wipe out tracking variables
-            if (file_exists($jobPath)) {
-                $existingData = file_get_contents($jobPath);
-                $jobData = json_decode($existingData, true) ?: [];
+                // Read existing data so we don't wipe out tracking variables
+                if (file_exists($jobPath)) {
+                    $existingData = file_get_contents($jobPath);
+                    $jobData = json_decode($existingData, true) ?: [];
+                }
+
+                // Update only the watering trigger fields
+                $jobData["soilSensorID"] = $soilSensorID;
+                $jobData["startTime"] = time();
+                $jobData["triggeredBy"] = "watering";
+
+                // Save it back
+                file_put_contents($jobPath, json_encode($jobData));
+                error_log("Creating job file for event $soilSensorID");
+            } else {
+                error_log("Warning: No primary deployment found. Job file not created.");
             }
-
-            // Update only the watering trigger fields
-            $jobData["soilSensorID"] = $soilSensorID;
-            $jobData["startTime"] = time();
-            $jobData["triggeredBy"] = "watering";
-
-            // Save it back
-            file_put_contents($jobPath, json_encode($jobData));
-
-            error_log("Creating job file for event $soilSensorID");
 
             $notifMessage = "";
 
@@ -302,6 +314,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    /* ============================================================
+       HANDSHAKE LOGIC
+    ============================================================ */
     if ($updateType === 'handshake') {
         $settingsPath = __DIR__ . '/../failsafe/settings.json';
         $settingsData = null;
@@ -320,7 +335,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $timeSinceLastHandshake = time() - $lastSeen;
         
-        // 5 mins
+        // 60 seconds (1 minute) threshold
         $disconnectThreshold = 60; 
         if ($timeSinceLastHandshake > $disconnectThreshold) {
             // It has been offline longer than the threshold, so it just reconnected!

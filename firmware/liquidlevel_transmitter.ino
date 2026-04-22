@@ -35,7 +35,7 @@ int readUltrasonic(int trigPin, int echoPin) {
 
   if (duration == 0) return -1;
 
-  return duration * 0.036 / 2;
+  return duration * 0.0343 / 2;
 }
 
 void setup() {
@@ -57,9 +57,9 @@ void loop() {
     previousReadMillis = currentMillis;
 
     int d1 = readUltrasonic(trigPin1, echoPin1);
-    delay(40);
+    delay(30);
     int d2 = readUltrasonic(trigPin2, echoPin2);
-    delay(40);
+    delay(30);
     int d3 = readUltrasonic(trigPin3, echoPin3);
 
     // Filter out 0s and outliers
