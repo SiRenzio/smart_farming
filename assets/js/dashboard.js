@@ -14,10 +14,11 @@ function updateTank(sensorID, liters, percent) {
 }
 
 function fetchLiquidLevel() {
-    fetch('../api/fetch_liquidlevel_data.php')
+    fetch('../failsafe/current_tank_levels.json' + new Date().getTime())
         .then(res => res.json())
         .then(data => {
-            data.forEach(sensor => {
+            for (const tankID in data) {
+                const tank = data[tankID];
 
                 // Barrel tank dimensions in Meters
                 const diameter = 0.48;
@@ -26,7 +27,7 @@ function fetchLiquidLevel() {
 
                 // Max capacity in Liters 
                 const maxCapacity = (Math.PI * Math.pow(radius, 2) * totalHeight) * 1000;
-                const sensorReadingM = sensor.currentliquidlevel / 100; // Convert cm to m
+                const sensorReadingM = tank.currentliquidlevel / 100; // Convert cm to m
                 let liquidHeightM = totalHeight - sensorReadingM; // Calculate liquid height in meters
                 
                 // Clamp values between 0 and totalHeight
@@ -39,11 +40,11 @@ function fetchLiquidLevel() {
                 const percentage = (liquidLiters / maxCapacity) * 100;
 
                 updateTank(
-                    sensor.liquidsensorID,
+                    tankID,
                     Math.round(liquidLiters),
                     percentage
                 );
-            });
+            }
         })
         .catch(err => console.error(err));
 }
