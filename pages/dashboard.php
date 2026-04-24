@@ -85,13 +85,16 @@ $mapSql = "SELECT
             pn.soilEC,
             pn.soilPH,
             pn.liquidVolume,
-            GROUP_CONCAT(fert.fertilizerName SEPARATOR ' & ') AS fertilizerNames
+            GROUP_CONCAT(fert.fertilizerName SEPARATOR ' & ') AS fertilizerNames,
+            pi.plantName,
+            pi.plantVariety
            FROM deployment d
            JOIN sensorinfo s ON d.soilSensorID = s.soilSensorID
            JOIN farmlocation f ON d.locationID = f.locationID
            JOIN users u ON d.userID = u.userID
            LEFT JOIN plantnutrionneed pn ON d.nutritionID = pn.nutritionID
            LEFT JOIN fertilizer fert ON pn.nutritionID = fert.nutritionID
+           LEFT JOIN plantinfo pi ON pn.plantID = pi.plantID
            WHERE s.sensorStatus = 1 
            AND s.isRegistered = 1
            AND f.latitude IS NOT NULL 

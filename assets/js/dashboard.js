@@ -70,6 +70,23 @@ function showNutritionModal(sensorsData) {
         const ph = sensor.soilPH || 'N/A';
         const lVolume = sensor.liquidVolume ? sensor.liquidVolume + ' L' : 'N/A';
         const fertilizer = sensor.fertilizerNames || 'N/A';
+        const plantName = sensor.plantName || 'N/A';
+        const plantVariety = sensor.plantVariety || 'N/A';
+
+        let growthStage = 'N/A';
+
+        if(gStage === 'vegetative'){
+            growthStage = 'Vegetative';
+        }
+        else if(gStage === 'lateVegetative'){
+            growthStage = 'Late Vegetative';
+        }
+        else if(gStage === 'floweringToFruiting') {
+            growthStage = 'Flowering to Fruiting';
+        }
+        else if(gStage === 'harvesting'){
+            growthStage = 'Harvesting';
+        }
 
         htmlContent += `
             <div class="nutrition-item">
@@ -78,9 +95,11 @@ function showNutritionModal(sensorsData) {
                     <span>Owner: ${sensor.username}</span>
                 </div>
                 <div class="nutrition-grid">
+                    <div><strong>Plant Name:</strong> ${plantName}</div>
+                    <div><strong>Plant Variety:</strong> ${plantVariety}</div>
                     <div><strong>Nutrition Set:</strong> ${nName}</div>
                     <div><strong>Soil Type:</strong> ${sType}</div>
-                    <div><strong>Growth Stage:</strong> ${gStage}</div>
+                    <div><strong>Growth Stage:</strong> ${growthStage}</div>
                     <div><strong>Mean Moisture:</strong> ${mMoisture} | ${parseInt(mMoisture) + 5} | ${parseInt(mMoisture) + 10}</div>
                     <div><strong>No. of Plants:</strong> ${pCount}</div>
                     <div><strong>N:</strong> ${nitrogen} &nbsp;&nbsp;  <strong>P:</strong> ${phosphorus}, &nbsp;&nbsp;  <strong>K:</strong> ${potassium}</div>

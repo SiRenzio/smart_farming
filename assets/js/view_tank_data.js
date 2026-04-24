@@ -8,11 +8,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 
+                // Update Table Content
                 const newContent = doc.getElementById('data-wrapper');
                 const currentContent = document.getElementById('data-wrapper');
                 
                 if (newContent && currentContent) {
                     currentContent.innerHTML = newContent.innerHTML;
+                }
+
+                // Update Indicator Content (AJAX applied)
+                const newIndicator = doc.getElementById('tank-status-container');
+                const currentIndicator = document.getElementById('tank-status-container');
+                
+                if (newIndicator && currentIndicator) {
+                    currentIndicator.innerHTML = newIndicator.innerHTML;
                 }
             })
             .catch(err => console.error('Data update failed:', err));
@@ -30,6 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updateContent(url.toString());
         reloadSensorData(1);
     }
+
+    // Assigning applyFilters explicitly to the window scope so it can be called directly from inline HTML
+    window.applyFilters = applyFilters;
 
     document.getElementById('event').addEventListener('change', applyFilters);
     document.getElementById('dateFrom').addEventListener('change', applyFilters);

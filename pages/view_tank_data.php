@@ -27,7 +27,6 @@ $stmtTank->close();
 
 $tankName = $tankResult->fetch_assoc()['liquidtankname'];
 
-
 // Pagination
 $limit = 15;
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -38,7 +37,6 @@ $offset = ($page - 1) * $limit;
 $filterDateFrom = $_GET['dateFrom'] ?? '';
 $filterDateTo = $_GET['dateTo'] ?? '';
 $filterEvent = $_GET['event'] ?? '';
-
 
 $whereSQL = " WHERE liquidsensorID = ?";
 $params = [$tankID];
@@ -65,7 +63,6 @@ if (!empty($filterDateTo)) {
     $params[] = str_replace('T', ' ', $filterDateTo);
     $types .= "s";
 }
-
 
 // pagination count
 $countSql = "SELECT COUNT(*) AS total FROM tankpumpevent" . $whereSQL;
@@ -101,7 +98,6 @@ $tankHeightM = 0.90;
 
 foreach ($data as $key => $tank) {
     if ($tank['waterlevel'] !== null) {
-        
         $emptySpace = $tank['waterlevel'] / 100;
         $liquidHeightMeters = $tankHeightM - $emptySpace;
 
@@ -113,7 +109,6 @@ foreach ($data as $key => $tank) {
         $currentLiters = $volume * 1000;
 
         $data[$key]['liters'] = round($currentLiters);
-        
     } else {
         $data[$key]['liters'] = 0;
     }
@@ -134,10 +129,13 @@ $stmtTankStatus = $conn->prepare($tankStatusSQL);
 $stmtTankStatus->execute();
 $tankStatusResult = $stmtTankStatus->get_result();
 
-$currentStatus = 'System Ready';
+// Status logic with icons
+$currentStatus = '<i class="fas fa-check-circle"></i> System Ready';
+$statusClass = 'status-ready';
 
 if ($tankStatusResult->num_rows > 0) {
-    $currentStatus = 'Holding Watering';
+    $currentStatus = '<i class="fas fa-pause-circle"></i> System Busy';
+    $statusClass = 'status-holding';
 }
 
 function getFilterParams($excludePage = true) {
@@ -174,11 +172,11 @@ function getFilterParams($excludePage = true) {
         </div>
         
         <div class="page-header">
-            <form method="GET" action="">
+            
+            <form method="GET" action="" id="filter-form">
                 <input type="hidden" name="tankID" value="<?php echo htmlspecialchars($tankID); ?>">
                 
                 <div class="filters-container">
-
                     <div class="filter">
                         <label for="event"><i class="fa fa-filter"></i> Event:</label>
                         <select id="event" name="event" onchange="applyFilters()">
@@ -209,89 +207,94 @@ function getFilterParams($excludePage = true) {
                             <i class="fa-solid fa-rotate-left"></i> Clear
                         </a>
                     </div>
-
                 </div>
             </form>
-        <div class="tank-status">
-            <h3>Status: <span class="indicator"><?php echo $currentStatus; ?></span></h3>
-        </div>
-        <div id="data-wrapper">
-            <?php if (empty($data)): ?>
-            <div class="empty-state">
-                <p>No sensor data found matching your criteria.</p>
-                <?php if(!empty($filterDateFrom) || !empty($filterDateTo)): ?>
-                    <p><a href="?tankID=<?php echo htmlspecialchars($tankID); ?>">Clear Filters</a></p>
+
+            <div class="status-bar-wrapper" id="tank-status-container">
+                <span class="status-label">System Status</span>
+                <span class="indicator <?php echo $statusClass; ?>">
+                    <?php echo $currentStatus; ?>
+                </span>
+            </div>
+
+            <div id="data-wrapper">
+                <?php if (empty($data)): ?>
+                <div class="empty-state">
+                    <p>No sensor data found matching your criteria.</p>
+                    <?php if(!empty($filterDateFrom) || !empty($filterDateTo)): ?>
+                        <p><a href="?tankID=<?php echo htmlspecialchars($tankID); ?>">Clear Filters</a></p>
+                    <?php endif; ?>
+                </div>
+                <?php else: ?>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-calendar"></i> Date & Time</th>
+                                <th><i class="fas fa-tint"></i> Watering Status</th>
+                                <th><i class="fas fa-tint"></i> Watering Flag</th>
+                                <th><i class="fas fa-water"></i> Watering Amount</th>
+                                <th><i class="fas fa-water"></i> Water Level</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tank-data-body">
+                            <?php foreach ($data as $row): ?>
+                                <tr>
+                                    <td><?php echo date('M j, Y g:i A', strtotime($row['dateandtime'])); ?></td>
+                                    <td class="numeric-value"><?php echo ($row['wateringstatus'] === 1) ? 'Pumped' : ($row['wateringstatus'] === 0 ? 'Hold Watering' : 'Able Watering'); ?></td>
+                                    <td class="numeric-value"><?php echo ($row['wateringFlag'] === 1) ? 'Low' : ($row['wateringFlag'] === 0 ? 'Full' : 'Idle'); ?></td>
+                                    <td class="numeric-value"><?php echo $row['wateringvolume'] !== null ? htmlspecialchars($row['wateringvolume']) . ' mL' : '-'; ?></td>
+                                    <td class="numeric-value"><?php echo ($row['waterlevel'] === 0) ? '0' : ($row['liters'] !== null ? $row['liters'] . ' Liters' : '-'); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+
+                    <?php if ($totalPages > 1): ?>
+                        <div class="pagination-container">
+                            <?php
+                                $queryParams = getFilterParams(); 
+                                $maxButtons = 5;
+                                $startPage = max(1, $page - 2);
+                                $endPage = min($totalPages, $startPage + $maxButtons - 1);
+                                
+                                if ($endPage - $startPage < $maxButtons - 1) {
+                                    $startPage = max(1, $endPage - $maxButtons + 1);
+                                }
+                            ?>
+
+                            <a href="?<?php echo $queryParams; ?>&page=<?php echo max(1, $page - 1); ?>" 
+                               class="pagination-link <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                               <i class="fa fa-chevron-circle-left"></i>
+                            </a>
+
+                            <a href="?<?php echo $queryParams; ?>&page=1"
+                                class="pagination-link <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                                First
+                            </a>
+
+                            <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                                <a href="?<?php echo $queryParams; ?>&page=<?php echo $i; ?>" 
+                                   class="pagination-link <?php echo ($i == $page) ? 'active' : ''; ?>">
+                                   <?php echo $i; ?>
+                                </a>
+                            <?php endfor; ?>
+
+                            <a href="?<?php echo $queryParams; ?>&page=<?php echo $totalPages; ?>"
+                                class="pagination-link <?php echo ($page >= $totalPages) ? 'disabled' : ''; ?>">
+                                Last
+                            </a>
+
+                            <a href="?<?php echo $queryParams; ?>&page=<?php echo min($totalPages, $page + 1); ?>" 
+                               class="pagination-link <?php echo ($page >= $totalPages) ? 'disabled' : ''; ?>">
+                               <i class="fa fa-chevron-circle-right"></i>
+                            </a>
+                        </div>
+                        <div class="pagination-info">
+                            Showing page <?php echo $page; ?> of <?php echo $totalPages; ?>
+                        </div>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
-            <?php else: ?>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th><i class="fas fa-calendar"></i> Date & Time</th>
-                            <th><i class="fas fa-tint"></i> Watering Status</th>
-                            <th><i class="fas fa-tint"></i> Watering Flag</th>
-                            <th><i class="fas fa-water"></i> Watering Amount</th>
-                            <th><i class="fas fa-water"></i> Water Level</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tank-data-body">
-                        <?php foreach ($data as $row): ?>
-                            <tr>
-                                <td><?php echo date('M j, Y g:i A', strtotime($row['dateandtime'])); ?></td>
-                                <td class="numeric-value"><?php echo ($row['wateringstatus'] === 1) ? 'Pumped' : ($row['wateringstatus'] === 0 ? 'Hold Watering' : 'Able Watering'); ?></td>
-                                <td class="numeric-value"><?php echo ($row['wateringFlag'] === 1) ? 'Low' : ($row['wateringFlag'] === 0 ? 'Full' : 'Idle'); ?></td>
-                                <td class="numeric-value"><?php echo $row['wateringvolume'] !== null ? htmlspecialchars($row['wateringvolume']) . ' mL' : '-'; ?></td>
-                                <td class="numeric-value"><?php echo ($row['waterlevel'] === 0) ? '0' : ($row['liters'] !== null ? $row['liters'] . ' Liters' : '-'); ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-
-                <?php if ($totalPages > 1): ?>
-                    <div class="pagination-container">
-                        <?php
-                            $queryParams = getFilterParams(); 
-                            $maxButtons = 5;
-                            $startPage = max(1, $page - 2);
-                            $endPage = min($totalPages, $startPage + $maxButtons - 1);
-                            
-                            if ($endPage - $startPage < $maxButtons - 1) {
-                                $startPage = max(1, $endPage - $maxButtons + 1);
-                            }
-                        ?>
-
-                        <a href="?<?php echo $queryParams; ?>&page=<?php echo max(1, $page - 1); ?>" 
-                           class="pagination-link <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
-                           <i class="fa fa-chevron-circle-left"></i>
-                        </a>
-
-                        <a href="?<?php echo $queryParams; ?>&page=1"
-                            class="pagination-link <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
-                            First
-                        </a>
-
-                        <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
-                            <a href="?<?php echo $queryParams; ?>&page=<?php echo $i; ?>" 
-                               class="pagination-link <?php echo ($i == $page) ? 'active' : ''; ?>">
-                               <?php echo $i; ?>
-                            </a>
-                        <?php endfor; ?>
-
-                        <a href="?<?php echo $queryParams; ?>&page=<?php echo $totalPages; ?>"
-                            class="pagination-link <?php echo ($page >= $totalPages) ? 'disabled' : ''; ?>">
-                            Last
-                        </a>
-
-                        <a href="?<?php echo $queryParams; ?>&page=<?php echo min($totalPages, $page + 1); ?>" 
-                           class="pagination-link <?php echo ($page >= $totalPages) ? 'disabled' : ''; ?>">
-                           <i class="fa fa-chevron-circle-right"></i>
-                        </a>
-                    </div>
-                    <div class="pagination-info">
-                        Showing page <?php echo $page; ?> of <?php echo $totalPages; ?>
-                    </div>
-                <?php endif; ?>
-            <?php endif; ?>
         </div>
     </div>
     <script src="../assets/js/view_tank_data.js" defer></script>

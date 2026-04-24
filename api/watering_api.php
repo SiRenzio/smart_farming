@@ -205,7 +205,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $notifMessage = "[Tank $liquidsensorID]: LOW water tank level, system HOLD WATERING";
             }
             else {
-                $notifMessage = "[Tank $liquidsensorID]:Mixing process finished and watering is Abled. System READY!";
+                if ($liquidsensorID === 1) {
+                    $notifMessage = "[Tank $liquidsensorID]: is Now FULL and watering is Abled. System READY!";
+                }
+                else {
+                    $notifMessage = "[Tank $liquidsensorID]: Mixing process finished and watering is Abled. System READY!";
+                }
             }
 
             if (!empty($notifMessage)) {
