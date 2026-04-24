@@ -28,8 +28,14 @@ bell.addEventListener("click", function (e) {
 
 // Close when clicking outside
 document.addEventListener("click", function () {
-    dropdown.style.display = "none";
-    markAsRead(); // Mark as read when closing the dropdown by clicking outside
+    if (dropdown.style.display === "block") {
+        dropdown.style.display = "none";
+        markAsRead(); // Now it ONLY marks as read if you are closing an open dropdown
+    }
+});
+
+dropdown.addEventListener("click", function (e) {
+    e.stopPropagation();
 });
 
 function loadNotifications() {
