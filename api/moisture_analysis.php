@@ -208,15 +208,8 @@ function process_sensor_job($conn, $jobFile, $data) {
     if(abs($deviation) > 20){
         $averageRounded = round($average, 2);
         $deviationRounded = round($deviation, 2);
-
-        $notif = "$sensorName abnormal moisture: $latest (avg $averageRounded) | Deviation: $deviationRounded%";
-
-        $stmt = $conn->prepare("INSERT INTO notification(message, createdAT) VALUES (?, NOW())");
-        $stmt->bind_param("s", $notif);
-        $stmt->execute();
-        $stmt->close();
         
-        // Find another connected sensor
+        // Find another connected sensor FIRST to see if a switch is even possible
         $nextStmt = $conn->prepare("
             SELECT soilSensorID 
             FROM deployment 
@@ -227,8 +220,41 @@ function process_sensor_job($conn, $jobFile, $data) {
         $nextStmt->execute();
         $nextResult = $nextStmt->get_result();
         
-        if ($nextResult->num_rows > 0) {
-            $nextSensor = $nextResult->fetch_assoc();
+        $canSwitch = $nextResult->num_rows > 0;
+        $nextSensor = $canSwitch ? $nextResult->fetch_assoc() : null;
+        $nextStmt->close();
+
+        $shouldNotify = true;
+
+        // If we can't switch, enforce a 5-minute (300 seconds) cooldown on notifications
+        if (!$canSwitch) {
+            if (isset($data['lastDeviationNotifTime']) && (time() - $data['lastDeviationNotifTime'] < 300)) {
+                $shouldNotify = false; // 5 minutes haven't passed yet, mute it
+            } else {
+                $data['lastDeviationNotifTime'] = time(); // Reset the 5-minute timer
+            }
+        }
+
+        // Only send the notification if we are allowed to
+        if ($shouldNotify) {
+            $averageRounded = round($average, 2);
+            $deviationRounded = round($deviation, 2);
+
+            $notif = "$sensorName abnormal moisture: $latest (avg $averageRounded) | Deviation: $deviationRounded%";
+            
+            // Optionally add a helpful note to the user if they have no backups
+            if (!$canSwitch) {
+                $notif .= " (No backup available. Next alert in 5 mins if unresolved).";
+            }
+
+            $stmt = $conn->prepare("INSERT INTO notification(message, createdAT) VALUES (?, NOW())");
+            $stmt->bind_param("s", $notif);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        // If we have a backup sensor, perform the switch
+        if ($canSwitch) {
             $newPrimaryID = $nextSensor['soilSensorID'];
             
             // Demote the old sensor
@@ -254,13 +280,19 @@ function process_sensor_job($conn, $jobFile, $data) {
                 "triggeredBy"  => "primary_switch"
             ]));
         }
-        $nextStmt->close();
+        
     } else {
         // Deviation is safe
         $insert = $conn->prepare("INSERT INTO soilmoisture_samples (soilSensorID, SoilMois, is_baseline) VALUES (?, ?, 0)");
         $insert->bind_param("id", $soilSensorID, $latest);
         $insert->execute();
         $insert->close();
+
+        // The sensor is behaving normally again. Delete the cooldown timer 
+        // so it will alert immediately if it deviates again.
+        if (isset($data['lastDeviationNotifTime'])) {
+            unset($data['lastDeviationNotifTime']);
+        }
     }
 
     // Save the timestamp of this reading so we don't duplicate it in 5 seconds
