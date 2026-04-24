@@ -34,7 +34,7 @@
 
 /* ===================== SERVER & WIFI ===================== */
 // const char* webServerIp = "172.16.0.100";
-const char* webServerIp = "192.168.1.6";
+const char* webServerIp = "192.168.1.5";
  
 String sendWateringURL = "http://" + String(webServerIp) + "/smart_farming/api/watering_api.php";
 String sendIntelURL = "http://" + String(webServerIp) + "/smart_farming/api/intel_api.php";
@@ -90,9 +90,7 @@ const unsigned long serialTimeout = 10000;
 // Tank 1 State
 int wateringflag1 = -1;  
 int wateringstatus1 = -1;
-int mixingflag1 = 0;
 int trig_tsl1 = 0;
-unsigned long mixStartTime1 = 0;
 
 // Tank 2 State
 int wateringflag2 = -1;  
@@ -111,6 +109,7 @@ unsigned long mixStartTime3 = 0;
 
 // Flow Sensor State
 volatile unsigned long flowPulseCount = 0;
+unsigned long lastFlowPulseCount = 0;
 const float calibrationFactor = 450.0; // YF-S201: 450 pulses per liter
 float currentVolumeML = 0;
 float targetVolumeML = 0;
@@ -133,10 +132,8 @@ unsigned long cycleWaitInterval = 60000;  // 15 minutes = 900000 ms | 30 minutes
 bool waitingAfterCycle = false;
 
 // Pre-watering mixing flags (from Intel command)
-int premixFlag1 = 0;
 int premixFlag2 = 0;
 int premixFlag3 = 0;
-unsigned long premixStartTime1 = 0;
 unsigned long premixStartTime2 = 0;
 unsigned long premixStartTime3 = 0;
 
@@ -396,11 +393,10 @@ void checkIntelConnection() {
 
             if (cmdTank > 0) {
               // Determine if system is currently busy
-              bool isPremixing = (premixFlag1 == 1 || premixFlag2 == 1 || premixFlag3 == 1);
+              bool isPremixing = (premixFlag2 == 1 || premixFlag3 == 1);
               bool isBusy = wateringActive || isPremixing;
               
               int currentBusyTank = activeTank;
-              if (premixFlag1 == 1) currentBusyTank = 1;
               if (premixFlag2 == 1) currentBusyTank = 2;
               if (premixFlag3 == 1) currentBusyTank = 3;
 
@@ -410,8 +406,18 @@ void checkIntelConnection() {
                 targetVolumeML = intelVolume;
                 
                 if (cmdTank == 1) {
-                  activeTank = 1; premixFlag1 = 1; premixStartTime1 = millis(); flowPulseCount = 0; lastCommand1 = command; digitalWrite(mixermotor1, HIGH);
-                  Serial.println("[INTEL] Tank 1: Starting pre-watering mix (NORMAL WATER)");
+                  activeTank = 1; 
+                  lastCommand1 = command; 
+                  
+                  // Immediately start watering process
+                  wateringActive = true; 
+                  flowPulseCount = 0; 
+                  lastFlowPulseTime = millis();
+                  wateringstatus1 = 1;
+                  trig_tsl1 = 1;
+                  
+                  digitalWrite(slIndicator1, HIGH); // Open solenoid
+                  Serial.println("[INTEL] Tank 1: Opening solenoid and starting flow (NO PRE-MIX)");
                 } else if (cmdTank == 2) {
                   activeTank = 2; premixFlag2 = 1; premixStartTime2 = millis(); flowPulseCount = 0; lastCommand2 = command; digitalWrite(mixermotor2, HIGH);
                   Serial.println("[INTEL] Tank 2: Starting pre-watering mix (CALCIUM BASED)");
@@ -825,7 +831,7 @@ void loop() {
 
     wateringflag1 = wateringflag2 = wateringflag3 = -1;
     wateringstatus1 = wateringstatus2 = wateringstatus3 = -1;
-    mixingflag1 = mixingflag2 = mixingflag3 = 0;
+    mixingflag2 = mixingflag3 = 0;
   }
 
   /* ================= CONTINUOUS UPDATE ================= */
@@ -842,9 +848,11 @@ void loop() {
 
   /* ================= TANK LOGIC ================= */
 
-  if (currentliquidlevel1 <= 25) digitalWrite(pumpmotor1, LOW);
-  if (currentliquidlevel2 <= 25) digitalWrite(pumpmotor2, LOW);
-  if (currentliquidlevel3 <= 25) digitalWrite(pumpmotor3, LOW);
+  if(!manualRunning) {
+    if (currentliquidlevel1 <= 25) digitalWrite(pumpmotor1, LOW);
+    if (currentliquidlevel2 <= 25) digitalWrite(pumpmotor2, LOW);
+    if (currentliquidlevel3 <= 25) digitalWrite(pumpmotor3, LOW);
+  }
 
   // Tank 1
   if (apiReady && dataValid) {
@@ -855,31 +863,13 @@ void loop() {
       digitalWrite(pumpmotor1, HIGH);
       sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1, 0);
     }
-
     
     if (currentliquidlevel1 <= 25 && wateringflag1 == 1 && wateringstatus1 == 0) {
-      digitalWrite(pumpmotor1, LOW); // Redundant safety
-      wateringflag1 = 0;
-      wateringstatus1 = 0;
-      mixingflag1 = 1;
+      digitalWrite(pumpmotor1, LOW); 
+      wateringflag1 = -1;
+      wateringstatus1 = -1;
       sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1, 0);
     }
-  }
-
-  // Tank 1 Mixing
-  if (mixingflag1 == 1 && digitalRead(switch1) == LOW) {
-    digitalWrite(mixermotor1, HIGH);
-    wateringstatus1 = -1;
-    mixingflag1 = 2;
-    mixStartTime1 = currentMillis;
-  }
-
-  if (mixingflag1 == 2 && currentMillis - mixStartTime1 >= mixingDuration) {
-    digitalWrite(mixermotor1, LOW);
-    mixingflag1 = 0;
-    wateringflag1 = -1;
-    wateringstatus1 = -1;
-    sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1, 0);
   }
 
   // Tank 2
@@ -955,26 +945,6 @@ void loop() {
 
   /* ================= PRE-WATERING MIX SEQUENCE (FROM INTEL) ================= */
   
-  // Tank 1 Pre-watering Mix
-  if (premixFlag1 == 1) {
-    unsigned long premixElapsed = millis() - premixStartTime1;
-
-    if (premixElapsed >= mixingDuration) {
-      digitalWrite(mixermotor1, LOW);
-      premixFlag1 = 0;
-      trig_tsl1 = 1;
-
-      wateringActive = true;  
-      activeTank = 1;
-      flowPulseCount = 0;
-      lastFlowPulseTime = millis();
-      wateringstatus1 = 1;
-
-      digitalWrite(slIndicator1, HIGH); // solenoid open | start watering
-      Serial.println("[INTEL SEQUENCE] Tank 1: Pre-mix complete, opening solenoid and starting flow count");
-    }
-  }
-
   // Tank 2 Pre-watering Mix
   if (premixFlag2 == 1) {
     unsigned long premixElapsed = millis() - premixStartTime2;
@@ -1021,6 +991,12 @@ void loop() {
   if (wateringActive && targetVolumeML > 0) {
     currentVolumeML = (flowPulseCount / calibrationFactor) * 1000;  // Convert pulses to mL
     
+    // reset the flow timeout if there's a pulse count
+    if (flowPulseCount != lastFlowPulseCount) {
+      lastFlowPulseTime = currentMillis;
+      lastFlowPulseCount = flowPulseCount; 
+    }
+
     if (currentMillis - lastFlowPrintTime >= flowPrintInterval) {
       lastFlowPrintTime = currentMillis;
       
@@ -1044,9 +1020,12 @@ void loop() {
       Serial.println("%");
     }
 
-    // FAIL SAFE: No flow detected 
+    // FAIL SAFE: No flow detected or flow stopped (tank empty)
     if (millis() - lastFlowPulseTime >= flowTimeout) {
-      Serial.println("[FAILSAFE] No flow detected for 3 minutes! Closing solenoid...");
+      Serial.println("[FAILSAFE] Flow stopped or not detected! Tank might be empty. Closing solenoid...");
+
+      // send failsafe notice
+      sendWateringData("failsafe", activeTank, 0, -1, -1, 0);
 
       // Close the active solenoid
       if (activeTank == 1) {
@@ -1065,23 +1044,19 @@ void loop() {
       // Stop watering process
       wateringActive = false;
       flowPulseCount = 0;
+      lastFlowPulseCount = 0; // Reset tracking variable
       currentVolumeML = 0;
 
-      // Reset DB flags
-      sendResetToWatering(1);
-      sendResetToWatering(2);
-      sendResetToWatering(3);
-
-      // Reset system state
-      activeTank = 0;
-      cycleRunning = false;
-      intakeLocked = false;
-
-      // clear if there was queued command
+      // Clear if there was a queued command so it doesn't try to run a bad sequence
       queuedTank = 0;
       queuedVolumeML = 0;
 
-      Serial.println("[FAILSAFE] System reset due to no flow.");
+      // proceed to wait cycle after failsafe
+      waitingAfterCycle = true;
+      cycleCompleteTime = currentMillis;
+      activeTank = 0;
+      
+      Serial.println("[INTEL] Failsafe triggered. Starting wait period before system reset...");
 
       return; // EXIT early to prevent further execution
     }
@@ -1119,6 +1094,7 @@ void loop() {
       
       wateringActive = false;
       flowPulseCount = 0;
+      lastFlowPulseCount = 0; // Reset tracking variable
       currentVolumeML = 0;
 
       // --- QUEUE CHECK: START NEXT TANK IF QUEUED ---
@@ -1129,9 +1105,7 @@ void loop() {
         targetVolumeML = queuedVolumeML;
         intakeLocked = true;
 
-        if (queuedTank == 1) {
-          activeTank = 1; premixFlag1 = 1; premixStartTime1 = currentMillis; wateringflag1 = 1; wateringstatus1 = 2; digitalWrite(mixermotor1, HIGH);
-        } else if (queuedTank == 2) {
+        if (queuedTank == 2) {
           activeTank = 2; premixFlag2 = 1; premixStartTime2 = currentMillis; wateringflag2 = 1; wateringstatus2 = 2; digitalWrite(mixermotor2, HIGH);
         } else if (queuedTank == 3) {
           activeTank = 3; premixFlag3 = 1; premixStartTime3 = currentMillis; wateringflag3 = 1; wateringstatus3 = 2; digitalWrite(mixermotor3, HIGH);
@@ -1164,7 +1138,7 @@ void loop() {
     wateringflag3 = -1;
     wateringstatus3 = -1;
     
-    // Send reset signal to Watering API to set isActive=0
+    // Send reset signal
     sendResetToWatering(1);
     sendResetToWatering(2);
     sendResetToWatering(3);

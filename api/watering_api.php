@@ -36,9 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         sendResponse(false, 'liquidsensorID is required');
     }
 
-    /* ============================================================
-       RESET FLAG LOGIC
-    ============================================================ */
+    // RESET CYCLE
     if ($updateType === 'reset') {
         
         $resetQuery = "UPDATE tankpumpevent SET isActive = 0, fertFlag = 0 WHERE liquidsensorID = ? AND isActive = 1";
@@ -75,14 +73,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $dateTime = date('Y-m-d H:i:s');
 
-    /* ============================================================
-       CONTINUOUS UPDATE LOGIC
-    ============================================================ */
+
+    // CONTINUOUS LEVEL UPDATE
     if ($updateType === 'continuous') {
 
         $jsonFile = '../failsafe/current_tank_levels.json';
-    
-        // Initialize an empty array for our tank data
         $tanksData = [];
 
         // Read existing data if the file already exists
@@ -95,16 +90,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $tanksData = $decodedData;
             }
         }
-
-        // Update or add the data for the specific tank
-        // We use $liquidsensorID as the array key so it overwrites the old data for that tank
+        // Update the specific tank's data
         $tanksData[$liquidsensorID] = [
             'tank' => $liquidsensorID,
             'currentliquidlevel' => $currentliquidlevel,
             'dateandtime' => $dateTime // Assuming $dateTime is defined earlier in your script
         ];
 
-        // Encode back to JSON (JSON_PRETTY_PRINT makes it readable if you open the file)
+        // Encode the updated data back to JSON with pretty print for readability
         $newJsonContent = json_encode($tanksData, JSON_PRETTY_PRINT);
 
         // Write to the file using an exclusive lock (LOCK_EX) to prevent file corruption from concurrent writes
@@ -119,9 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    /* ============================================================
-       EVENT UPDATE LOGIC
-    ============================================================ */
+    // PUMPING EVENT
     if ($updateType === 'event') {
 
         $stateQuery = "SELECT fertFlag, isActive FROM tankpumpevent WHERE liquidsensorID = ? ORDER BY tankPumpEventID DESC LIMIT 1";
@@ -245,9 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     }
 
-    /* ============================================================
-       WATERING EVENT LOGIC
-    ============================================================ */
+    // WATERING EVENT
     if ($updateType === 'watering') {
         
         $fertQuery = "SELECT fertFlag FROM tankpumpevent WHERE liquidsensorID = ? ORDER BY tankPumpEventID DESC LIMIT 1";
@@ -334,9 +323,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    /* ============================================================
-       HANDSHAKE LOGIC
-    ============================================================ */
+    // FAILSAFE NOTIFICATION
+    if($updateType === 'failsafe') {
+        // Updated message to accurately reflect the flow sensor timeout
+        $notifMessage = "Failsafe triggered for Tank $liquidsensorID. Flow stopped or not detected! Watering process aborted.";
+        $notifSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
+        $notifStmt = $conn->prepare($notifSql);
+        $notifStmt->bind_param("s", $notifMessage);
+        $notifStmt->execute();
+        
+        // Always good practice to send a JSON response back to the ESP32 so it doesn't hang
+        sendResponse(true, "Failsafe logged for Tank $liquidsensorID");
+        $notifStmt->close();
+    }
+
+    // HANDSHAKE LOGIC
     if ($updateType === 'handshake') {
         $settingsPath = __DIR__ . '/../failsafe/settings.json';
         $settingsData = null;
