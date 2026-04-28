@@ -302,7 +302,7 @@ function disconnectSensor(btn) {
     fetch('../api/disconnect_sensor.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ sensor_id: btn.dataset.id })
+        body: new URLSearchParams({ sensor_id: btn.dataset.id, location_id: btn.dataset.locationId })
     })
     .then(res => res.json())
     .then(data => {

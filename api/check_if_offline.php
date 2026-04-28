@@ -9,8 +9,9 @@ function checkIF_Offline($conn) {
     $currentTime = time();
 
     // Fetch userID as well to avoid relying on session in a continuous loop
-    $checkSql = "SELECT soilSensorID, userID, sensorMacAddress, last_sensor_online, sensorStatus, isRegistered 
-                 FROM sensorinfo";
+    $checkSql = "SELECT s.soilSensorID, s.userID, s.sensorMacAddress, s.last_sensor_online, s.sensorStatus, s.isRegistered, d.locationID 
+                 FROM sensorinfo s
+                 LEFT JOIN deployment d ON s.soilSensorID = d.soilSensorID";
 
     $result = $conn->query($checkSql);
 
@@ -22,7 +23,8 @@ function checkIF_Offline($conn) {
             $lastOnline   = $row['last_sensor_online'];
             $status       = (int)$row['sensorStatus'];
             $isRegistered = (int)$row['isRegistered'];
-
+            $locationID   = $row['locationID'];
+            
             // Calculate time difference
             $lastOnlineTime = strtotime($lastOnline);
             $timeDiffSeconds = $currentTime - $lastOnlineTime;
@@ -61,6 +63,7 @@ function checkIF_Offline($conn) {
                                  FROM deployment d
                                  JOIN sensorinfo s ON d.soilSensorID = s.soilSensorID
                                  WHERE d.userID = ? 
+                                   AND d.locationID = ? 
                                    AND s.sensorStatus = 1 
                                    AND d.isConnected = 1 
                                    AND d.isPrimary = 0 
@@ -68,7 +71,7 @@ function checkIF_Offline($conn) {
                                  ORDER BY d.deploymentID ASC LIMIT 1";
                                  
                 $checkStmt = $conn->prepare($checkNextSql);
-                $checkStmt->bind_param("ii", $userID, $soilSensorID);
+                $checkStmt->bind_param("iii", $userID, $locationID, $soilSensorID);
                 $checkStmt->execute();
                 $checkResult = $checkStmt->get_result();
                 

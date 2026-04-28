@@ -10,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $sensorID = $_POST['sensor_id'] ?? null;
+$locationID = $_POST['location_id'] ?? null;
 $userID   = $_SESSION['userID'] ?? null; // Added user base check
 $command  = 'disconnect';
 
@@ -48,10 +49,10 @@ if ($wasPrimary) {
     $nextStmt = $conn->prepare("
         SELECT soilSensorID 
         FROM deployment 
-        WHERE userID = ? AND isConnected = 1 AND soilSensorID != ? 
+        WHERE userID = ? AND isConnected = 1 AND soilSensorID != ? AND locationID = ?
         ORDER BY deploymentID ASC
     ");
-    $nextStmt->bind_param("ii", $userID, $sensorID);
+    $nextStmt->bind_param("iii", $userID, $sensorID, $locationID);
     $nextStmt->execute();
     $nextResult = $nextStmt->get_result();
     

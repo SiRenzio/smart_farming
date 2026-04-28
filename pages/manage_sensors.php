@@ -14,7 +14,7 @@ if (!isset($_SESSION['userID'])) {
 
 // Fetch sensors
 $sensors = $conn->query("
-    SELECT s.*, sd.*, f.*
+    SELECT s.*, sd.*, f.*, d*
     FROM sensorinfo s
     LEFT JOIN sensordata sd 
         ON sd.SensorDataID = (
@@ -26,6 +26,8 @@ $sensors = $conn->query("
         )
     LEFT JOIN farmlocation f 
         ON sd.locationID = f.locationID
+    LEFT JOIN deployment d 
+        ON s.soilSensorID = d.soilSensorID
     ORDER BY s.soilSensorID ASC
 ");
 
@@ -229,7 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         </select>
                     </div>
                     <button type="button" class="send-button" onclick="connectSensor(this)" disabled>Connect</button>
-                    <button class="disconnect" style="display: none;" data-id="<?= htmlspecialchars($sensor['soilSensorID'] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
+                    <button class="disconnect" style="display: none;" data-id="<?= htmlspecialchars($sensor['soilSensorID'] ?? '') ?>" data-location-id="<?= htmlspecialchars($sensor['locationID'] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
                     <button class="register" style="display: none;" onclick="registerSensor(<?= $sensor['soilSensorID'] ?>)">Register</button>
                     
                     <div class="add-sensor-modal" style="display: none;">
