@@ -56,8 +56,8 @@ function process_sensor_job($conn, $jobFile, $data) {
         $targetTime = date('Y-m-d H:i:s', $data['startTime'] + 120);
     }
 
-    // Check primary status, connectivity, and current nutrition stage
-    $statusQuery = $conn->prepare("SELECT isConnected, isPrimary, nutritionID FROM deployment WHERE soilSensorID = ? LIMIT 1");
+   // Check primary status, connectivity, current nutrition stage, and location
+    $statusQuery = $conn->prepare("SELECT isConnected, isPrimary, nutritionID, locationID FROM deployment WHERE soilSensorID = ? LIMIT 1");
     $statusQuery->bind_param("i", $soilSensorID);
     $statusQuery->execute();
     $sensorStatus = $statusQuery->get_result()->fetch_assoc();
@@ -213,10 +213,10 @@ function process_sensor_job($conn, $jobFile, $data) {
         $nextStmt = $conn->prepare("
             SELECT soilSensorID 
             FROM deployment 
-            WHERE userID = ? AND isConnected = 1 AND soilSensorID != ? 
+            WHERE userID = ? AND locationID = ? AND isConnected = 1 AND soilSensorID != ? 
             ORDER BY deploymentID ASC LIMIT 1
         ");
-        $nextStmt->bind_param("ii", $userResult['userID'], $soilSensorID);
+        $nextStmt->bind_param("iii", $userResult['userID'], $sensorStatus['locationID'], $soilSensorID);
         $nextStmt->execute();
         $nextResult = $nextStmt->get_result();
         
