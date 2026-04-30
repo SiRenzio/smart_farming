@@ -14,7 +14,7 @@ if (!isset($_SESSION['userID'])) {
 
 // Fetch sensors
 $sensors = $conn->query("
-    SELECT s.*, sd.*, f.*, d*
+    SELECT s.*, sd.*, f.*, d.*
     FROM sensorinfo s
     LEFT JOIN sensordata sd 
         ON sd.SensorDataID = (
