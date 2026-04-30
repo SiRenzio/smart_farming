@@ -13,14 +13,17 @@ CREATE TABLE plantnutrionneed (
     nutritionSetName VARCHAR(30),
     userID INT(11), -- Foreign key to users table
     plantID INT, -- Foreign key to plantinfo table
+    soilType VARCHAR(30),
+    meanMoistureThreshold INT,
+    growthStage VARCHAR(50),
+    numberOfPlants INT,
     soilN INT(10),
     soilP INT(10),
     soilK INT(10),
     soilEC INT(10),
     soilPH FLOAT,
-    soilT FLOAT,
-    soilM FLOAT,
-    flowRate FLOAT,
+    liquidVolume FLOAT,
+    isActive TINYINT(1),
     FOREIGN KEY (userID) REFERENCES users(userID),
     FOREIGN KEY (plantID) REFERENCES plantinfo(plantID)
 );
@@ -44,6 +47,7 @@ CREATE TABLE sensorinfo (
     sensorStatus TINYINT(1),
     last_sensor_online DATETIME,
     dateAdded DATETIME,
+    isRestart TINYINT(1),
     FOREIGN KEY (userID) REFERENCES users(userID)
 );
 
@@ -51,6 +55,8 @@ CREATE TABLE farmlocation (
     locationID INT(15) AUTO_INCREMENT PRIMARY KEY,
     userID INT(11), -- Foreign key to users table
     farmName VARCHAR(30),
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
     dateAdded TIMESTAMP,
     FOREIGN KEY (userID) REFERENCES users(userID)
 );
@@ -90,11 +96,15 @@ CREATE TABLE liquidlevelsensor (
 -- Create the 'tankpumpevent' table
 CREATE TABLE tankpumpevent (
     tankpumpventID INT(15) AUTO_INCREMENT PRIMARY KEY,
-    liquidsensorID INT(15),
+    liquidsensorID INT(15), -- Foreign key to liquidsensorinfo table
     wateringstatus TINYINT(1),
     wateringvolume FLOAT,
     wateringFlag TINYINT(1),
+    isActive TINYINT(1),
+    fertFlag TINYINT(1),
+    waterlevel INT(15),
     dateandtime TIMESTAMP
+    FOREIGN KEY (liquidsensorID) REFERENCES liquidsensorinfo(liquidsensorID)
 );
 
 -- Create the 'deployment' table
@@ -103,10 +113,13 @@ CREATE TABLE deployment (
     userID INT(11), -- Foreign key to users table
     soilSensorID INT(11), -- Foreign key to sensorinfo table
     locationID INT(11), -- Foreign key to farmlocation table
+    nutritionID INT(11), -- Foreign key to plantnutrionneed table
     isConnected TINYINT(1),
+    isPrimary TINYINT(1),
     FOREIGN KEY (userID) REFERENCES users(userID),
     FOREIGN KEY (locationID) REFERENCES farmlocation (locationID),
-    FOREIGN KEY (soilSensorID) REFERENCES sensorinfo (soilSensorID)
+    FOREIGN KEY (soilSensorID) REFERENCES sensorinfo (soilSensorID),
+    FOREIGN KEY (nutritionID) REFERENCES plantnutrionneed (nutritionID)
 )
 
 -- Create the 'notification' table
@@ -127,3 +140,13 @@ CREATE TABLE fertilizer (
     FOREIGN KEY (liquidsensorID) REFERENCES liquidsensorinfo(liquidsensorID),
     FOREIGN KEY (nutritionID) REFERENCES plantnutrionneed(nutritionID)
 );
+
+-- Create the soilmoisture_samples table
+CREATE TABLE soilmoisture_samples (
+    sampleID INT(11) AUTO_INCREMENT PRIMARY KEY,
+    soilSensorID INT(15), -- Foreign key to sensorinfo table
+    SoilMois FLOAT,
+    createdAt TIMESTAMP,
+    isBaseline TINYINT(1),
+    FOREIGN KEY (soilSensorID) REFERENCES sensorinfo(soilSensorID)
+)
