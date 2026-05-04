@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sensorName']) && isse
         $stmt->bind_param("isi", $_SESSION['userID'], $sensorName, $sensorID);
 
         if ($stmt->execute()) {
-            $success = "Sensor registered successfully." . "Soil Sensor ID: " . $sensorID . ", Sensor Name: " . $sensorName;
+            $success = "Sensor registered successfully.";
             $_SESSION['success'] = $success;
             header("Location: manage_sensors.php");
             exit;
@@ -232,8 +232,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     </div>
                     <button type="button" class="send-button" onclick="connectSensor(this)" disabled>Connect</button>
                     <button class="disconnect" style="display: none;" data-id="<?= htmlspecialchars($sensor['primaryID'] ?? '') ?>" data-location-id="<?= htmlspecialchars($sensor['locationID'] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
-                    <button class="register" style="display: none;" onclick="registerSensor(<?= htmlspecialchars($sensor['primaryID']) ?>)">Register</button>
-                    
+                    <button class="register" style="display: none;" onclick="registerSensor(<?= $sensor['primaryID'] ?>)">Register</button>
+
                     <div class="add-sensor-modal" style="display: none;">
                         <div class="modal-header">
                             <div class="icon">

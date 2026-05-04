@@ -35,6 +35,6 @@
     </style>
 </head>
 <body>
-    <a href="/test/test.php" class="test">Go to Test Page</a>
+    <a href="../test/test.php" class="test">Go to Test Page</a>
 </body>
 </html>

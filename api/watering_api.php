@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
 
         $stmt->bind_param(
-            'iiiiiid',
+            'iiiiiii',
             $liquidsensorID, $wateringstatus, $wateringFlag, $currentIsActive, 
             $currentFertFlag, $currentliquidlevel, $wateringvolume
         );
@@ -259,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             VALUES (?, ?, ?, ?, ?, ?, ?, NOW())'
         );
 
-        $wateringStmt->bind_param('iiiiidi', 
+        $wateringStmt->bind_param('iiiiiii', 
             $liquidsensorID, $wateringstatus, $wateringFlag, $isActiveFlag, 
             $currentliquidlevel, $wateringvolume, $currentFertFlag
         );

@@ -13,10 +13,11 @@ SoftwareSerial mySerial(TX_PIN, RX_PIN);
 
 /* ===================== SERVER URLs ===================== */
 // Update this to your current server IP if necessary
-const char* webServerIp = "172.16.0.100"; 
+const char* webServerIp = "172.16.0.105";
+// const char* webServerIp = "mystifying-smoke-57804.pktriot.xyz"; 
 
-String verifyDeviceURL = "http://" + String(webServerIp) + "/smart_farming/webServer.php";
-String sendDataURL     = "http://" + String(webServerIp) + "/smart_farming/api/sensor_api.php";
+String verifyDeviceURL = "http://" + String(webServerIp) + "/webServer.php";
+String sendDataURL     = "http://" + String(webServerIp) + "/api/sensor_api.php";
 
 /* ===================== GLOBALS ===================== */
 WebServer server(80);
@@ -230,7 +231,14 @@ void setup() {
   if (savedSSID != "") {
     Serial.println("\n[WiFi] Found saved credentials. Connecting to: " + savedSSID);
     WiFi.mode(WIFI_STA);
-    WiFi.setHostname("ESP32-Smart-Agri_Sensor");
+    uint64_t chipid = ESP.getEfuseMac();
+    // generate hostname from device itself
+    char hostname[32];
+    sprintf(hostname, "ESP32-%04X%08X", 
+            (uint16_t)(chipid >> 32), 
+            (uint32_t)chipid);
+
+    WiFi.setHostname(hostname);
     WiFi.begin(savedSSID.c_str(), savedPass.c_str());
 
     int timeout = 20;
