@@ -1,0 +1,776 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.welcome-section h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+}
+
+.welcome-section p {
+    font-size: 1.1rem;
+    color: #666;
+    font-weight: 400;
+}
+
+.logout-btn {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.logout-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+    text-decoration: none;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* No tanks available */
+.empty {
+    text-align: center;
+}
+
+@media (min-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .span-2 {
+        grid-column: span 2;
+    }
+}
+@media (max-width: 1023px) and (min-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .span-2 {
+        grid-column: span 2;
+    }
+}
+
+.dashboard-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.dashboard-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+.dashboard-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.card-icon {
+    width: 50px;
+    height: 70px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    font-size: 1.5rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.icon-plant { background: linear-gradient(135deg, #4CAF50, #45a049); }
+.icon-sensor { background: linear-gradient(135deg, #2196F3, #1976D2); }
+.icon-data { background: linear-gradient(135deg, #FF9800, #F57C00); }
+.icon-view { background: linear-gradient(135deg, #9C27B0, #7B1FA2); }
+
+.card-content h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.card-content p {
+    color: #666;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.card-action {
+    margin-top: 1.5rem;
+}
+
+.card-btn {
+    display: inline-block;
+    width: 100%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 1rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 500;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.card-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    text-decoration: none;
+}
+
+.stats-section {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border-radius: 15px;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #666;
+    font-weight: 500;
+}
+
+/* User sensor deployment */
+
+.empty-state p { 
+    text-align: center; 
+    color: #6c757d; 
+    padding: 2em; 
+}
+
+.sensors-deployment-section {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 2rem;
+}
+.sensors-deployment-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+.deployment-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin-top: 1em; 
+}
+.deployment-table th, .deployment-table td { 
+    padding: 0.75em; text-align: center; 
+    border-bottom: 1px solid #dee2e6; 
+}
+.deployment-table th { 
+    background: #f8f9fa; 
+    font-weight: bold; 
+}
+.deployment-table tr:hover { 
+    background: #f8f9fa; 
+}
+
+.action-btn {
+    flex: 1;
+    min-width: 70px;
+    padding: 0.5rem 0.5rem;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 500;
+    text-align: center;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+}
+/* Pagination */
+.pagination-container { 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    margin-top: 2rem; 
+    gap: 5px
+}
+.pagination-link { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    min-width: 40px; 
+    height: 40px; 
+    background: rgba(255, 255, 255, 0.9); 
+    padding: 0.5rem 0.5rem; 
+    border: 1px solid rgba(255, 255, 255, 0.3); 
+    border-radius: 8px; 
+    color: #555; 
+    font-weight: 600; 
+    text-decoration: none; 
+    transition: all 0.3s ease; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+}
+.pagination-link { 
+    font-size: 1.1rem;
+}
+.pagination-link:hover { 
+    background: white; 
+    color: #667eea; 
+    transform: translateY(-2px); 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+    text-decoration: none; 
+}
+.pagination-link.active { 
+    background: linear-gradient(135deg, #667eea, #764ba2); 
+    color: white; border-color: transparent; 
+    box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3); 
+}
+.pagination-link.disabled { 
+    background: rgba(255, 255, 255, 0.5); 
+    color: #aaa; 
+    cursor: not-allowed; 
+    pointer-events: none; 
+}
+.pagination-info { 
+    text-align: center; 
+    margin-top: 1rem; 
+    color: rgba(14, 0, 0, 0.9); 
+    font-size: 0.9rem; 
+}
+
+/* Map Deployment Section */
+
+.map-deployment-section {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 2rem;
+}
+.map-deployment-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+/* Map Legend */
+.map-legend {
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding-left: 0.5rem;
+}
+
+.legend-connected {
+    color: #2e7d32;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-disconnected {
+    color: #e74c3c;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Leaflet Map Container */
+.dashboard-map {
+    height: 400px;
+    width: 100%;
+    border-radius: 8px;
+    z-index: 1;
+    border: 1px solid #e2e8f0;
+    background-color: #f8fafc;
+}
+
+/* Sensor Label */
+.sensor-map-label {
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 6px 10px;
+    white-space: nowrap;
+}
+
+
+.sensor-label-content {
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* Sensor Name Styling */
+.sensor-label-content strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 3px;
+}
+
+/* Username Styling */
+.sensor-label-content span {
+    display: block;
+    font-size: 11px; 
+    color: #64748b;
+    font-weight: 400;
+}
+
+/* --- WATER TANK LAYOUT --- */
+.tank-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    overflow: hidden;
+}
+
+.tank-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+.tank-container:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+}
+
+.tanks-wrapper {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    gap: 1rem;
+    width: 100%;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.tank-card {
+    text-align: center;
+    flex: 1 1 80px;
+    min-width: 80px;
+    max-width: 150px;
+}
+
+.tank-card-btn {
+    text-decoration: none;
+    cursor: pointer;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.tank-card-btn:hover {
+    transform: translateY(-5px);
+}
+
+.tank-card-btn:focus-visible {
+    outline: 2px solid #4da3ff;
+    border-radius: 12px;
+}
+
+.tank-name {
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #1976D2;
+}
+
+.tank {
+    position: relative;
+    width: 60%;
+    margin: auto;
+    background: rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 20px;
+    box-shadow: 
+        inset 15px 0 20px rgba(0,0,0,0.05),
+        inset -15px 0 20px rgba(0,0,0,0.05),
+        0 10px 20px rgba(0,0,0,0.1);
+    overflow: hidden;
+    z-index: 1;
+    aspect-ratio: 4 / 5;
+}
+
+.measurement {
+    position: absolute;
+    right: 5px;
+    top: 20px;
+    bottom: 20px;
+    width: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    z-index: 4;
+    opacity: 0.4;
+}
+.measurement div {
+    width: 100%;
+    height: 1px;
+    background: #333;
+}
+.measurement div:nth-child(5n) {
+    width: 150%;
+    margin-left: -50%;
+    height: 2px;
+    background: #000;
+}
+
+.glass-glare {
+    position: absolute;
+    top: 0; left: 20px;
+    width: 30px;
+    height: 100%;
+    background: linear-gradient(to right, rgba(255,255,255,0.1), rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+    z-index: 5;
+    pointer-events: none;
+}
+
+.water {
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 100%;
+    height: 0; 
+    background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+    transition: height 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2;
+}
+
+.wave-container {
+    position: absolute;
+    top: -15px; 
+    left: 0;
+    width: 100%;
+    height: 30px;
+    overflow: hidden;
+}
+
+.waves-svg {
+    width: 200%;
+    height: 65%;
+}
+
+.wave-path {
+    animation: moveWave linear infinite;
+}
+
+.wave-back {
+    fill: #00f2fe;
+    opacity: 0.5;
+    animation-duration: 4s;
+    animation-direction: reverse;
+}
+
+.wave-mid {
+    fill: #4facfe;
+    opacity: 0.7;
+    animation-duration: 7s;
+}
+
+.wave-front {
+    fill: #4facfe;
+    opacity: 1;
+    animation-duration: 3s;
+}
+
+@keyframes moveWave {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+.level-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1976D2; 
+    z-index: 10;
+    text-shadow: 0 2px 10px rgba(255, 255, 255, 0.93);
+}
+
+.failsafe_btn {
+    margin-left: auto;
+}
+
+/* Beautiful styling for the Failsafe Settings button */
+.fsafe-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem; /* Space between icon and text */
+    background: linear-gradient(135deg, #9C27B0, #7B1FA2);
+    color: white;
+    padding: 0.6rem 1.25rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.8rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(238, 36, 211, 0.3);
+}
+
+.fsafe-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(238, 36, 187, 0.4);
+    color: white;
+}
+
+/* Modal Base Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 10000; /* Ensures it sits above Leaflet map */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+.modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 24px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 650px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    font-family: 'Inter', sans-serif;
+}
+.modal-header {
+    margin-bottom: 20px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+.modal-header h2 {
+    margin: 0;
+    color: #333;
+    font-size: 1.5rem;
+}
+.close-modal {
+    color: #888;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.close-modal:hover {
+    color: #e74c3c;
+}
+/* Dynamic Content Styles */
+.nutrition-item {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+.deployment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0;
+    color: #2c3e50;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 8px;
+}
+.nutrition-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+}
+.nutrition-grid div {
+    font-size: 0.9rem;
+    color: #555;
+}
+.nutrition-grid strong {
+    color: #222;
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 1rem;
+    }
+    .header {
+        padding: 1.5rem;
+    }
+    .welcome-section h1 {
+        font-size: 2rem;
+    }
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .tank-card {
+        flex: 1 1 70px;
+        min-width: 70px;
+        max-width: 120px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    .tanks-wrapper {
+        gap: 0.5rem;
+    }
+    .tank-card {
+        flex: 1 1 60px;
+        min-width: 60px;
+        max-width: 100px;
+    }
+    .tank-name {
+        font-size: 0.85rem;
+    }
+    .level-text {
+        font-size: 0.8rem;
+    }
+}
