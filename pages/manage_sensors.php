@@ -14,7 +14,7 @@ if (!isset($_SESSION['userID'])) {
 
 // Fetch sensors
 $sensors = $conn->query("
-    SELECT s.*, sd.*, f.*, d*
+    SELECT s.soilSensorID AS primaryID, s.*, sd.*, f.*, d.*
     FROM sensorinfo s
     LEFT JOIN sensordata sd 
         ON sd.SensorDataID = (
@@ -164,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <p>No sensors found.</p>
             </div>
             <?php while ($sensor = $sensors->fetch_assoc()): ?>
-                <div class="sensor-box" data-sensor-id="<?= $sensor['soilSensorID'] ?>">
+                <div class="sensor-box" data-sensor-id="<?= htmlspecialchars($sensor['primaryID']) ?>">
                     <div class="icon">
                         <i class="fas fa-microchip"></i>
                     </div>

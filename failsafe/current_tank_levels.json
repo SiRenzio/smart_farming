@@ -1,0 +1,17 @@
+{
+    "1": {
+        "tank": 1,
+        "currentliquidlevel": 0,
+        "dateandtime": "2026-05-04 08:55:34"
+    },
+    "2": {
+        "tank": 2,
+        "currentliquidlevel": 0,
+        "dateandtime": "2026-05-04 08:55:34"
+    },
+    "3": {
+        "tank": 3,
+        "currentliquidlevel": 0,
+        "dateandtime": "2026-05-04 08:55:35"
+    }
+}
