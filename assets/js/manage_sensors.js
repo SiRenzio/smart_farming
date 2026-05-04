@@ -193,9 +193,17 @@ function updateSensors() {
                     `.sensor-box[data-sensor-id="${sensor.soilSensorID}"]`
                 );
 
+                console.log(box);
+
                 // If brand-new sensor appears
                 if (!box) {
-                    location.reload();
+                    console.warn(`Sensor ${sensor.soilSensorID} found in API but missing in DOM. Reloading...`);
+                    // Optional: Only reload if it hasn't reloaded in the last 5 seconds to prevent infinite loops
+                    if (!sessionStorage.getItem('reloaded_recently')) {
+                        sessionStorage.setItem('reloaded_recently', 'true');
+                        setTimeout(() => sessionStorage.removeItem('reloaded_recently'), 5000);
+                        location.reload();
+                    }
                     return;
                 }
 

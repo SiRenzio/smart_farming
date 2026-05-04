@@ -14,7 +14,7 @@ if (!isset($_SESSION['userID'])) {
 
 // Fetch sensors
 $sensors = $conn->query("
-    SELECT s.*, sd.*, f.*, d.*
+    SELECT s.soilSensorID AS primaryID, s.*, sd.*, f.*, d.*
     FROM sensorinfo s
     LEFT JOIN sensordata sd 
         ON sd.SensorDataID = (
@@ -164,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <p>No sensors found.</p>
             </div>
             <?php while ($sensor = $sensors->fetch_assoc()): ?>
-                <div class="sensor-box" data-sensor-id="<?= $sensor['soilSensorID'] ?>">
+                <div class="sensor-box" data-sensor-id="<?= htmlspecialchars($sensor['primaryID']) ?>">
                     <div class="icon">
                         <i class="fas fa-microchip"></i>
                     </div>
@@ -182,7 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
                     <form action="manage_sensors.php" method="POST" class="unregister-form" style="display: none; margin-bottom: 10px;">
                         <input type="hidden" name="action" value="unregister">
-                        <input type="hidden" name="unregisterSensorID" value="<?= htmlspecialchars($sensor['soilSensorID']) ?>">
+                        <input type="hidden" name="unregisterSensorID" value="<?= htmlspecialchars($sensor['primaryID']) ?>">
                         <button type="submit" class="unregister-btn" onclick="return confirm('Are you sure you want to unregister this sensor? All configurations will be cleared.');">
                             Unregister
                         </button>
@@ -190,12 +190,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
                     <div class="checkbox-wrapper">
                         <input type="checkbox" 
-                            id="cb-<?= $sensor['soilSensorID'] ?>"
+                            id="cb-<?= $sensor['primaryID'] ?>"
                             name="sensor[]" 
-                            value="<?= $sensor['soilSensorID'] ?>" 
+                            value="<?= $sensor['primaryID'] ?>" 
                             onchange="toggleLocation(this)" 
                             class="sensor-checkbox">
-                        <label for="cb-<?= $sensor['soilSensorID'] ?>" class="toggle-label"></label>
+                        <label for="cb-<?= $sensor['primaryID'] ?>" class="toggle-label"></label>
                     </div>
                     <div class="online-text" style="display: none;">
                         <i class="fas fa-circle-check"></i>
@@ -217,7 +217,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     </div>
                     <span class="location" style="display: none;"></span>
                     <div class="location-select">
-                        <select name="location[<?= $sensor['soilSensorID'] ?>]">
+                        <select name="location[<?= $sensor['primaryID'] ?>]">
                             <?php if (!empty($locations)): ?>
                                 <option value="">Select Farm Location</option>
                                 <?php foreach ($locations as $loc): ?>
@@ -231,9 +231,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         </select>
                     </div>
                     <button type="button" class="send-button" onclick="connectSensor(this)" disabled>Connect</button>
-                    <button class="disconnect" style="display: none;" data-id="<?= htmlspecialchars($sensor['soilSensorID'] ?? '') ?>" data-location-id="<?= htmlspecialchars($sensor['locationID'] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
-                    <button class="register" style="display: none;" onclick="registerSensor(<?= $sensor['soilSensorID'] ?>)">Register</button>
-                    
+                    <button class="disconnect" style="display: none;" data-id="<?= htmlspecialchars($sensor['primaryID'] ?? '') ?>" data-location-id="<?= htmlspecialchars($sensor['locationID'] ?? '') ?>" onclick="disconnectSensor(this)">Disconnect</button>
+                    <button class="register" style="display: none;" onclick="registerSensor(<?= $sensor['primaryID'] ?>)">Register</button>
+
                     <div class="add-sensor-modal" style="display: none;">
                         <div class="modal-header">
                             <div class="icon">
@@ -257,7 +257,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                     placeholder="Enter sensor name (e.g., Sensor A, Sensor B)" 
                                     value="<?php echo htmlspecialchars($_POST['sensorName'] ?? ''); ?>">
                             </div>
-                            <input type="hidden" value="<?= $sensor['soilSensorID'] ?>" name="modalSensorID">
+                            <input type="hidden" value="<?= $sensor['primaryID'] ?>" name="modalSensorID">
                             <button type="submit" class="submit-btn">
                                 <i class="fas fa-plus"></i> Register Sensor
                             </button>
@@ -265,7 +265,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     </div>
 
                     <div class="primary-btn">
-                        <button data-id="<?= htmlspecialchars($sensor['soilSensorID'] ?? '') ?>" onclick="switchPrimary(this)">
+                        <button data-id="<?= htmlspecialchars($sensor['primaryID'] ?? '') ?>" onclick="switchPrimary(this)">
                             <i class="fas fa-arrow-right-arrow-left"></i>
                             Switch to Primary
                         </button>
