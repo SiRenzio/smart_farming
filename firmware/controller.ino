@@ -33,12 +33,12 @@
 #define switch3 18
 
 /* ===================== SERVER & WIFI ===================== */
-// const char* webServerIp = "172.16.0.100";
-const char* webServerIp = "192.168.1.5";
+const char* webServerIp = "172.16.0.105";
+// const char* webServerIp = "192.168.1.5";
  
-String sendWateringURL = "http://" + String(webServerIp) + "/smart_farming/api/watering_api.php";
-String sendIntelURL = "http://" + String(webServerIp) + "/smart_farming/api/intel_api.php";
-String sendManualURL = "http://" + String(webServerIp) + "/smart_farming/test/manual_api.php";
+String sendWateringURL = "http://" + String(webServerIp) + "/api/watering_api.php";
+String sendIntelURL = "http://" + String(webServerIp) + "/api/intel_api.php";
+String sendManualURL = "http://" + String(webServerIp) + "/test/manual_api.php";
 
 /* ===================== WIFI AP & PREFERENCES GLOBALS ===================== */
 WebServer server(80);
