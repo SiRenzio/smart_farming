@@ -11,23 +11,31 @@
     $sensorStmt->close();
 
     // Tank Data
-    $tankStmt = $conn->prepare(
-        'SELECT 
-            s.liquidsensorID, 
-            s.liquidtankname, 
-            t.currentliquidlevel,
-            t.dateandtime
-        FROM liquidsensorinfo s
-        LEFT JOIN liquidlevelsensor t ON s.liquidsensorID = t.liquidsensorID
-        WHERE t.liquidsensorreadID = (
-            SELECT MAX(liquidsensorreadID)
-            FROM liquidlevelsensor
-            WHERE liquidsensorID = s.liquidsensorID)'
-        );
-    $tankStmt->execute();
-    $tankData = $tankStmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $tankStmt->close();
+    $jsonFilePath = 'current_tank_levels.json'; 
+    $tankData = [];
 
+    if (file_exists($jsonFilePath)) {
+        $jsonContent = file_get_contents($jsonFilePath);
+        $decodedData = json_decode($jsonContent, true); 
+        
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decodedData)) {
+            // Loop through the JSON object and format it for the frontend
+            foreach ($decodedData as $key => $tankEntry) {
+                $tankData[] = [
+                    // Map "tank" from JSON to "liquidsensorID" for test.js
+                    'liquidsensorID' => $tankEntry['tank'], 
+                    'currentliquidlevel' => $tankEntry['currentliquidlevel'],
+                    'dateandtime' => $tankEntry['dateandtime']
+                ];
+            }
+        } else {
+            error_log("Failed to parse $jsonFilePath: " . json_last_error_msg());
+        }
+    } else {
+        error_log("Warning: $jsonFilePath not found.");
+    }
+
+    // Return Combined Data
     echo json_encode([
         'sensorData' => $sensorData,
         'tankData' => $tankData

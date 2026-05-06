@@ -17,50 +17,24 @@
     $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 
+    $jsonFilePath = '../failsafe/current_tank_levels.json'; 
+    $tankResult = [];
 
-    // fetch water level for testing
-    $tankQuery = "
-        SELECT 
-            s.liquidsensorID, 
-            s.liquidtankname, 
-            t.currentliquidlevel,
-            t.dateandtime
-        FROM liquidsensorinfo s
-        LEFT JOIN liquidlevelsensor t ON s.liquidsensorID = t.liquidsensorID
-        WHERE t.liquidsensorreadID = (
-            SELECT MAX(liquidsensorreadID)
-            FROM liquidlevelsensor
-            WHERE liquidsensorID = s.liquidsensorID
-        )
-    ";
-    
-    $tankStmt = $conn->prepare($tankQuery);
-    $tankStmt->execute(); // Fixed typo here
-    $tankResult = $tankStmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $tankStmt->close();
-
-    // Tank Dimensions
-    $diameter = 0.48;
-    $radius = $diameter / 2; // 0.24m
-    $tankHeightM = 0.90;
-
-    foreach ($tankResult as $key => $tank) {
-        if ($tank['currentliquidlevel'] !== null) {
-            
-            $emptySpace = $tank['currentliquidlevel'] / 100;
-            $liquidHeightMeters = $tankHeightM - $emptySpace;
-
-            if ($liquidHeightMeters < 0) {
-                $liquidHeightMeters = 0;
+    if (file_exists($jsonFilePath)) {
+        $jsonContent = file_get_contents($jsonFilePath);
+        $decodedData = json_decode($jsonContent, true); 
+        
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decodedData)) {
+            foreach ($decodedData as $key => $tankEntry) {
+                $tankResult[] = [
+                    'liquidsensorID' => $tankEntry['tank'],
+                    // The JSON doesn't contain a name, so we generate one dynamically (e.g., "Tank 1")
+                    'liquidtankname' => 'Tank ' . $tankEntry['tank'], 
+                    'currentliquidlevel' => $tankEntry['currentliquidlevel'],
+                    // Set default liters to 0. Your test.js script will calculate and update this instantly.
+                    'liters' => 0 
+                ];
             }
-            
-            $volume = pi() * pow($radius, 2) * $liquidHeightMeters;
-            $currentLiters = $volume * 1000;
-
-            $tankResult[$key]['liters'] = round($currentLiters);
-            
-        } else {
-            $tankResult[$key]['liters'] = 0;
         }
     }
 ?>
