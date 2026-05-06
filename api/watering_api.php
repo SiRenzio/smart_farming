@@ -330,16 +330,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // FAILSAFE NOTIFICATION
     if($updateType === 'failsafe') {
-        // Updated message to accurately reflect the flow sensor timeout
         $notifMessage = "Failsafe triggered for Tank $liquidsensorID. Flow stopped or not detected! Watering process aborted.";
         $notifSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
         $notifStmt = $conn->prepare($notifSql);
         $notifStmt->bind_param("s", $notifMessage);
         $notifStmt->execute();
         
-        // Always good practice to send a JSON response back to the ESP32 so it doesn't hang
         sendResponse(true, "Failsafe logged for Tank $liquidsensorID");
         $notifStmt->close();
+    }
+
+    // CANCEL MIXING NOTIFICATION
+    if ($updateType === 'cancelMixing') {
+        
+        $stateQuery = "SELECT fertFlag, isActive FROM tankpumpevent WHERE liquidsensorID = ? ORDER BY tankPumpEventID DESC LIMIT 1";
+        if ($stateStmt = $conn->prepare($stateQuery)) {
+            $stateStmt->bind_param("i", $liquidsensorID);
+            $stateStmt->execute();
+            $stateRes = $stateStmt->get_result();
+            $stateData = $stateRes->fetch_assoc();
+            
+            // Default to 0 if no record exists
+            $currentFertFlag = $stateData['fertFlag'] ?? 0;
+            $currentIsActive = $stateData['isActive'] ?? 0;
+            $stateStmt->close();
+        } else {
+            sendResponse(false, 'Database Error: Failed to prepare state query.');
+            return; // Halt execution
+        }
+
+        // pump event
+        $insertQuery = "INSERT INTO tankpumpevent 
+            (liquidsensorID, wateringstatus, wateringFlag, isActive, fertFlag, waterlevel, wateringvolume, dateandtime) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
+
+        if ($stmt = $conn->prepare($insertQuery)) {
+            $stmt->bind_param(
+                'iiiiiii',
+                $liquidsensorID, $wateringstatus, $wateringFlag, $currentIsActive, 
+                $currentFertFlag, $currentliquidlevel, $wateringvolume
+            );
+            
+            if (!$stmt->execute()) {
+                $errorMsg = $stmt->error;
+                $stmt->close();
+                sendResponse(false, 'Database Error during cancel mixing: ' . $errorMsg);
+                return;
+            }
+            $stmt->close();
+        } else {
+            sendResponse(false, 'Database Error: Failed to prepare event insert query.');
+            return;
+        }
+
+        // cancel mixing notification
+        $notifMessage = "Mixing canceled for Tank {$liquidsensorID}. Enabled watering without mixing. System Ready!";
+        $notifSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
+        
+        if ($notifStmt = $conn->prepare($notifSql)) {
+            $notifStmt->bind_param("s", $notifMessage);
+            $notifStmt->execute();
+            $notifStmt->close();
+        } else {
+            error_log("Warning: Failed to insert cancel mixing notification for Tank {$liquidsensorID}.");
+        }
     }
 
     // HANDSHAKE LOGIC
@@ -350,6 +404,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (file_exists($settingsPath)) {
             $jsonConfig = file_get_contents($settingsPath);
             $settingsData = json_decode($jsonConfig, true);
+        }
+
+        // Handle cancel_mixing.json
+        $cancelMixPath = __DIR__ . '/../failsafe/cancel_mixing.json';
+        $cancelMixResponseData = null;
+
+        if (file_exists($cancelMixPath)) {
+            $cancelJson = file_get_contents($cancelMixPath);
+            $cancelMixData = json_decode($cancelJson, true);
+            $cancelMixResponseData = $cancelMixData; // Copy original data to send to ESP32
+            $cancelMixModified = false;
+
+            // Reset any active 'isStop' to 0 for next time
+            if (is_array($cancelMixData)) {
+                foreach ($cancelMixData as $tankId => &$tankData) {
+                    if (isset($tankData['isStop']) && $tankData['isStop'] == 1) {
+                        $tankData['isStop'] = 0;
+                        $cancelMixModified = true;
+                    }
+                }
+                unset($tankData);
+
+                // If we changed any 1s to 0s, save the file back immediately
+                if ($cancelMixModified) {
+                    file_put_contents($cancelMixPath, json_encode($cancelMixData, JSON_PRETTY_PRINT));
+                }
+            }
         }
 
         // Notif if Tank Controller is connected
@@ -364,7 +445,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // 60 seconds (1 minute) threshold
         $disconnectThreshold = 60; 
         if ($timeSinceLastHandshake > $disconnectThreshold) {
-            // It has been offline longer than the threshold, so it just reconnected!
             $notifMessage = "Tank Controller is now connected.";
             $notifSql = "INSERT INTO notification (message, createdAT) VALUES (?, NOW())";
             $notifStmt = $conn->prepare($notifSql);
@@ -378,7 +458,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         sendResponse(true, 'Handshake successful', [
             'liquidsensorID' => $liquidsensorID,
-            'settings' => $settingsData
+            'settings' => $settingsData,
+            'cancel_mixing' => $cancelMixResponseData // Send to ESP32
         ]);
     }
 

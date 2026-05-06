@@ -33,12 +33,12 @@
 #define switch3 18
 
 /* ===================== SERVER & WIFI ===================== */
-const char* webServerIp = "172.16.0.105";
+const char* webServerIp = "172.16.0.101";
 // const char* webServerIp = "192.168.1.5";
  
-String sendWateringURL = "http://" + String(webServerIp) + "/api/watering_api.php";
-String sendIntelURL = "http://" + String(webServerIp) + "/api/intel_api.php";
-String sendManualURL = "http://" + String(webServerIp) + "/test/manual_api.php";
+String sendWateringURL = "http://" + String(webServerIp) + "/smart_farming/api/watering_api.php";
+String sendIntelURL = "http://" + String(webServerIp) + "/smart_farming/api/intel_api.php";
+String sendManualURL = "http://" + String(webServerIp) + "/smart_farming/test/manual_api.php";
 
 /* ===================== WIFI AP & PREFERENCES GLOBALS ===================== */
 WebServer server(80);
@@ -74,7 +74,7 @@ unsigned long lastHandshakeTime = 0;
 const unsigned long handshakeInterval = 2000;
 
 unsigned long lastSettingsCheck = 0;
-const unsigned long settingsInterval = 15000; // 30 seconds
+const unsigned long settingsInterval = 5000; // 5 seconds (setting updates)
 
 unsigned long lastIntelCheck = 0;
 const unsigned long intelInterval = 1000;
@@ -105,6 +105,10 @@ int wateringstatus3 = -1;
 int mixingflag3 = 0;
 int trig_tsl3 = 0;
 unsigned long mixStartTime3 = 0;
+
+// Cancel Mixing Flags
+bool cancelMix2 = false;
+bool cancelMix3 = false;
 
 
 // Flow Sensor State
@@ -317,8 +321,8 @@ bool initialHandshake(int id) {
   String response = http.getString();
   http.end();
 
-  // Increased size to 512 to safely hold the added settings payload
-  StaticJsonDocument<512> resDoc; 
+  // Increased size to handle both settings and cancel_mixing payloads safely
+  StaticJsonDocument<1024> resDoc; 
 
   if (deserializeJson(resDoc, response) != DeserializationError::Ok)
     return false;
@@ -346,6 +350,20 @@ bool initialHandshake(int id) {
       Serial.print(" ms | Wait Interval: "); Serial.print(cycleWaitInterval);
       Serial.print(" ms | Mix Duration: "); Serial.print(mixingDuration);
       Serial.println(" ms");
+    }
+
+    // --- FETCH CANCEL MIXING STATUS ---
+    if (resDoc["data"]["cancel_mixing"].is<JsonObject>()) {
+      JsonObject cancelMix = resDoc["data"]["cancel_mixing"];
+      
+      if (cancelMix.containsKey("2") && cancelMix["2"]["isStop"] == 1) {
+        cancelMix2 = true;
+        Serial.println("[HANDSHAKE] Tank 2 mixing cancel command received");
+      }
+      if (cancelMix.containsKey("3") && cancelMix["3"]["isStop"] == 1) {
+        cancelMix3 = true;
+        Serial.println("[HANDSHAKE] Tank 3 mixing cancel command received");
+      }
     }
 
     return true;
@@ -587,16 +605,17 @@ void checkSettingsUpdate() {
 
   if (httpCode > 0) {
     String response = http.getString();
-    StaticJsonDocument<512> resDoc; 
+    // Increased to safely hold incoming config JSONs
+    StaticJsonDocument<1024> resDoc; 
 
     if (deserializeJson(resDoc, response) == DeserializationError::Ok) {
       if (resDoc["success"] == true || resDoc["success"] == 1 || resDoc["status"] == "ok") {
         
+        // Settings Check
         if (resDoc["data"]["settings"].is<JsonObject>()) {
           JsonObject settings = resDoc["data"]["settings"];
-          bool isChanged = false; // Flag to track if anything is different
+          bool isChanged = false;
 
-          // Check Flow Timeout
           if (settings.containsKey("wateringTime")) {
             unsigned long newFlowTimeout = settings["wateringTime"].as<unsigned long>();
             if (newFlowTimeout != flowTimeout && newFlowTimeout > 0) {
@@ -605,7 +624,6 @@ void checkSettingsUpdate() {
             }
           }
           
-          // Check Wait Interval
           if (settings.containsKey("backOffTime")) {
             unsigned long newWaitInterval = settings["backOffTime"].as<unsigned long>();
             if (newWaitInterval != cycleWaitInterval && newWaitInterval > 0) {
@@ -614,7 +632,6 @@ void checkSettingsUpdate() {
             }
           }
           
-          // Check Mixing Duration
           if (settings.containsKey("mixingTime")) {
             unsigned long newMixDuration = settings["mixingTime"].as<unsigned long>();
             if (newMixDuration != mixingDuration && newMixDuration > 0) {
@@ -623,7 +640,6 @@ void checkSettingsUpdate() {
             }
           }
 
-          // Only print to serial if changes actually happened
           if (isChanged) {
             Serial.print("[SETTINGS BACKGROUND UPDATE] New timings applied -> ");
             Serial.print("Flow: "); Serial.print(flowTimeout);
@@ -632,6 +648,21 @@ void checkSettingsUpdate() {
             Serial.println("ms");
           }
         }
+
+        // Cancel Mixing Check
+        if (resDoc["data"]["cancel_mixing"].is<JsonObject>()) {
+          JsonObject cancelMix = resDoc["data"]["cancel_mixing"];
+          
+          if (cancelMix.containsKey("2") && cancelMix["2"]["isStop"] == 1) {
+            cancelMix2 = true;
+            Serial.println("[SETTINGS BG UPDATE] Tank 2 mixing cancel command received");
+          }
+          if (cancelMix.containsKey("3") && cancelMix["3"]["isStop"] == 1) {
+            cancelMix3 = true;
+            Serial.println("[SETTINGS BG UPDATE] Tank 3 mixing cancel command received");
+          }
+        }
+
       }
     }
   }
@@ -881,7 +912,6 @@ void loop() {
       sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2, 0);
     }
 
-    // FIX: Removed 'activeTank != 2'
     if (currentliquidlevel2 <= 25 && wateringflag2 == 1 && wateringstatus2 == 0) {
       digitalWrite(pumpmotor2, LOW);
       wateringflag2 = 0;
@@ -892,19 +922,30 @@ void loop() {
   }
 
   // Tank 2 Mixing
-  if (mixingflag2 == 1 && digitalRead(switch2) == LOW) {
+  if (mixingflag2 == 1 && digitalRead(switch2) == LOW && !cancelMix2) {
     digitalWrite(mixermotor2, HIGH);
     wateringstatus2 = -1;
     mixingflag2 = 2;
     mixStartTime2 = currentMillis;
   }
 
-  if (mixingflag2 == 2 && currentMillis - mixStartTime2 >= mixingDuration) {
+  // TANK 2: Cancel mixing if command received, or stop normally after duration
+  if ((mixingflag2 == 2 && currentMillis - mixStartTime2 >= mixingDuration) || (mixingflag2 != 0 && cancelMix2)) {
+    
     digitalWrite(mixermotor2, LOW);
     mixingflag2 = 0;
     wateringflag2 = -1;
     wateringstatus2 = -1;
-    sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2, 0);
+    
+    if (cancelMix2) {
+      Serial.println("[CANCEL] Tank 2 mixing aborted by web command!");
+      // Notify the API that mixing was canceled
+      sendWateringData("cancelMixing", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2, 0);
+      cancelMix2 = false; // Reset the cancel flag
+    } else {
+      // Notify the API of normal completion
+      sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2, 0);
+    }
   }
 
   // Tank 3
@@ -916,7 +957,6 @@ void loop() {
       sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3, 0);
     }
 
-    // FIX: Removed 'activeTank != 3'
     if (currentliquidlevel3 <= 25 && wateringflag3 == 1 && wateringstatus3 == 0) {
       digitalWrite(pumpmotor3, LOW);
       wateringflag3 = 0;
@@ -927,19 +967,30 @@ void loop() {
   }
 
   // Tank 3 Mixing
-  if (mixingflag3 == 1 && digitalRead(switch3) == LOW) {
+  if (mixingflag3 == 1 && digitalRead(switch3) == LOW && !cancelMix3) {
     digitalWrite(mixermotor3, HIGH);
     wateringstatus3 = -1;
     mixingflag3 = 2;
     mixStartTime3 = currentMillis;
   }
 
-  if (mixingflag3 == 2 && currentMillis - mixStartTime3 >= mixingDuration) {
+  // TANK 3: Cancel mixing if command received, or stop normally after duration
+  if ((mixingflag3 == 2 && currentMillis - mixStartTime3 >= mixingDuration) || (mixingflag3 != 0 && cancelMix3)) {
+    
     digitalWrite(mixermotor3, LOW);
     mixingflag3 = 0;
     wateringflag3 = -1;
     wateringstatus3 = -1;
-    sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3, 0);
+    
+    if (cancelMix3) {
+      Serial.println("[CANCEL] Tank 3 mixing aborted by web command!");
+      // Notify the API that mixing was canceled
+      sendWateringData("cancelMixing", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3, 0);
+      cancelMix3 = false; // Reset the cancel flag
+    } else {
+      // Notify the API of normal completion
+      sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3, 0);
+    }
   }
 
 
