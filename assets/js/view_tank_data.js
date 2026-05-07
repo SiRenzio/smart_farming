@@ -101,6 +101,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- Helper function to show the toast ---
+    function showToast(message) {
+        // Create the toast container
+        const toast = document.createElement('div');
+        toast.className = 'success-toast'; // Using your CSS class
+        
+        // Populate it with your exact HTML structure
+        toast.innerHTML = `
+            <i class="fas fa-info-circle"></i>
+            <span>${message}</span>
+        `;
+        
+        // Append it to the body
+        document.body.appendChild(toast);
+
+        // Fade out and remove after 3 seconds (just like your PHP script did)
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 500); // Wait for fade transition
+        }, 3000);
+    }
+
     document.addEventListener('click', function(e) {
         // Look for clicks on the cancelBtn (or the icon inside it)
         const btn = e.target.closest('#cancelBtn');
@@ -129,6 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 if (data.success) {
                     console.log("Mixing cancelled successfully via API.");
+                    showToast("Mixing cancelled successfully!"); // Show the toast notification
                     // Your 2.5s auto-reload will handle updating the button state 
                     // once the backend databases update!
                 } else {
