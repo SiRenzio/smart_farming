@@ -189,12 +189,6 @@ function getFilterParams($excludePage = true) {
             <p>Monitor your liquid tank event.</p>
         </div>
 
-        <?php if (isset($_GET['status']) && $_GET['status'] === 'cancelled'): ?>
-            <div style="background-color: #fee2e2; color: #b91c1c; padding: 12px 16px; margin-bottom: 20px; border-radius: 6px; border: 1px solid #f87171; display: flex; align-items: center; gap: 10px; font-weight: 500;">
-                <i class="fas fa-info-circle"></i> Mixing being cancelled.
-            </div>
-        <?php endif; ?>
-
         <div class="nav-links" style="display: flex; gap: 15px; align-items: center; margin-bottom: 20px;">
             <a href="dashboard.php" style="margin: 0;">
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
