@@ -444,14 +444,14 @@
             </div>
             <div class="mixers">
                 <div class="actuator-header">
-                    <h1><i class="fas fa-cogs"></i> Mixers</h1>
+                    <h1><i class="fas fa-cogs"></i> Tank Mixers</h1>
                 </div>
                 <div class="button-group">
-                    <h3>Mixer 1</h3>
+                    <h3>Tank Mixer 2</h3>
                     <button class="btn btn-secondary" id="mixer-tank-1"><i class="fas fa-cogs"></i> Mix</button>
                 </div>
                 <div class="button-group">
-                    <h3>Mixer 2</h3>
+                    <h3>Tank Mixer 3</h3>
                     <button class="btn btn-secondary" id="mixer-tank-2"><i class="fas fa-cogs"></i> Mix</button>
                 </div>
             </div>
@@ -465,15 +465,15 @@
                 </div>
                 <div class="button-group">
                     <h3>Solenoid 1</h3>
-                    <button class="btn btn-success" id="valve-1"><i class="fas fa-shower"></i> Open/Close</button>
+                    <button class="btn btn-success" id="valve-1"><i class="fas fa-shower"></i> Open</button>
                 </div>
                 <div class="button-group">
                     <h3>Solenoid 2</h3>
-                    <button class="btn btn-success" id="valve-2"><i class="fas fa-shower"></i> Open/Close</button>
+                    <button class="btn btn-success" id="valve-2"><i class="fas fa-shower"></i> Open</button>
                 </div>
                 <div class="button-group">
                     <h3>Solenoid 3</h3>
-                    <button class="btn btn-success" id="valve-3"><i class="fas fa-shower"></i> Open/Close</button>
+                    <button class="btn btn-success" id="valve-3"><i class="fas fa-shower"></i> Open</button>
                 </div>
             </div>
         </section>

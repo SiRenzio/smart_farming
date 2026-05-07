@@ -92,7 +92,7 @@
                         <i class="fas fa-clock"></i>
                     </div>
                     <div class="card-title">
-                        <h3>Watering Time</h3>
+                        <h3>Flow Time-out</h3>
                     </div>
                 </div>
                 <div class="card-content">
@@ -110,12 +110,12 @@
                         <i class="fas fa-clock"></i>
                     </div>
                     <div class="card-title">
-                        <h3>Hold Watering</h3>
+                        <h3>Backoff Time</h3>
                     </div>
                 </div>
                 <div class="card-content">
                     <form action="" method="POST" class="failsafe-form">
-                        <label for="backOffTime">Set back-off time for watering <br>(in minutes):</label>
+                        <label for="backOffTime">Set back-off time after watering <br>(in minutes):</label>
                         <input type="number" id="backOffTime" name="backOffTime" min="1" value="<?php echo htmlspecialchars($settings['backOffTime']) / 60000; ?>" step="any" required>
                         <button type="submit" class="btn btn-primary" id="backOffTimeBtn" disabled>Save</button>
                     </form>
