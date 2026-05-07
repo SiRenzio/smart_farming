@@ -16,6 +16,7 @@ $nutritionID = $_GET['nutritionID'] ?? '';
 $plantName = '';
 $nutritionData = [];
 $fertilizerData = [];
+$plantID = $_GET['plantID'] ?? '';
 
 // Validate nutritionID and get plant info
 if (!$nutritionID) {
