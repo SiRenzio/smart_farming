@@ -53,9 +53,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="../assets/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link href="../assets/leaflet/leaflet.css" rel="stylesheet" />
     
     <link href="../assets/css/add_sensor_location.css" rel="stylesheet">
+
+    <style>
+        /* Basic styling for the offline warning banner */
+        #offline-banner {
+            display: none;
+            background-color: #f39c12;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body>
     <div class="page-container">
@@ -81,6 +95,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <div class="form-card">
+            
+            <div id="offline-banner">
+                You are currently offline. Map background images will not load, but you can still drag the pin to set your exact coordinates or use GPS.
+            </div>
+
             <form method="post" action="add_sensor_location.php" id="locationForm">
                 
                 <div class="form-group">
@@ -139,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="../assets/leaflet/leaflet.js"></script>
     <script src="../assets/js/add_farm_location.js"></script>
 </body>
 </html>

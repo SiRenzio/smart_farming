@@ -56,7 +56,7 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-// Get the lates plant nutrition data for the dashboard
+// Get the latest plant nutrition data for the dashboard
 $depPlants = $conn->prepare('SELECT nutritionID FROM deployment WHERE userID = ? ORDER BY deploymentID DESC LIMIT 1');
 $depPlants->bind_param('i', $_SESSION['userID']);
 $depPlants->execute();
@@ -108,8 +108,7 @@ if ($mapResult) {
         $mapData[] = $row;
     }
 }
-$mapDataJSON = json_encode($mapData); // Convert to JSON for Javascript use
-
+$mapDataJSON = json_encode($mapData);
 
 // Helper to keep filters in URL
 function getFilterParams($excludePage = true) {
@@ -127,7 +126,7 @@ function getFilterParams($excludePage = true) {
     <link href="../assets/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="../assets/leaflet/leaflet.css" />
     
     <link href="../assets/css/dashboard.css" rel="stylesheet">
 </head>
@@ -327,7 +326,6 @@ function getFilterParams($excludePage = true) {
                             $startPage = max(1, $page - 2);
                             $endPage = min($totalPages, $startPage + $maxButtons - 1);
                             
-                            // Adjust if we are near the end
                             if ($endPage - $startPage < $maxButtons - 1) {
                                 $startPage = max(1, $endPage - $maxButtons + 1);
                             }
@@ -383,6 +381,10 @@ function getFilterParams($excludePage = true) {
                 <span class="legend-disconnected"><i class="fas fa-map-marker-alt"></i> Disconnected</span>
             </div>
 
+            <div id="offline-map-banner" style="display: none; background: #fff3cd; color: #856404; padding: 10px; text-align: center; font-size: 14px; border-radius: 5px; margin-bottom: 10px;">
+                <i class="fas fa-wifi" style="text-decoration: line-through;"></i> You are currently offline. Background map tiles cannot load, but saved sensor markers will still display.
+            </div>
+
             <div id="dashboard-map" class="dashboard-map"></div>
         </div>
 
@@ -416,7 +418,7 @@ function getFilterParams($excludePage = true) {
         </div>
     </div>
     
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="../assets/leaflet/leaflet.js"></script>
     
     <script src="../assets/js/dashboard.js"></script>
 

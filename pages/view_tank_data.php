@@ -189,12 +189,6 @@ function getFilterParams($excludePage = true) {
             <p>Monitor your liquid tank event.</p>
         </div>
 
-        <?php if (isset($_GET['status']) && $_GET['status'] === 'cancelled'): ?>
-            <div style="background-color: #fee2e2; color: #b91c1c; padding: 12px 16px; margin-bottom: 20px; border-radius: 6px; border: 1px solid #f87171; display: flex; align-items: center; gap: 10px; font-weight: 500;">
-                <i class="fas fa-info-circle"></i> Mixing being cancelled.
-            </div>
-        <?php endif; ?>
-
         <div class="nav-links" style="display: flex; gap: 15px; align-items: center; margin-bottom: 20px;">
             <a href="dashboard.php" style="margin: 0;">
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
@@ -202,20 +196,16 @@ function getFilterParams($excludePage = true) {
             
             <?php if ($tankID == 2 || $tankID == 3): ?>
             <div class="center-wrapper" id="cancel-mixing-wrapper">
-                <div class="nav-links" style="margin-bottom: 0;"> 
-                    <button type="button" 
-                            id="cancelBtn" 
-                            data-tankid="<?php echo htmlspecialchars($tankID); ?>"
-                            class="btn-cancel"
-                            <?php echo $canCancelMixing ? '' : 'disabled'; ?>
-                            title="<?php echo $canCancelMixing ? 'Cancel Mixing Process' : 'Disabled: System is not in the correct state to cancel'; ?>"
-                            style="background-color: <?php echo $canCancelMixing ? '#e74c3c' : '#bdc3c7'; ?>; 
-                                color: white; border: none; padding: 10px 15px; border-radius: 5px; 
-                                cursor: <?php echo $canCancelMixing ? 'pointer' : 'not-allowed'; ?>; 
-                                font-family: 'Inter', sans-serif; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;">
-                        <i class="fas fa-ban"></i> Cancel Mixing
-                    </button>
-                </div>
+                <form method="POST" action="?tankID=<?php echo htmlspecialchars($tankID); ?>" style="margin: 0;">
+                    <div class="nav-links" style="margin-bottom: 0;"> <button type="submit" 
+                                name="cancel_mixing" 
+                                class="btn-cancel"
+                                <?php echo $canCancelMixing ? '' : 'disabled'; ?>
+                                title="<?php echo $canCancelMixing ? 'Cancel Mixing Process' : 'Disabled: System is not in the correct state to cancel'; ?>">
+                            <i class="fas fa-ban"></i> Cancel Mixing
+                        </button>
+                    </div>
+                </form>
             </div>
             <?php endif; ?>
         </div>
