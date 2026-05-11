@@ -286,6 +286,28 @@ a:hover {
     box-shadow: 0 4px 12px rgba(253, 126, 20, 0.3);
 }
 
+.success-toast {
+    position: fixed;
+    top: 20px;
+    right: 43%;
+    background-color: #4CAF50; /* A nice success green */
+    color: white;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+    z-index: 1000;
+    animation: slideIn 0.5s ease forwards;
+    transition: opacity 0.5s ease;
+}
+
+.success-toast i {
+    font-size: 1.2rem;
+}
+
 /* --- PAGINATION --- */
 
 .pagination-container {
