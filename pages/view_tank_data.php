@@ -176,7 +176,6 @@ function getFilterParams($excludePage = true) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sensors - Smart Farming</title>
     <link href="../assets/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="../assets/css/view_tank_data.css" rel="stylesheet">
 </head>
 <body>
@@ -196,16 +195,20 @@ function getFilterParams($excludePage = true) {
             
             <?php if ($tankID == 2 || $tankID == 3): ?>
             <div class="center-wrapper" id="cancel-mixing-wrapper">
-                <form method="POST" action="?tankID=<?php echo htmlspecialchars($tankID); ?>" style="margin: 0;">
-                    <div class="nav-links" style="margin-bottom: 0;"> <button type="submit" 
-                                name="cancel_mixing" 
-                                class="btn-cancel"
-                                <?php echo $canCancelMixing ? '' : 'disabled'; ?>
-                                title="<?php echo $canCancelMixing ? 'Cancel Mixing Process' : 'Disabled: System is not in the correct state to cancel'; ?>">
-                            <i class="fas fa-ban"></i> Cancel Mixing
-                        </button>
-                    </div>
-                </form>
+                <div class="nav-links" style="margin-bottom: 0;"> 
+                    <button type="button" 
+                            id="cancelBtn" 
+                            data-tankid="<?php echo htmlspecialchars($tankID); ?>"
+                            class="btn-cancel"
+                            <?php echo $canCancelMixing ? '' : 'disabled'; ?>
+                            title="<?php echo $canCancelMixing ? 'Cancel Mixing Process' : 'Disabled: System is not in the correct state to cancel'; ?>"
+                            style="background-color: <?php echo $canCancelMixing ? '#e74c3c' : '#bdc3c7'; ?>; 
+                                color: white; border: none; padding: 10px 15px; border-radius: 5px; 
+                                cursor: <?php echo $canCancelMixing ? 'pointer' : 'not-allowed'; ?>; 
+                                font-family: 'Inter', sans-serif; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-ban"></i> Cancel Mixing
+                    </button>
+                </div>
             </div>
             <?php endif; ?>
         </div>

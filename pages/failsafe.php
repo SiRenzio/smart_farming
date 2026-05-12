@@ -83,6 +83,7 @@
             <a href="dashboard.php">
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
             </a>
+            <button class="resetBtn" id="resetBtn"><i class="fas fa-redo"></i> Reset Active Tank</button>
         </div>
 
         <div class="failsafe-grid">
