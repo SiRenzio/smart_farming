@@ -126,7 +126,7 @@ function getFilterParams($excludePage = true) {
     <title>Sensors - Smart Farming</title>
     <link href="../assets/css/all.min.css" rel="stylesheet">
     <link href="../assets/css/sensors.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../assets/js/chart.umd.js"></script>
 </head>
 <body>
     <div class="page-container">
