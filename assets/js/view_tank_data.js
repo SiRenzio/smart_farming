@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    let isCanceling = false;
+
     // update content of the pages
     function updateContent(urlStr) {
         fetch(urlStr, { cache: 'no-store' })
@@ -26,7 +28,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newCancelWrapper = doc.getElementById('cancel-mixing-wrapper');
                 const currentCancelWrapper = document.getElementById('cancel-mixing-wrapper');
                 if (newCancelWrapper && currentCancelWrapper) {
-                    currentCancelWrapper.innerHTML = newCancelWrapper.innerHTML;
+                    if (!isCanceling) {
+                        // Normal operation: just replace it
+                        currentCancelWrapper.innerHTML = newCancelWrapper.innerHTML;
+                    } else {
+                        // Only replace the HTML if the incoming button is ACTUALLY disabled.
+                        // This means the hardware database has finally caught up.
+                        const incomingBtn = newCancelWrapper.querySelector('#cancelBtn');
+                        if (incomingBtn && incomingBtn.disabled) {
+                            currentCancelWrapper.innerHTML = newCancelWrapper.innerHTML;
+                            isCanceling = false; // Release the lock
+                        }
+                    }
                 }
             })
             .catch(err => console.error('Data update failed:', err));
@@ -130,6 +143,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // If the button was clicked and it's not disabled
         if (btn && !btn.disabled) {
             e.preventDefault(); 
+
+            // Activate the lock so the 2.5s loop doesn't overwrite it prematurely
+            isCanceling = true;
             
             // Immediately disable visually to prevent double clicks
             btn.disabled = true;
@@ -154,11 +170,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast("Mixing cancelled successfully!"); // Show the toast notification
                     // Your 2.5s auto-reload will handle updating the button state 
                     // once the backend databases update!
+
+                    // Failsafe: Release the lock after 10 seconds just in case 
+                    // the hardware goes offline and the database never updates.
+                    setTimeout(() => { isCanceling = false; }, 10000);
                 } else {
                     console.error("Cancellation failed:", data.error);
                 }
             })
-            .catch(err => console.error('API request failed:', err));
+            .catch(err => {
+                console.error('API request failed:', err);
+                isCanceling = false;
+                btn.disabled = false;
+                btn.style.cursor = 'pointer';
+            });
         }
     });
 

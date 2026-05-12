@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <button type="submit" class="submit-btn">
-                    <i class="fas fa-plus"></i> Add Plant
+                    <i class="fas fa-arrow-right-to-bracket"></i> Submit
                 </button>
             </form>
 

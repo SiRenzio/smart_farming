@@ -410,7 +410,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <i class="fas fa-undo"></i> Reset
             </button>
             <button type="submit" class="submit-btn">
-                <i class="fas fa-plus"></i> Add Nutrition Needs
+                <i class="fas fa-arrow-right-to-bracket"></i> Submit
             </button>
         </form>
 
