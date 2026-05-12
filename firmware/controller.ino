@@ -10,9 +10,9 @@
 #define TX2 17
 
 // Solenoid Valves
-#define slIndicator1 21
-#define slIndicator2 22
-#define slIndicator3 23
+#define solenoidValve1 21
+#define solenoidValve2 22
+#define solenoidValve3 23
 
 // Flow Sensor
 #define flowSensor 19
@@ -222,11 +222,11 @@ void manualTesting() {
       Serial.println("[MANUAL] Actuators Stop!.....");
 
       // Turn off based on the active command
-      if (manualCommand == "pump1") digitalWrite(pumpmotor1, LOW);
-      else if (manualCommand == "pump2") digitalWrite(pumpmotor2, LOW);
-      else if (manualCommand == "pump3") digitalWrite(pumpmotor3, LOW);
-      else if (manualCommand == "mixer2") digitalWrite(mixermotor2, LOW);
-      else if (manualCommand == "mixer3") digitalWrite(mixermotor3, LOW);
+      if (manualCommand == "pump1") digitalWrite(pumpmotor1, HIGH);
+      else if (manualCommand == "pump2") digitalWrite(pumpmotor2, HIGH);
+      else if (manualCommand == "pump3") digitalWrite(pumpmotor3, HIGH);
+      else if (manualCommand == "mixer2") digitalWrite(mixermotor2, HIGH);
+      else if (manualCommand == "mixer3") digitalWrite(mixermotor3, HIGH);
 
       manualRunning = false;
       manualCommand = "";
@@ -266,11 +266,11 @@ void manualTesting() {
         Serial.println(command);
 
         // Turn ON the specific device
-        if (command == "pump1") digitalWrite(pumpmotor1, HIGH);
-        else if (command == "pump2") digitalWrite(pumpmotor2, HIGH);
-        else if (command == "pump3") digitalWrite(pumpmotor3, HIGH);
-        else if (command == "mixer2") digitalWrite(mixermotor2, HIGH);
-        else if (command == "mixer3") digitalWrite(mixermotor3, HIGH);
+        if (command == "pump1") digitalWrite(pumpmotor1, LOW);
+        else if (command == "pump2") digitalWrite(pumpmotor2, LOW);
+        else if (command == "pump3") digitalWrite(pumpmotor3, LOW);
+        else if (command == "mixer2") digitalWrite(mixermotor2, LOW);
+        else if (command == "mixer3") digitalWrite(mixermotor3, LOW);
         else {
           http.end();
           return;
@@ -424,9 +424,7 @@ void checkIntelConnection() {
                 targetVolumeML = intelVolume;
                 
                 if (cmdTank == 1) {
-                  activeTank = 1; 
-                  lastCommand1 = command; 
-                  
+                  activeTank = 1; lastCommand1 = command;
                   // Immediately start watering process
                   wateringActive = true; 
                   flowPulseCount = 0; 
@@ -434,13 +432,13 @@ void checkIntelConnection() {
                   wateringstatus1 = 1;
                   trig_tsl1 = 1;
                   
-                  digitalWrite(slIndicator1, HIGH); // Open solenoid
+                  digitalWrite(solenoidValve1, LOW); // Open solenoid
                   Serial.println("[INTEL] Tank 1: Opening solenoid and starting flow (NO PRE-MIX)");
                 } else if (cmdTank == 2) {
-                  activeTank = 2; premixFlag2 = 1; premixStartTime2 = millis(); flowPulseCount = 0; lastCommand2 = command; digitalWrite(mixermotor2, HIGH);
+                  activeTank = 2; premixFlag2 = 1; premixStartTime2 = millis(); flowPulseCount = 0; lastCommand2 = command; digitalWrite(mixermotor2, LOW);
                   Serial.println("[INTEL] Tank 2: Starting pre-watering mix (CALCIUM BASED)");
                 } else if (cmdTank == 3) {
-                  activeTank = 3; premixFlag3 = 1; premixStartTime3 = millis(); flowPulseCount = 0; lastCommand3 = command; digitalWrite(mixermotor3, HIGH);
+                  activeTank = 3; premixFlag3 = 1; premixStartTime3 = millis(); flowPulseCount = 0; lastCommand3 = command; digitalWrite(mixermotor3, LOW);
                   Serial.println("[INTEL] Tank 3: Starting pre-watering mix (POTASSIUM BASED)");
                 }
               } 
@@ -688,9 +686,9 @@ void setup() {
   pinMode(pumpmotor3, OUTPUT);
   pinMode(switch3, INPUT_PULLUP);
 
-  pinMode(slIndicator1, OUTPUT);
-  pinMode(slIndicator2, OUTPUT);
-  pinMode(slIndicator3, OUTPUT);
+  pinMode(solenoidValve1, OUTPUT);
+  pinMode(solenoidValve2, OUTPUT);
+  pinMode(solenoidValve3, OUTPUT);
 
   pinMode(flowSensor, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(flowSensor), flowPulseCounter, FALLING);
@@ -852,13 +850,13 @@ void loop() {
       dataValid = false; // Toggle to false so it doesn't spam the serial monitor
     }
 
-    digitalWrite(pumpmotor1, LOW);
-    digitalWrite(pumpmotor2, LOW);
-    digitalWrite(pumpmotor3, LOW);
+    digitalWrite(pumpmotor1, HIGH);
+    digitalWrite(pumpmotor2, HIGH);
+    digitalWrite(pumpmotor3, HIGH);
 
-    digitalWrite(mixermotor1, LOW);
-    digitalWrite(mixermotor2, LOW);
-    digitalWrite(mixermotor3, LOW);
+    digitalWrite(mixermotor1, HIGH);
+    digitalWrite(mixermotor2, HIGH);
+    digitalWrite(mixermotor3, HIGH);
 
     wateringflag1 = wateringflag2 = wateringflag3 = -1;
     wateringstatus1 = wateringstatus2 = wateringstatus3 = -1;
@@ -880,9 +878,9 @@ void loop() {
   /* ================= TANK LOGIC ================= */
 
   if(!manualRunning) {
-    if (currentliquidlevel1 <= 25) digitalWrite(pumpmotor1, LOW);
-    if (currentliquidlevel2 <= 25) digitalWrite(pumpmotor2, LOW);
-    if (currentliquidlevel3 <= 25) digitalWrite(pumpmotor3, LOW);
+    if (currentliquidlevel1 <= 25) digitalWrite(pumpmotor1, HIGH);
+    if (currentliquidlevel2 <= 25) digitalWrite(pumpmotor2, HIGH);
+    if (currentliquidlevel3 <= 25) digitalWrite(pumpmotor3, HIGH);
   }
 
   // Tank 1
@@ -891,12 +889,12 @@ void loop() {
     if (currentliquidlevel1 > 60 && wateringflag1 != 1 && activeTank != 1) {
       wateringflag1 = 1;
       wateringstatus1 = 0;
-      digitalWrite(pumpmotor1, HIGH);
+      digitalWrite(pumpmotor1, LOW);
       sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1, 0);
     }
     
     if (currentliquidlevel1 <= 25 && wateringflag1 == 1 && wateringstatus1 == 0) {
-      digitalWrite(pumpmotor1, LOW); 
+      digitalWrite(pumpmotor1, HIGH); 
       wateringflag1 = -1;
       wateringstatus1 = -1;
       sendWateringData("event", liquidsensorID1, currentliquidlevel1, wateringstatus1, wateringflag1, 0);
@@ -908,12 +906,12 @@ void loop() {
     if (currentliquidlevel2 > 60 && wateringflag2 != 1 && activeTank != 2) {
       wateringflag2 = 1;
       wateringstatus2 = 0;
-      digitalWrite(pumpmotor2, HIGH);
+      digitalWrite(pumpmotor2, LOW);
       sendWateringData("event", liquidsensorID2, currentliquidlevel2, wateringstatus2, wateringflag2, 0);
     }
 
     if (currentliquidlevel2 <= 25 && wateringflag2 == 1 && wateringstatus2 == 0) {
-      digitalWrite(pumpmotor2, LOW);
+      digitalWrite(pumpmotor2, HIGH);
       wateringflag2 = 0;
       wateringstatus2 = 0;
       mixingflag2 = 1;
@@ -923,7 +921,7 @@ void loop() {
 
   // Tank 2 Mixing
   if (mixingflag2 == 1 && digitalRead(switch2) == LOW && !cancelMix2) {
-    digitalWrite(mixermotor2, HIGH);
+    digitalWrite(mixermotor2, LOW);
     wateringstatus2 = -1;
     mixingflag2 = 2;
     mixStartTime2 = currentMillis;
@@ -932,7 +930,7 @@ void loop() {
   // TANK 2: Cancel mixing if command received, or stop normally after duration
   if ((mixingflag2 == 2 && currentMillis - mixStartTime2 >= mixingDuration) || (mixingflag2 != 0 && cancelMix2)) {
     
-    digitalWrite(mixermotor2, LOW);
+    digitalWrite(mixermotor2, HIGH);
     mixingflag2 = 0;
     wateringflag2 = -1;
     wateringstatus2 = -1;
@@ -953,12 +951,12 @@ void loop() {
     if (currentliquidlevel3 > 60 && wateringflag3 != 1 && activeTank != 3) {
       wateringflag3 = 1;
       wateringstatus3 = 0;
-      digitalWrite(pumpmotor3, HIGH);
+      digitalWrite(pumpmotor3, LOW);
       sendWateringData("event", liquidsensorID3, currentliquidlevel3, wateringstatus3, wateringflag3, 0);
     }
 
     if (currentliquidlevel3 <= 25 && wateringflag3 == 1 && wateringstatus3 == 0) {
-      digitalWrite(pumpmotor3, LOW);
+      digitalWrite(pumpmotor3, HIGH);
       wateringflag3 = 0;
       wateringstatus3 = 0;
       mixingflag3 = 1;
@@ -968,7 +966,7 @@ void loop() {
 
   // Tank 3 Mixing
   if (mixingflag3 == 1 && digitalRead(switch3) == LOW && !cancelMix3) {
-    digitalWrite(mixermotor3, HIGH);
+    digitalWrite(mixermotor3, LOW);
     wateringstatus3 = -1;
     mixingflag3 = 2;
     mixStartTime3 = currentMillis;
@@ -977,7 +975,7 @@ void loop() {
   // TANK 3: Cancel mixing if command received, or stop normally after duration
   if ((mixingflag3 == 2 && currentMillis - mixStartTime3 >= mixingDuration) || (mixingflag3 != 0 && cancelMix3)) {
     
-    digitalWrite(mixermotor3, LOW);
+    digitalWrite(mixermotor3, HIGH);
     mixingflag3 = 0;
     wateringflag3 = -1;
     wateringstatus3 = -1;
@@ -1001,7 +999,7 @@ void loop() {
     unsigned long premixElapsed = millis() - premixStartTime2;
 
     if (premixElapsed >= mixingDuration) {
-      digitalWrite(mixermotor2, LOW);
+      digitalWrite(mixermotor2, HIGH);
       premixFlag2 = 0;
       trig_tsl2 = 1;
 
@@ -1011,7 +1009,7 @@ void loop() {
       lastFlowPulseTime = millis();
       wateringstatus2 = 1;
 
-      digitalWrite(slIndicator2, HIGH); // solenoid open | start watering
+      digitalWrite(solenoidValve2, LOW); // solenoid open | start watering
       Serial.println("[INTEL SEQUENCE] Tank 2: Pre-mix complete, opening solenoid and starting flow count");
     }
   }
@@ -1021,7 +1019,7 @@ void loop() {
     unsigned long premixElapsed = millis() - premixStartTime3;
 
     if (premixElapsed >= mixingDuration) {
-      digitalWrite(mixermotor3, LOW);
+      digitalWrite(mixermotor3, HIGH);
       premixFlag3 = 0;
       trig_tsl3 = 1;
 
@@ -1031,7 +1029,7 @@ void loop() {
       lastFlowPulseTime = millis();
       wateringstatus3 = 1;
 
-      digitalWrite(slIndicator3, HIGH); // solenoid open | start watering
+      digitalWrite(solenoidValve3, LOW); // solenoid open | start watering
       Serial.println("[INTEL SEQUENCE] Tank 3: Pre-mix complete, opening solenoid and starting flow count");
     }
   }
@@ -1052,9 +1050,9 @@ void loop() {
       lastFlowPrintTime = currentMillis;
       
       int solenoidState = 0;
-      if (activeTank == 1) solenoidState = digitalRead(slIndicator1);
-      else if (activeTank == 2) solenoidState = digitalRead(slIndicator2);
-      else if (activeTank == 3) solenoidState = digitalRead(slIndicator3);
+      if (activeTank == 1) solenoidState = digitalRead(solenoidValve1);
+      else if (activeTank == 2) solenoidState = digitalRead(solenoidValve2);
+      else if (activeTank == 3) solenoidState = digitalRead(solenoidValve3);
       
       Serial.print("[FLOW COUNTING] Tank ");
       Serial.print(activeTank);
@@ -1080,15 +1078,15 @@ void loop() {
 
       // Close the active solenoid
       if (activeTank == 1) {
-        digitalWrite(slIndicator1, LOW);
+        digitalWrite(solenoidValve1, HIGH);
         wateringstatus1 = -1;
       }
       else if (activeTank == 2) {
-        digitalWrite(slIndicator2, LOW);
+        digitalWrite(solenoidValve2, HIGH);
         wateringstatus2 = -1;
       }
       else if (activeTank == 3) {
-        digitalWrite(slIndicator3, LOW);
+        digitalWrite(solenoidValve3, HIGH);
         wateringstatus3 = -1;
       }
 
@@ -1125,19 +1123,19 @@ void loop() {
       Serial.println(targetVolumeML);
 
       if (activeTank == 1) {
-        digitalWrite(slIndicator1, LOW);
+        digitalWrite(solenoidValve1, HIGH);
         trig_tsl1 = 0;
         wateringstatus1 = -1; 
         wateringflag1 = -1;
       }
       if (activeTank == 2) {
-        digitalWrite(slIndicator2, LOW);
+        digitalWrite(solenoidValve2, HIGH);
         trig_tsl2 = 0;
         wateringstatus2 = -1; 
         wateringflag2 = -1;
       }
       if (activeTank == 3) {
-        digitalWrite(slIndicator3, LOW);
+        digitalWrite(solenoidValve3, HIGH);
         trig_tsl3 = 0;
         wateringstatus3 = -1; 
         wateringflag3 = -1;
@@ -1157,9 +1155,9 @@ void loop() {
         intakeLocked = true;
 
         if (queuedTank == 2) {
-          activeTank = 2; premixFlag2 = 1; premixStartTime2 = currentMillis; wateringflag2 = 1; wateringstatus2 = 2; digitalWrite(mixermotor2, HIGH);
+          activeTank = 2; premixFlag2 = 1; premixStartTime2 = currentMillis; wateringflag2 = 1; wateringstatus2 = 2; digitalWrite(mixermotor2, LOW);
         } else if (queuedTank == 3) {
-          activeTank = 3; premixFlag3 = 1; premixStartTime3 = currentMillis; wateringflag3 = 1; wateringstatus3 = 2; digitalWrite(mixermotor3, HIGH);
+          activeTank = 3; premixFlag3 = 1; premixStartTime3 = currentMillis; wateringflag3 = 1; wateringstatus3 = 2; digitalWrite(mixermotor3, LOW);
         }
 
         // Clear the queue slot
