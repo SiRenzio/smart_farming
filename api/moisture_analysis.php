@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../db.php';
 
 function process_sensor_job($conn, $jobFile, $data) {
+    echo "PULSE CHECK: Found job file for sensor " . $data['soilSensorID'] . "\n";
     // Only wait 120 seconds if the job was triggered by watering
     if(isset($data['triggeredBy']) && $data['triggeredBy'] === "watering"){
         if(time() - $data['startTime'] < 120){
@@ -161,9 +162,16 @@ function process_sensor_job($conn, $jobFile, $data) {
         $query->execute();
         $result = $query->get_result();
 
-        if($result->num_rows < 20) {
+        // ADD THIS LINE TO SEE WHAT PHP IS THINKING:
+        error_log("Sensor $soilSensorID | Target: $targetTime | Found rows: " . $result->num_rows);
+
+        if($result->num_rows < 20) { // (Or < 3 if you changed it!)
             $query->close();
-            return false; // Wait until 20 samples exist
+            
+            // ADD THIS LINE TO KNOW IF IT IS BAILING OUT HERE:
+            error_log("Bailing out! Not enough rows yet.");
+            
+            return false; // Wait until enough samples exist
         }
 
         $insert = $conn->prepare("INSERT INTO soilmoisture_samples (soilSensorID, SoilMois, is_baseline) VALUES (?, ?, 1)");
