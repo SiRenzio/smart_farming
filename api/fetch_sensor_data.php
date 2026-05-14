@@ -73,10 +73,12 @@ if ($type === 'visual') {
 
 // Sensor Data
 $sql = "
-    SELECT sd.*, si.sensorName, fl.farmName
+    SELECT sd.*, si.sensorName, fl.farmName, p.plantName, n.nutritionSetName
     FROM sensordata sd
     INNER JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID
     LEFT JOIN farmlocation fl ON sd.locationID = fl.locationID
+    LEFT JOIN plantnutrionneed n ON sd.nutritionID = n.nutritionID
+    LEFT JOIN plantinfo p ON n.plantID = p.plantID
     $whereSQL
     ORDER BY sd.DateTime DESC
     LIMIT 10
@@ -106,13 +108,22 @@ while ($row = $result->fetch_assoc()):
     <td><?= $row['SoilMois'] ?? '-' ?></td>
     <td>
         <div class="actions">
-            <form method="post" style="display: inline;" 
-                  onsubmit="return confirm('Are you sure you want to delete this sensor data? This action cannot be undone.');">
-                <input type="hidden" name="data_id" value="<?= $row['SensorDataID']; ?>">
-                <button type="submit" name="delete_data" class="btn btn-delete">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
-            </form>
+            <button class="details-btn" 
+            data-id="<?= $row['SensorDataID'] ?>"
+            data-sensorname="<?php echo htmlspecialchars($row['sensorName']); ?>"
+            data-farmname="<?php echo htmlspecialchars($row['farmName'] ?? 'Unknown Location'); ?>"
+            data-plantname="<?php echo htmlspecialchars($row['plantName'] ?? 'N/A'); ?>"
+            data-nutritionset="<?php echo htmlspecialchars($row['nutritionSetName'] ?? 'N/A'); ?>"
+            data-datetime="<?php echo date('M j, Y g:i:s A', strtotime($row['DateTime'])); ?>"
+            data-n="<?php echo $row['SoilN'] !== null ? htmlspecialchars($row['SoilN']) : '-'; ?>"
+            data-p="<?php echo $row['SoilP'] !== null ? htmlspecialchars($row['SoilP']) : '-'; ?>"
+            data-k="<?php echo $row['SoilK'] !== null ? htmlspecialchars($row['SoilK']) : '-'; ?>"
+            data-ec="<?php echo $row['SoilEC'] !== null ? htmlspecialchars($row['SoilEC']) : '-'; ?>"
+            data-ph="<?php echo $row['SoilPH'] !== null ? htmlspecialchars($row['SoilPH']) : '-'; ?>"
+            data-temp="<?php echo $row['SoilT'] !== null ? htmlspecialchars($row['SoilT']) : '-'; ?>"
+            data-mois="<?php echo $row['SoilMois'] !== null ? htmlspecialchars($row['SoilMois']) : '-'; ?>">
+                <i class="fas fa-list"></i> Details
+            </button>
         </div>
     </td>
 </tr>

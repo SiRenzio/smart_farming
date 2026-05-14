@@ -17,7 +17,7 @@
     $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 
-    $jsonFilePath = '../failsafe/current_tank_levels.json'; 
+    $jsonFilePath = '../json/current_tank_levels.json'; 
     $tankResult = [];
 
     if (file_exists($jsonFilePath)) {

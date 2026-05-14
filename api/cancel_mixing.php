@@ -30,7 +30,7 @@ if ($tankID == 2 || $tankID == 3) {
 
     // --- If eligible, execute the cancel logic ---
     if ($canCancelMixing) {
-        $jsonFilePath = '../failsafe/cancel_mixing.json';
+        $jsonFilePath = '../json/cancel_mixing.json';
         
         if (file_exists($jsonFilePath)) {
             $jsonContent = file_get_contents($jsonFilePath);

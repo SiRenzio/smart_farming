@@ -4,7 +4,7 @@
     session_start();
 
     // Define the path to the JSON file
-    $jsonFile = '../failsafe/settings.json';
+    $jsonFile = '../json/settings.json';
 
     // Default settings
     $settings = [

@@ -66,6 +66,7 @@ CREATE TABLE sensordata (
     userID INT(11), -- Foreign key to users table
     SoilSensorID INT(10), -- Foreign key to sensorinfo table
     locationID INT(15), -- Foreign key to farmlocation table
+    nutritionID INT(11), -- Foreign key to plantnutrionneed table
     SoilN INT(10),
     SoilP INT(10),
     SoilK INT(10),
@@ -76,7 +77,8 @@ CREATE TABLE sensordata (
     DateTime TIMESTAMP,
     FOREIGN KEY (userID) REFERENCES users(userID),
     FOREIGN KEY (SoilSensorID) REFERENCES sensorinfo(soilSensorID),
-    FOREIGN KEY (locationID) REFERENCES farmlocation(locationID)
+    FOREIGN KEY (locationID) REFERENCES farmlocation(locationID),
+    FOREIGN KEY (nutritionID) REFERENCES plantnutrionneed(nutritionID)
 );
 
 -- Create the 'liquidsensorinfo' table

@@ -475,6 +475,114 @@ a:hover {
     margin-bottom: 0.5em;
 }
 
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.modal-header h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed #eee;
+    font-size: 14px;
+}
+
+.detail-item span:first-child {
+    font-weight: 500;
+    color: #555;
+}
+
+.detail-item span:last-child {
+    font-weight: 600;
+    color: #111;
+}
+
+#close-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 20px;
+    border: none;
+    background: #f3f4f6;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+#close-btn:hover {
+    background: #e5e7eb;
+}
+
+#modal-content {
+    margin-top: 2rem;
+}
+
+#modal-content p {
+    margin-bottom: 1rem;
+}
+
+.modal-backdrop {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+}
+
+.modal-box {
+    position: relative;
+    background: #ffffff;
+    width: 420px;
+    max-height: 80vh;
+    margin: 5% auto;
+    padding: 24px;
+    border-radius: 16px;
+    z-index: 2;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    overflow-y: auto;
+}
+
+#modal-content {
+    margin-top: 16px;
+}
+
+.details-btn {
+    width: 100px;
+    padding: 0.5rem;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    color: white;
+    box-shadow: 0 0 8px rgba(33, 150, 243, 0.4);
+    transition: all 0.3s ease;
+}
+
+.details-btn:hover {
+    box-shadow: 
+        0 0 12px rgba(33, 150, 243, 0.6),
+        0 0 20px rgba(33, 150, 243, 0.4);
+    transform: translateY(-2px);
+}
+
 .icon-temp i { color: #ff9800; }
 .icon-mois i { color: #03a9f4; }
 .icon-ec i   { color: #9c27b0; }

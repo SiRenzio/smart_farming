@@ -85,16 +85,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         sendResponse(false, 'Soil moisture must be between 0% and 100%. Received: ' . $soilMois . '%');
     }
 
+    //Get deployed nutrition set
+    $nutritionID = null;
+    $check_deploymentStmt = $conn->prepare('SELECT nutritionID FROM deployment WHERE soilSensorID = ? AND isPrimary = 1');
+    $check_deploymentStmt->bind_param('i', $soilSensorID);
+    $check_deploymentStmt->execute();
+    $deploymentResult = $check_deploymentStmt->get_result();
+    if ($deploymentResult->num_rows > 0) {
+        $nutritionID = $deploymentResult->fetch_assoc()['nutritionID'];
+    }
+    $check_deploymentStmt->close();
+
+
     // Set current timestamp
     $dateTime = date('Y-m-d H:i:s');
     
     // Insert data into database
-    $stmt = $conn->prepare('INSERT INTO sensordata (userID, SoilSensorID, locationID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
+    $stmt = $conn->prepare('INSERT INTO sensordata (userID, SoilSensorID, locationID, nutritionID, SoilN, SoilP, SoilK, SoilEC, SoilPH, SoilT, SoilMois, DateTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
     
-    $stmt->bind_param('iidddddddd', 
+    $stmt->bind_param('iiiiddddddd', 
         $userID,
         $soilSensorID, 
         $locationID,
+        $nutritionID,
         $soilN, 
         $soilP, 
         $soilK, 

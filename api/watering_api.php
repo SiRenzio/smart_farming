@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // CONTINUOUS LEVEL UPDATE
     if ($updateType === 'continuous') {
 
-        $jsonFile = '../failsafe/current_tank_levels.json';
+        $jsonFile = '../json/current_tank_levels.json';
         $tanksData = [];
 
         // Read existing data if the file already exists
@@ -398,7 +398,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // HANDSHAKE LOGIC
     if ($updateType === 'handshake') {
-        $settingsPath = __DIR__ . '/../failsafe/settings.json';
+        $settingsPath = __DIR__ . '/../json/settings.json';
         $settingsData = null;
         
         if (file_exists($settingsPath)) {
@@ -407,7 +407,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Handle cancel_mixing.json
-        $cancelMixPath = __DIR__ . '/../failsafe/cancel_mixing.json';
+        $cancelMixPath = __DIR__ . '/../json/cancel_mixing.json';
         $cancelMixResponseData = null;
 
         if (file_exists($cancelMixPath)) {
@@ -434,7 +434,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Notif if Tank Controller is connected
-        $statusPath = __DIR__ . "/../failsafe/tank_status.json";
+        $statusPath = __DIR__ . "/../json/tank_status.json";
         $lastSeen = 0;
         if (file_exists($statusPath)) {
             $statusData = json_decode(file_get_contents($statusPath), true);

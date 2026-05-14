@@ -297,6 +297,51 @@ function checkCarouselButtons() {
     }
 }
 
+const closeBtn = document.getElementById("close-btn");
+
+// Attach the listener to the whole document, which is never destroyed
+document.addEventListener("click", function(event) {
+    
+    // Check if the element that was clicked is (or is inside) a details button
+    const button = event.target.closest(".details-btn");
+
+    // If it is our button, run the code
+    if (button) {
+        console.log("clicked");
+        const data = button.dataset;
+        
+        const modalContent = document.getElementById("modal-content"); // Make sure this matches your HTML
+        const modal = document.getElementById("modal");               // Make sure this matches your HTML
+
+        modalContent.innerHTML = `
+            <div class="detail-item"><span>Sensor Name</span><span>${data.sensorname || '-'}</span></div>
+            <div class="detail-item"><span>Farm Name</span><span>${data.farmname || '-'}</span></div>
+            <div class="detail-item"><span>Plant Name</span><span>${data.plantname || '-'}</span></div>
+            <div class="detail-item"><span>Nutrition Set</span><span>${data.nutritionset || '-'}</span></div>
+            <div class="detail-item"><span>Date and Time</span><span>${data.datetime || '-'}</span></div>
+            <div class="detail-item"><span>Nitrogen (N)</span><span>${data.n || '-'}</span></div>
+            <div class="detail-item"><span>Phosphorus (P)</span><span>${data.p || '-'}</span></div>
+            <div class="detail-item"><span>Potassium (K)</span><span>${data.k || '-'}</span></div>
+            <div class="detail-item"><span>EC</span><span>${data.ec || '-'}</span></div>
+            <div class="detail-item"><span>pH</span><span>${data.ph || '-'}</span></div>
+            <div class="detail-item"><span>Temperature</span><span>${data.temp || '-'} °C</span></div>
+            <div class="detail-item"><span>Moisture</span><span>${data.mois || '-'} %</span></div>
+        `;
+
+        modal.style.display = "block";
+    }
+});
+
+closeBtn.addEventListener("click", () => {
+    modal.style.display = "none";
+});
+
+modal.addEventListener("click", (e) => {
+    if (e.target.classList.contains("modal-backdrop")) {
+        modal.style.display = "none";
+    }
+});
+
 
 // Master execution
 document.addEventListener('DOMContentLoaded', () => {
