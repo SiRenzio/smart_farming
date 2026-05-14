@@ -169,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
-            $success = 'Nutrition needs added successfully! <a href="view_nutrition.php?plantID=' . $plantID . '">View nutrition details</a> or <a href="plants.php">view all plants</a>.';
+            $success = 'Nutrition needs added successfully! <a href="view_nutrition.php?plantID=' . $plantID . '">View nutrition details</a>, <a href="plants.php">View all plants</a> or <a href="manage_sensors.php">Deploy a sensor</a>.';
             $_SESSION['success'] = $success;
             header('Location: add_nutrition.php?plantID=' . $plantID);
             exit;
@@ -223,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <!-- Nutrition Form -->
-        <form method="post" action="add_nutrition.php?plantID=<?php echo $plantID; ?>">
+        <form method="post" action="add_nutrition.php?plantID=<?php echo $plantID; ?>" id="addNutritionForm">
             <div class="form-group full-width">
                 <label for="savedNutritionSetName">
                     <i class="fas fa-floppy-disk"></i> Saved Nutrition Set Name
@@ -251,6 +251,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     id="nutritionSetName" 
                     name="nutritionSetName" 
                     placeholder="Enter a name for this nutrition set"
+                    required
                 >
             </div>
 
@@ -258,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="soilType">
                     <i class="fas fa-layer-group"></i> Soil Type *
                 </label>
-                <select name="soilType" class="dropdown" id="soil-type">
+                <select name="soilType" class="dropdown" id="soil-type" required>
                     <option value="">Select soil type</option>
                     <option value="sandyClayLoam">Sandy clay loam</option>
                     <option value="loam">Loam</option>
@@ -274,7 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="growthStage">
                     <i class="fas fa-tree"></i> Growth Stages *
                 </label>
-                <select name="growthStage" class="dropdown" id="plant-stage">
+                <select name="growthStage" class="dropdown" id="plant-stage" required>
                     <option value="">Select growth stage</option>
                     <option value="vegetative">Vegetative (3-15 Days)</option>
                     <option value="lateVegetative">Late Vegetative (16-45 Days)</option>
@@ -301,6 +302,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         type="number" 
                         id="numberOfPlants" 
                         name="numberOfPlants" 
+                        required
                         step="any"
                         placeholder="Enter number of plants"
                         value="<?php echo htmlspecialchars($_POST['numberOfPlants'] ?? ''); ?>"
@@ -410,7 +412,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <i class="fas fa-undo"></i> Reset
             </button>
             <button type="submit" class="submit-btn">
-                <i class="fas fa-plus"></i> Add Nutrition Needs
+                <i class="fas fa-arrow-right-to-bracket"></i> Submit
             </button>
         </form>
 

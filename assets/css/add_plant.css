@@ -158,6 +158,12 @@ body {
     box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
 }
 
+.submit-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
 .nav-links {
     text-align: center;
     margin-top: 1.5rem;

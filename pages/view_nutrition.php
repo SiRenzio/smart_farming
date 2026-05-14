@@ -54,11 +54,11 @@ foreach ($nutritionData as $nutrition) {
         $fertilizerData[$nutrition['nutritionID']][] = $fertRow;
     }
     $stmt->close();
-}
 
-$fertList = isset($fertilizerData[$nutrition['nutritionID']]) 
+    $fertList = isset($fertilizerData[$nutrition['nutritionID']]) 
     ? json_encode($fertilizerData[$nutrition['nutritionID']]) 
     : json_encode([]);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

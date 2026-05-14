@@ -225,6 +225,12 @@ body {
     transform: translateY(0);
 }
 
+.submit-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
 .reset-btn {
     width: 100%;
     padding: 1rem;

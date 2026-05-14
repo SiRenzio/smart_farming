@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
 
-            <form method="post" action="add_plant.php">
+            <form method="post" action="add_plant.php" id="addPlantForm">
                 <div class="form-group">
                     <label for="plantName">Plant Name *</label>
                     <input type="text" 
@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <button type="submit" class="submit-btn">
-                    <i class="fas fa-plus"></i> Add Plant
+                    <i class="fas fa-arrow-right-to-bracket"></i> Submit
                 </button>
             </form>
 
@@ -109,5 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
+    <script src="../assets/js/jquery-1.9.1.min.js"></script>
+    <script src="../assets/js/add_plant.js"></script>
 </body>
 </html> 

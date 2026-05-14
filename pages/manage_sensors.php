@@ -258,7 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                             </div>
                             <input type="hidden" value="<?= $sensor['primaryID'] ?>" name="modalSensorID">
                             <button type="submit" class="submit-btn">
-                                <i class="fas fa-plus"></i> Register Sensor
+                                <i class="fas fa-arrow-right-to-bracket"></i> Submit
                             </button>
                         </form>
                     </div>

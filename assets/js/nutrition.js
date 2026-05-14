@@ -235,4 +235,37 @@ window.addEventListener("DOMContentLoaded", () => {
     // default fertilizer input
     container.appendChild(createFertilizerGroup("", "", false));
     updateFertilizerOptions();
+
+    console.log("1. DOM loaded. Script is starting...");
+    const submitButton = form.querySelector('.submit-btn');
+    const requiredInputs = form.querySelectorAll('[required]');
+
+    // Disable button initially
+    submitButton.disabled = true;
+
+    function checkFields() {
+        let allFilled = true;
+
+        requiredInputs.forEach(input => {
+            if (input.value.trim() === '') {
+                allFilled = false;
+            }
+        });
+
+        submitButton.disabled = !allFilled;
+    }
+
+    // Check inputs while typing
+    requiredInputs.forEach(input => {
+        // Fires when typing in text/number fields
+        input.addEventListener('input', checkFields); 
+        
+        // Fires when selecting an option from a dropdown
+        input.addEventListener('change', checkFields);
+    });
+
+    // Disable after submit
+    form.addEventListener('submit', function() {
+        submitButton.disabled = true;
+    });
 });

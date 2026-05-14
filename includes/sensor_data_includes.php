@@ -13,20 +13,19 @@
             fetch(`../api/intel_api.php?sensorDataID=${lastSensorDataID || ''}`)
                 .then(res => res.json())
                 .then(data => {
-
+                    console.log("API Response:", data);
                     if (data.status === "no-change") {
 
                         // slow polling when nothing changes
                         pollDelay = 10000;
 
-                    } else {
-
+                    } else if (data.sensor && data.sensor.SensorDataID) {
                         lastSensorDataID = data.sensor.SensorDataID;
-
-                        console.log(lastSensorDataID);
-
-                        // speed up polling when new data arrives
+                        console.log("New ID:", lastSensorDataID);
                         pollDelay = 3000;
+                    } else {
+                        // Fallback if the API response is weird/unexpected
+                        pollDelay = 10000; 
                     }
 
                     setTimeout(pollSensors, pollDelay);
