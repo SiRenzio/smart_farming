@@ -297,17 +297,20 @@ function getFilterParams($excludePage = true) {
                     </thead>
                     <tbody id="userDeploymentTable">
                         <?php foreach ($deployedResult as $deployment): ?>
-                            <tr>
-                                <td><?= htmlspecialchars($deployment['sensorName']) ?></td>
-                                <td><?= htmlspecialchars($deployment['farmName']) ?></td>
-                                <td>
+                            <tr class="deployment-row">
+                                <td data-label="Sensor">
+                                    <?= htmlspecialchars($deployment['sensorName']) ?>
+                                    <i class="fas fa-chevron-down mobile-chevron"></i>
+                                </td>
+                                <td data-label="Location" class="expandable-cell"><?= htmlspecialchars($deployment['farmName']) ?></td>
+                                <td data-label="Status" class="expandable-cell">
                                     <?php if ((int)$deployment['isConnected'] === 1): ?>
                                         <span class="status connected" style="color: #2e7d32;"><i class="fas fa-check-circle"></i> Connected</span>
                                     <?php else: ?>
                                         <span class="status disconnected" style="color: #e74c3c;"><i class="fas fa-times-circle"></i> Disconnected</span>
                                     <?php endif; ?>
                                 </td>
-                                <td>
+                                <td data-label="Action" class="expandable-cell">
                                     <a href="deployed_nutrition.php?nutritionID=<?php echo $latestNutritionID; ?>" class="action-btn btn-success">
                                         <i class="fas fa-eye"></i> View Data
                                     </a>

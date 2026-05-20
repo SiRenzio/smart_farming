@@ -200,4 +200,7 @@ body {
     .page-header h1 {
         font-size: 1.8rem;
     }
+    .nav-links a{
+    margin-bottom: 0.7rem;
+    }
 }

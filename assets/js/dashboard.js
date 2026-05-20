@@ -224,6 +224,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+
+    // Toggle logic for mobile table accordion
+    const deploymentRows = document.querySelectorAll('.deployment-row');
+    deploymentRows.forEach(row => {
+        row.addEventListener('click', () => {
+            // Check if window is in mobile view width
+            if (window.innerWidth <= 768) {
+                row.classList.toggle('expanded');
+            }
+        });
+    });
 });
 
 const params = new URLSearchParams(window.location.search);

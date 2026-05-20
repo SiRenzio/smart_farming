@@ -272,6 +272,11 @@ body {
     background: #f8f9fa; 
 }
 
+/* Hide mobile chevron by default */
+.mobile-chevron {
+    display: none;
+}
+
 .action-btn {
     flex: 1;
     min-width: 70px;
@@ -294,6 +299,7 @@ body {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
 }
+
 /* Pagination */
 .pagination-container { 
     display: flex; 
@@ -317,8 +323,6 @@ body {
     text-decoration: none; 
     transition: all 0.3s ease; 
     box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-}
-.pagination-link { 
     font-size: 1.1rem;
 }
 .pagination-link:hover { 
@@ -415,7 +419,6 @@ body {
     padding: 6px 10px;
     white-space: nowrap;
 }
-
 
 .sensor-label-content {
     text-align: center;
@@ -631,11 +634,10 @@ body {
     margin-left: auto;
 }
 
-/* Beautiful styling for the Failsafe Settings button */
 .fsafe-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem; /* Space between icon and text */
+    gap: 0.3rem;
     background: linear-gradient(135deg, #9C27B0, #7B1FA2);
     color: white;
     padding: 0.6rem 1.25rem;
@@ -657,7 +659,7 @@ body {
 .modal {
     display: none;
     position: fixed;
-    z-index: 10000; /* Ensures it sits above Leaflet map */
+    z-index: 10000; 
     left: 0;
     top: 0;
     width: 100%;
@@ -697,7 +699,7 @@ body {
 .close-modal:hover {
     color: #e74c3c;
 }
-/* Dynamic Content Styles */
+
 .nutrition-item {
     background: #f8f9fa;
     border: 1px solid #e9ecef;
@@ -727,11 +729,13 @@ body {
     color: #222;
 }
 
+/* Mobile  */
+
 @media (max-width: 768px) {
     .dashboard-container {
-        padding: 1rem;
+        padding: 0.5rem;
     }
-    .header {
+    .header, .dashboard-card, .tank-container, .sensors-deployment-section, .stats-section {
         padding: 1.5rem;
     }
     .welcome-section h1 {
@@ -739,15 +743,112 @@ body {
     }
     .dashboard-grid {
         grid-template-columns: 1fr;
-        gap: 1.5rem;
+        gap: 1rem;
     }
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+    
+    .tanks-wrapper {
+        flex-direction: column;
+        align-items: center;
+        gap: 2rem;
+    }
     .tank-card {
-        flex: 1 1 70px;
-        min-width: 70px;
-        max-width: 120px;
+        flex: 1 1 100%;
+        max-width: 200px;
+        width: 100%;
+    }
+
+    .deployment-table thead {
+        display: none; /* Hide headers */
+    }
+    .deployment-table tbody tr {
+        display: block;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        background: #fff;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .deployment-table tbody td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        text-align: right;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .deployment-table tbody td:last-child {
+        border-bottom: none;
+    }
+    .deployment-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #333;
+        text-align: left;
+    }
+    
+    .expandable-cell {
+        display: none !important;
+    }
+    
+    .deployment-row.expanded .expandable-cell {
+        display: flex !important;
+    }
+    
+    .mobile-chevron {
+        display: inline-block;
+        transition: transform 0.3s ease;
+        color: #667eea;
+        margin-left: 10px;
+    }
+    .deployment-row.expanded .mobile-chevron {
+        transform: rotate(180deg);
+    }
+/
+    .map-deployment-section {
+        padding: 1.5rem 0 0 0;
+        border-radius: 10px;
+    }
+    .map-deployment-section .card-header, 
+    .map-deployment-section .map-legend,
+    .map-deployment-section #offline-map-banner {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    .dashboard-map {
+        height: 65vh; 
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+    .tank-container .card-header {
+        flex-wrap: wrap;
+    }
+    .tank-container .card-content {
+        flex: 1;
+        min-width: 0;
+        margin-bottom: 1rem;
+    }
+    .failsafe_btn {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 1rem; /* Adds space between text and button */
+        display: flex;
+        justify-content: flex-start;
+    }
+    .fsafe-btn {
+        width: 100%;
+        justify-content: center;    
+    }
+    .card-content p{
+        font-size: 1rem;
+    }
+    .card-content h3{
+        font-size: 1.3rem;
     }
 }
 
@@ -760,17 +861,27 @@ body {
         grid-template-columns: 1fr;
     }
     .tanks-wrapper {
-        gap: 0.5rem;
-    }
-    .tank-card {
-        flex: 1 1 60px;
-        min-width: 60px;
-        max-width: 100px;
+        gap: 1.5rem;
     }
     .tank-name {
         font-size: 0.85rem;
     }
     .level-text {
         font-size: 0.8rem;
+    }
+    
+    .deployment-table tbody td {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+        gap: 0.5rem;
+    }
+    .mobile-chevron {
+        position: absolute;
+        right: 15px;
+        top: 15px;
+    }
+    .action-btn {
+        width: 100%;
     }
 }
