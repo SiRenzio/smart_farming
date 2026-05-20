@@ -297,19 +297,91 @@ body {
 .btn-confirm:hover { background-color: #d97706; }
 .btn-confirm.confirmed { background-color: #10b981; cursor: default; }
 
-/* Mobile Responsiveness */
+/* ========================================= */
+/* MOBILE RESPONSIVENESS                     */
+/* ========================================= */
 @media (max-width: 768px) {
+    /* Maximize container space */
+    .page-container {
+        padding: 1rem 0.5rem;
+    }
+
+    /* Reduce header bloat */
+    .page-header {
+        padding: 1.5rem 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: 16px;
+    }
+
+    .page-header .icon {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .page-header h1 {
+        font-size: 1.75rem;
+    }
+
+    /* Form card spacing */
+    .form-card {
+        padding: 1.5rem 1rem;
+        border-radius: 16px;
+    }
+
+    /* Prevent auto-zoom on iOS Safari */
+    .form-input, 
+    .search-input {
+        font-size: 16px; 
+    }
+
+    /* Map search row adjustments */
     .map-header.search-pin-row {
         flex-direction: column;
+        padding: 12px;
+        gap: 12px;
     }
+
     .btn-pin-me {
-        padding: 1rem;
+        padding: 0.85rem;
         justify-content: center;
+        width: 100%;
     }
+
+    /* Map sizing */
+    #map {
+        height: 350px; /* Better fit for smaller screens to reduce scrolling */
+    }
+
+    /* Map footer adjustments */
     .map-footer { 
         flex-direction: column; 
-        gap: 15px; 
+        gap: 12px; 
         align-items: stretch;
         text-align: center;
+        padding: 15px 12px;
+    }
+
+    .btn-confirm {
+        width: 100%;
+        padding: 12px;
+    }
+
+    /* Navigation links stacking */
+    .nav-links {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 1rem;
+    }
+
+    .nav-links a {
+        margin: 0;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
     }
 }

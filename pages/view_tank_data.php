@@ -279,13 +279,30 @@ function getFilterParams($excludePage = true) {
                             </tr>
                         </thead>
                         <tbody id="tank-data-body">
-                            <?php foreach ($data as $row): ?>
-                                <tr>
-                                    <td><?php echo date('M j, Y g:i A', strtotime($row['dateandtime'])); ?></td>
-                                    <td class="numeric-value"><?php echo ($row['wateringstatus'] === 1) ? 'Pumped' : ($row['wateringstatus'] === 0 ? 'Hold Watering' : 'Able Watering'); ?></td>
-                                    <td class="numeric-value"><?php echo ($row['wateringFlag'] === 1) ? 'Low' : ($row['wateringFlag'] === 0 ? 'Full' : 'Idle'); ?></td>
-                                    <td class="numeric-value"><?php echo $row['wateringvolume'] !== null ? htmlspecialchars($row['wateringvolume']) . ' mL' : '-'; ?></td>
-                                    <td class="numeric-value"><?php echo ($row['waterlevel'] === 0) ? '0' : ($row['liters'] !== null ? $row['liters'] . ' Liters' : '-'); ?></td>
+                            <?php foreach ($data as $row): 
+                                // Preparing the strings for the mobile dropdown header
+                                $statusText = ($row['wateringstatus'] === 1) ? 'Pumped' : ($row['wateringstatus'] === 0 ? 'Hold Watering' : 'Able Watering');
+                                $dateText = date('M j, Y g:i A', strtotime($row['dateandtime']));
+                                $flagText = ($row['wateringFlag'] === 1) ? 'Low' : ($row['wateringFlag'] === 0 ? 'Full' : 'Idle');
+                            ?>
+                                <tr data-row-id="<?php echo strtotime($row['dateandtime']); ?>">
+                                    <td class="first-col">
+                                        <div class="mobile-accordion-header" onclick="this.closest('tr').classList.toggle('expanded')">
+                                            <span class="mobile-title">
+                                                <i class="fas fa-tint"></i>
+                                                <?php echo htmlspecialchars($statusText) . ' - ' . $dateText; ?>
+                                            </span>
+                                            <i class="fas fa-chevron-down chevron-icon"></i>
+                                        </div>
+                                        
+                                        <div class="td-content" data-label="Date & Time">
+                                            <?php echo $dateText; ?>
+                                        </div>
+                                    </td>
+                                    <td class="numeric-value" data-label="Watering Status"><?php echo $statusText; ?></td>
+                                    <td class="numeric-value" data-label="Watering Flag"><?php echo $flagText; ?></td>
+                                    <td class="numeric-value" data-label="Watering Amount"><?php echo $row['wateringvolume'] !== null ? htmlspecialchars($row['wateringvolume']) . ' mL' : '-'; ?></td>
+                                    <td class="numeric-value" data-label="Water Level"><?php echo ($row['waterlevel'] === 0) ? '0' : ($row['liters'] !== null ? $row['liters'] . ' Liters' : '-'); ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
