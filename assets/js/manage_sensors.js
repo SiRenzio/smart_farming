@@ -166,9 +166,16 @@ function updateSensors() {
             const container = document.querySelector('.sensors-container');
             const emptyState = document.querySelector('.empty-state');
 
+            // --- NEW INTERVAL SWITCHING LOGIC ---
             if (!firstLoadDone) {
-                document.getElementById('app-loading').style.display = 'none';
+                const appLoading = document.getElementById('app-loading');
+                if (appLoading) appLoading.style.display = 'none';
                 firstLoadDone = true;
+                
+                // Clear the 1-second interval
+                clearInterval(sensorPollInterval);
+                // Start the 30-second interval (30,000 milliseconds)
+                sensorPollInterval = setInterval(updateSensors, 30000); 
             }
 
             // Handle empty state
@@ -353,4 +360,4 @@ function switchPrimary(btn) {
 }
 
 // Poll every 1 second
-setInterval(updateSensors, 1000);
+let sensorPollInterval = setInterval(updateSensors, 1000);

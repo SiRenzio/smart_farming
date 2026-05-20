@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (page === 1) {
             autoReloadInterval = setInterval(() => {
                 updateContent(window.location.href);
-            }, 2500); 
+            }, 15000); 
         }
     }
 

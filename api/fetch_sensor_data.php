@@ -14,12 +14,21 @@ $filterSensor   = $_GET['sensor'] ?? '';
 $filterLocation = $_GET['location'] ?? '';
 $filterDateFrom = $_GET['dateFrom'] ?? '';
 $filterDateTo   = $_GET['dateTo'] ?? '';
+$type           = $_GET['type'] ?? 'table';
 
-$type = $_GET['type'] ?? 'table';
+// NEW: Grab the last ID seen by the client
+$last_id = isset($_GET['last_id']) ? (int)$_GET['last_id'] : 0;
 
 $whereConditions = ["si.userID = ?"];
 $params = [$userID];
 $types = "i";
+
+// NEW: Filter for only new records if last_id is provided
+if ($last_id > 0) {
+    $whereConditions[] = "sd.SensorDataID > ?";
+    $params[] = $last_id;
+    $types .= "i";
+}
 
 if ($filterSensor) {
     $whereConditions[] = "sd.SoilSensorID = ?";
@@ -44,13 +53,12 @@ if ($filterDateTo) {
 
 $whereSQL = " WHERE " . implode(" AND ", $whereConditions);
 
-// for graph
+// FOR GRAPH
 if ($type === 'visual') {
-
     header('Content-Type: application/json');
-
+    // Added sd.SensorDataID to the SELECT list and a LIMIT 200 for safety
     $sql = "
-        SELECT sd.DateTime, sd.SoilN, sd.SoilP, sd.SoilK, sd.SoilEC, sd.SoilPH, sd.SoilT, sd.SoilMois, 
+        SELECT sd.SensorDataID, sd.DateTime, sd.SoilN, sd.SoilP, sd.SoilK, sd.SoilEC, sd.SoilPH, sd.SoilT, sd.SoilMois, 
                si.soilSensorID, si.sensorName, fl.farmName, d.isPrimary 
         FROM sensordata sd 
         INNER JOIN sensorinfo si ON sd.SoilSensorID = si.soilSensorID 
@@ -58,12 +66,12 @@ if ($type === 'visual') {
         LEFT JOIN deployment d ON sd.SoilSensorID = d.soilSensorID
         $whereSQL
         ORDER BY sd.DateTime DESC
+        LIMIT 200
     ";
 
     $stmt = $conn->prepare($sql);
     $stmt->bind_param($types, ...$params);
     $stmt->execute();
-
     $data = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 
@@ -71,7 +79,7 @@ if ($type === 'visual') {
     exit;
 }
 
-// Sensor Data
+// FOR TABLE
 $sql = "
     SELECT sd.*, si.sensorName, fl.farmName, p.plantName, n.nutritionSetName
     FROM sensordata sd
@@ -128,6 +136,5 @@ while ($row = $result->fetch_assoc()):
     </td>
 </tr>
 <?php endwhile;
-
 $stmt->close();
 ?>

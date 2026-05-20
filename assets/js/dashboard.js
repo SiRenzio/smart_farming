@@ -203,7 +203,7 @@ function checkMapNetworkStatus() {
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchLiquidLevel();
-    setInterval(fetchLiquidLevel, 1000);
+    setInterval(fetchLiquidLevel, 10000);
     initDashboardMap(); 
 
     // Initialize network status checks
