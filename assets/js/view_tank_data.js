@@ -10,11 +10,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 
-                // Update Table Content
-                const newContent = doc.getElementById('data-wrapper');
                 const currentContent = document.getElementById('data-wrapper');
+                const newContent = doc.getElementById('data-wrapper');
+
+                // 1. Capture currently expanded rows
+                const expandedRowIds = [];
+                if (currentContent) {
+                    currentContent.querySelectorAll('tr.expanded').forEach(tr => {
+                        if (tr.dataset.rowId) {
+                            expandedRowIds.push(tr.dataset.rowId);
+                        }
+                    });
+                }
+                
+                // 2. Update Table Content
                 if (newContent && currentContent) {
                     currentContent.innerHTML = newContent.innerHTML;
+                    
+                    // 3. Restore expanded state to the new rows
+                    expandedRowIds.forEach(id => {
+                        const trToExpand = currentContent.querySelector(`tr[data-row-id="${id}"]`);
+                        if (trToExpand) {
+                            trToExpand.classList.add('expanded');
+                        }
+                    });
                 }
 
                 // Update Indicator Content
@@ -33,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         currentCancelWrapper.innerHTML = newCancelWrapper.innerHTML;
                     } else {
                         // Only replace the HTML if the incoming button is ACTUALLY disabled.
-                        // This means the hardware database has finally caught up.
                         const incomingBtn = newCancelWrapper.querySelector('#cancelBtn');
                         if (incomingBtn && incomingBtn.disabled) {
                             currentCancelWrapper.innerHTML = newCancelWrapper.innerHTML;

@@ -69,7 +69,6 @@ foreach ($nutritionData as $nutrition) {
 </head>
 <body>
     <div class="page-container">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="icon">
                 <i class="fas fa-leaf"></i>
@@ -78,15 +77,13 @@ foreach ($nutritionData as $nutrition) {
             <p>Comprehensive nutrition requirements and soil conditions</p>
         </div>
 
-        <!-- Plant Info -->
         <div class="plant-info">
             <strong><i class="fas fa-seedling"></i> Plant:</strong> 
-            <span><?php echo htmlspecialchars($plantName); ?></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    
+            <span><?php echo htmlspecialchars($plantName); ?></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      
             <strong><i class="fas fa-dna"></i> Variety:</strong> 
             <span><?php echo htmlspecialchars($plantVariety); ?></span>
         </div>
 
-        <!-- Navigation Links -->
         <div class="nav-links">
             <a href="dashboard.php">
                 <i class="fas fa-arrow-left"></i> Dashboard
@@ -105,8 +102,7 @@ foreach ($nutritionData as $nutrition) {
                 </a>
             </div>
         <?php else: ?>
-        <!-- Nutrition Data Table -->
-            <div class="nutrition-container">
+        <div class="nutrition-container">
                 <table class="nutrition-table">
                     <thead>
                         <tr>
@@ -127,18 +123,30 @@ foreach ($nutritionData as $nutrition) {
                                 $nutritionSetStages = $nutrition['nutritionSetName'];
                         ?>
                             <tr class="nutrition-set-name">
-                                <td colspan="8">
-                                    <i class="fas fa-layer-group"></i> <?php echo htmlspecialchars($nutrition['nutritionSetName']); ?>
+                                <td colspan="7">
+                                    <i class="fas fa-layer-group set-icon"></i> <?php echo htmlspecialchars($nutrition['nutritionSetName']); ?>
                                 </td>
                             </tr>
                             <?php endif; ?>
+                            
                             <tr class="nutrition-values">
-                                <td><?php echo $nutrition['soilType'] !== null ? htmlspecialchars($nutrition['soilType']) : '-'; ?></td>
-                                <td><?php echo $nutrition['meanMoistureThreshold'] !== null ? htmlspecialchars($nutrition['meanMoistureThreshold']) . " | " . htmlspecialchars($nutrition['meanMoistureThreshold'] + 5) . " | " . htmlspecialchars($nutrition['meanMoistureThreshold'] + 10) : '-'; ?></td>
-                                <td><?php echo $nutrition['growthStage'] !== null ? htmlspecialchars($nutrition['growthStage']) : '-'; ?></td>
-                                <td>30° | 31°-34° | 35°</td>
-                                <td><?php echo $nutrition['soilN'] !== null ? htmlspecialchars($nutrition['soilN']) : '-'; ?></td>
-                                <td>
+                                <td class="first-col">
+                                    <div class="mobile-accordion-header" onclick="this.closest('tr').classList.toggle('expanded')">
+                                        <span>
+                                            <i class="fas fa-tree" style="margin-right: 8px; color: #4CAF50;"></i> 
+                                            <?php echo htmlspecialchars($nutrition['growthStage'] ?? 'All Stages'); ?>
+                                        </span>
+                                        <i class="fas fa-chevron-down chevron-icon"></i>
+                                    </div>
+                                    <div class="td-content" data-label="Soil Type">
+                                        <?php echo $nutrition['soilType'] !== null ? htmlspecialchars($nutrition['soilType']) : '-'; ?>
+                                    </div>
+                                </td>
+                                <td data-label="Moisture Threshold"><?php echo $nutrition['meanMoistureThreshold'] !== null ? htmlspecialchars($nutrition['meanMoistureThreshold']) . " | " . htmlspecialchars($nutrition['meanMoistureThreshold'] + 5) . " | " . htmlspecialchars($nutrition['meanMoistureThreshold'] + 10) : '-'; ?></td>
+                                <td data-label="Growth Stage" class="desktop-stage-cell"><?php echo $nutrition['growthStage'] !== null ? htmlspecialchars($nutrition['growthStage']) : '-'; ?></td>
+                                <td data-label="Temperature">30° | 31°-34° | 35°</td>
+                                <td data-label="Nitrogen (N)"><?php echo $nutrition['soilN'] !== null ? htmlspecialchars($nutrition['soilN']) : '-'; ?></td>
+                                <td data-label="Fertilizer">
                                     <?php 
                                         if (isset($fertilizerData[$nutrition['nutritionID']])) {
                                             foreach ($fertilizerData[$nutrition['nutritionID']] as $fertilizer) {
@@ -151,7 +159,7 @@ foreach ($nutritionData as $nutrition) {
                                         }
                                     ?>
                                 </td>
-                                <td>
+                                <td data-label="Actions" class="actions-cell">
                                     <div class="action-group">
                                         <button class="details-btn"
                                             data-soil="<?php echo htmlspecialchars($nutrition['soilType']); ?>"
@@ -186,4 +194,4 @@ foreach ($nutritionData as $nutrition) {
     </div>
     <script src="../assets/js/nutrition_sets.js" defer></script>
 </body>
-</html> 
+</html>
