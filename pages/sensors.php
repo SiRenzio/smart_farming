@@ -200,8 +200,8 @@ function getFilterParams($excludePage = true) {
                         <input type="datetime-local" step="1" name="dateTo" id="dateTo" value="<?php echo htmlspecialchars($filterDateTo); ?>">
                     </div>
 
-                    <div class="filter">
-                        <label>&nbsp;</label>
+                    <div class="filter clear-filter">
+                        <label class="hide-mobile">&nbsp;</label>
                         <a href="#" id="btn-clear-filters" class="btn btn-clear">
                             <i class="fa-solid fa-rotate-left"></i> Clear
                         </a>
@@ -225,7 +225,7 @@ function getFilterParams($excludePage = true) {
                         <button class="carousel-btn prev" onclick="scrollCarousel(-1)"><i class="fas fa-chevron-left"></i></button>
                         
                         <div class="carousel-viewport" id="carousel-inner">
-                            </div>
+                        </div>
                         
                         <button class="carousel-btn next" onclick="scrollCarousel(1)"><i class="fas fa-chevron-right"></i></button>
                     </div>

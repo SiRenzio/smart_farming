@@ -336,6 +336,20 @@ modal.addEventListener("click", (e) => {
     }
 });
 
+
+// MOBILE ACCORDION LOGIC FOR TABLE ROWS
+document.addEventListener("click", function(event) {
+    // Only execute if on mobile/tablet view
+    if (window.innerWidth <= 768) {
+        const row = event.target.closest("#sensor-data-body tr");
+        // Ensure the click was on a table row, but NOT on a button (like the Details button)
+        if (row && !event.target.closest(".actions") && !event.target.closest(".details-btn")) {
+            row.classList.toggle("expanded");
+        }
+    }
+});
+
+
 // Master execution
 document.addEventListener('DOMContentLoaded', () => {
     const filterForm = document.getElementById('filter-form');
