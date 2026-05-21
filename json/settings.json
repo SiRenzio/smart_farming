@@ -1,5 +1,5 @@
 {
     "wateringTime": 120000,
     "backOffTime": 120000,
-    "mixingTime": 6000
+    "mixingTime": 5000
 }

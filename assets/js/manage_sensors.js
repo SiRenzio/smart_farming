@@ -294,7 +294,9 @@ function connectSensor(btn) {
     .then(res => res.json())
     .then(data => {
         if (!data.success) {
-            throw new Error(data.message);
+            alert(data.message);
+            window.location.replace('../pages/view_nutrition.php')
+            return;
         }
         else {
             alert(data.message);

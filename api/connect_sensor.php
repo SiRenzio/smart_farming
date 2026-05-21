@@ -39,7 +39,27 @@ if ($existingSensor) {
     $stmt = $conn->prepare("UPDATE deployment SET userID = ?, locationID = ?, isConnected = 1, isPrimary = ? WHERE soilSensorID = ?");
     $stmt->bind_param("iiii", $userID, $locationID, $setPrimary, $sensorID);
     
-    if ($stmt->execute()) {
+    $nutriStmt = $conn->prepare("
+        SELECT nutritionID 
+        FROM plantnutrionneed 
+        WHERE isActive = 1 AND userID = ? 
+        ORDER BY nutritionID DESC LIMIT 1
+    ");
+    $nutriStmt->bind_param("i", $userID);
+    $nutriStmt->execute();
+    $nutriRow = $nutriStmt->get_result()->fetch_assoc();
+    $nutriStmt->close();
+
+    if (!$nutriRow) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Cannot deploy sensor: No active plant nutrition profile found.'
+        ]);
+        
+        exit;
+    }
+
+    else if ($stmt->execute()) {
         echo json_encode([
             'success' => true,
             'message' => 'Sensor re-deployed successfully.'
