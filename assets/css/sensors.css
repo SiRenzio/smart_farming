@@ -398,6 +398,13 @@ a:hover {
     box-sizing: border-box;
 }
 
+/* Forces canvas to scale seamlessly inside responsive wrapper */
+.chart-wrapper canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
+
 .header-title-wrapper {
     display: flex;
     justify-content: space-between;

@@ -116,7 +116,19 @@ function reloadVisuals() {
                             ]
                         },
                         options: {
-                            responsive: true, maintainAspectRatio: false,
+                            responsive: true, 
+                            maintainAspectRatio: false,
+                            animation: {
+                                duration: 800,
+                                easing: 'easeInOutQuart'
+                            },
+                            transitions: {
+                                active: {
+                                    animation: {
+                                        duration: 400
+                                    }
+                                }
+                            },
                             plugins: { title: { display: true, text: 'Realtime Soil Nutrient Levels', font: { size: 16 } } },
                             scales: {
                                 x: { title: { display: true, text: 'Time' } },
