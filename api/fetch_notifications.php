@@ -20,7 +20,7 @@ $stmt = $conn->prepare("
     FROM notification
     WHERE notificationID > ?
     ORDER BY createdAt DESC
-    LIMIT 99
+    LIMIT 25
 ");
 
 $stmt->bind_param("i", $last_id);

@@ -175,7 +175,7 @@ function updateSensors() {
                 // Clear the 1-second interval
                 clearInterval(sensorPollInterval);
                 // Start the 30-second interval (30,000 milliseconds)
-                sensorPollInterval = setInterval(updateSensors, 30000); 
+                sensorPollInterval = setInterval(updateSensors, 1000); 
             }
 
             // Handle empty state

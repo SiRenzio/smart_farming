@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     //Get deployed nutrition set
     $nutritionID = null;
-    $check_deploymentStmt = $conn->prepare('SELECT nutritionID FROM deployment WHERE soilSensorID = ? AND isPrimary = 1');
+    $check_deploymentStmt = $conn->prepare('SELECT nutritionID FROM deployment WHERE soilSensorID = ?');
     $check_deploymentStmt->bind_param('i', $soilSensorID);
     $check_deploymentStmt->execute();
     $deploymentResult = $check_deploymentStmt->get_result();
