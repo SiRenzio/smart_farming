@@ -1,4 +1,5 @@
 let chartInstances = {};
+const expandedRowKeys = new Set();
 
 function reloadVisuals() {
     const params = new URLSearchParams(window.location.search);
@@ -193,6 +194,22 @@ function reloadVisuals() {
         .catch(err => console.error('Visual reload failed:', err));
 }
 
+function restoreExpandedMobileRows() {
+    if (window.innerWidth > 768) return;
+    
+    const rows = document.querySelectorAll("#sensor-data-body tr");
+    rows.forEach(row => {
+        const btn = row.querySelector('.details-btn');
+        if (btn) {
+            // Re-create the key to check if it matches our memory
+            const rowKey = btn.dataset.sensorname + "-" + btn.dataset.datetime;
+            if (expandedRowKeys.has(rowKey)) {
+                row.classList.add("expanded");
+            }
+        }
+    });
+}
+
 function reloadSensorData() {
     const params = new URLSearchParams(window.location.search);
 
@@ -207,6 +224,7 @@ function reloadSensorData() {
             const tbody = document.getElementById('sensor-data-body');
             if (tbody) {
                 tbody.innerHTML = html;
+                restoreExpandedMobileRows();
             }
         })
         .catch(err => console.error('Auto reload failed:', err));
@@ -253,6 +271,7 @@ function updateDataFromFilters(resetPage = true, targetPage = 1) {
                 // re-initialize graphs and pagination
                 reloadVisuals();
                 attachPaginationEvents();
+                restoreExpandedMobileRows();
             }
         })
         .catch(err => console.error('Error fetching filtered data:', err));
@@ -298,14 +317,29 @@ function checkCarouselButtons() {
 }
 
 const closeBtn = document.getElementById("close-btn");
+const globalModal = document.getElementById("modal"); // Selected modal globally to fix closing errors
 
-// Attach the listener to the whole document, which is never destroyed
 document.addEventListener("click", function(event) {
+
+    // 4. Update row clicking logic to update the memory bank
+    const clickedRow = event.target.closest(".data-table tr");
+    if (clickedRow && window.innerWidth <= 768 && !event.target.closest(".details-btn")) {
+        clickedRow.classList.toggle("expanded");
+        
+        // Save or remove the row from memory based on its new state
+        const btn = clickedRow.querySelector('.details-btn');
+        if (btn) {
+            const rowKey = btn.dataset.sensorname + "-" + btn.dataset.datetime;
+            if (clickedRow.classList.contains("expanded")) {
+                expandedRowKeys.add(rowKey);
+            } else {
+                expandedRowKeys.delete(rowKey);
+            }
+        }
+    }
     
-    // Check if the element that was clicked is (or is inside) a details button
     const button = event.target.closest(".details-btn");
 
-    // If it is our button, run the code
     if (button) {
         console.log("clicked");
         const data = button.dataset;
@@ -313,56 +347,63 @@ document.addEventListener("click", function(event) {
         const modalContent = document.getElementById("modal-content");
         const modal = document.getElementById("modal");      
 
-        modalContent.innerHTML = `
-            <div class="detail-item"><span>Sensor Name</span><span>${data.sensorname || '-'}</span></div>
-            <div class="detail-item"><span>Farm Name</span><span>${data.farmname || '-'}</span></div>
-            <div class="detail-item"><span>Plant Name</span><span>${data.plantname || '-'}</span></div>
-            <div class="detail-item"><span>Nutrition Set</span><span>${data.nutritionset || '-'}</span></div>
-            <div class="detail-item"><span>Date and Time</span><span>${data.datetime || '-'}</span></div>
-            <div class="detail-item"><span>Nitrogen (N)</span><span>${data.n || '-'}</span></div>
-            <div class="detail-item"><span>Phosphorus (P)</span><span>${data.p || '-'}</span></div>
-            <div class="detail-item"><span>Potassium (K)</span><span>${data.k || '-'}</span></div>
-            <div class="detail-item"><span>EC</span><span>${data.ec || '-'}</span></div>
-            <div class="detail-item"><span>pH</span><span>${data.ph || '-'}</span></div>
-            <div class="detail-item"><span>Temperature</span><span>${data.temp || '-'} °C</span></div>
-            <div class="detail-item"><span>Moisture</span><span>${data.mois || '-'} %</span></div>
-        `;
-
-        modal.style.display = "block";
+        if(modalContent && modal) {
+            modalContent.innerHTML = `
+                <div class="detail-item"><span>Sensor Name</span><span>${data.sensorname || '-'}</span></div>
+                <div class="detail-item"><span>Farm Name</span><span>${data.farmname || '-'}</span></div>
+                <div class="detail-item"><span>Plant Name</span><span>${data.plantname || '-'}</span></div>
+                <div class="detail-item"><span>Nutrition Set</span><span>${data.nutritionset || '-'}</span></div>
+                <div class="detail-item"><span>Date and Time</span><span>${data.datetime || '-'}</span></div>
+                <div class="detail-item"><span>Nitrogen (N)</span><span>${data.n || '-'}</span></div>
+                <div class="detail-item"><span>Phosphorus (P)</span><span>${data.p || '-'}</span></div>
+                <div class="detail-item"><span>Potassium (K)</span><span>${data.k || '-'}</span></div>
+                <div class="detail-item"><span>EC</span><span>${data.ec || '-'}</span></div>
+                <div class="detail-item"><span>pH</span><span>${data.ph || '-'}</span></div>
+                <div class="detail-item"><span>Temperature</span><span>${data.temp || '-'} °C</span></div>
+                <div class="detail-item"><span>Moisture</span><span>${data.mois || '-'} %</span></div>
+            `;
+            modal.style.display = "block";
+        }
     }
 });
 
-closeBtn.addEventListener("click", () => {
-    modal.style.display = "none";
-});
+// Fixed modal closing logic to use globalModal so it doesn't throw a reference error
+if (closeBtn && globalModal) {
+    closeBtn.addEventListener("click", () => {
+        globalModal.style.display = "none";
+    });
+}
 
-modal.addEventListener("click", (e) => {
-    if (e.target.classList.contains("modal-backdrop")) {
-        modal.style.display = "none";
-    }
-});
-
+if (globalModal) {
+    globalModal.addEventListener("click", (e) => {
+        if (e.target.classList.contains("modal-backdrop")) {
+            globalModal.style.display = "none";
+        }
+    });
+}
 
 // Master execution
 document.addEventListener('DOMContentLoaded', () => {
     
     // Setup Filter Events
     const filterForm = document.getElementById('filter-form');
-    const filterInputs = filterForm.querySelectorAll('select, input');
-    const clearBtn = document.getElementById('btn-clear-filters');
+    if (filterForm) {
+        const filterInputs = filterForm.querySelectorAll('select, input');
+        const clearBtn = document.getElementById('btn-clear-filters');
 
-    // Automatically update when inputs change
-    filterInputs.forEach(input => {
-        input.addEventListener('change', () => updateDataFromFilters(true));
-    });
-
-    // reset filters and refresh data when clear button is clicked
-    if (clearBtn) {
-        clearBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            filterForm.reset();
-            updateDataFromFilters(true);
+        // Automatically update when inputs change
+        filterInputs.forEach(input => {
+            input.addEventListener('change', () => updateDataFromFilters(true));
         });
+
+        // reset filters and refresh data when clear button is clicked
+        if (clearBtn) {
+            clearBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                filterForm.reset();
+                updateDataFromFilters(true);
+            });
+        }
     }
 
     // Initialize visuals & bindings

@@ -563,11 +563,7 @@ a:hover {
 .icon-ph i   { color: #8bc34a; }
 
 
-/* ==========================================================
-   MOBILE & SMALL TABLET RESPONSIVE OVERRIDES (max-width: 768px)
-   ========================================================== */
 @media (max-width: 768px) {
-    /* Main Layout & Adjustments */
     .page-container {
         padding: 1rem;
     }
@@ -599,7 +595,6 @@ a:hover {
         text-align: center;
     }
 
-    /* Filter Section Enhancement */
     .filters-container {
         flex-direction: column;
         align-items: stretch;
@@ -615,7 +610,7 @@ a:hover {
     .filter input {
         width: 100%;
         min-width: unset;
-        padding: 0.75rem 1rem; /* Slightly larger tap targets */
+        padding: 0.75rem 1rem;
     }
 
     .hide-mobile {
@@ -627,9 +622,8 @@ a:hover {
         padding: 0.75rem;
     }
 
-    /* Stats Grid Redesign */
     .stats-grid {
-        grid-template-columns: 1fr 1fr; /* 2 columns on mobile */
+        grid-template-columns: 1fr 1fr; 
         gap: 10px;
     }
 
@@ -656,7 +650,6 @@ a:hover {
         font-size: 0.75rem;
     }
 
-    /* Graph Container Resizing */
     .chart-wrapper {
         height: 300px;
         padding: 10px;
@@ -672,9 +665,8 @@ a:hover {
         font-size: 1.2rem;
     }
 
-    /* Expandable Card Table (MOBILE ONLY) */
     .data-table thead {
-        display: none; /* Hide standard headers */
+        display: none; 
     }
 
     .data-table, .data-table tbody, .data-table tr {
@@ -731,7 +723,7 @@ a:hover {
     .data-table td:nth-child(1) {
         border-bottom: none;
         padding-top: 0;
-        padding-right: 1.5rem; /* Space for the chevron */
+        padding-right: 1.5rem;
         display: block;
     }
 
@@ -768,7 +760,6 @@ a:hover {
         display: block; 
     }
 
-    /* Columns 3 through 9: Hidden until expanded */
     .data-table tr:not(.expanded) td:nth-child(n+3) {
         display: none;
     }
@@ -790,7 +781,6 @@ a:hover {
         border: 1px solid #f0f0f0;
     }
 
-    /* Col 10: Action Button */
     .data-table td:nth-child(10) {
         padding-top: 1rem;
         justify-content: center;
@@ -811,7 +801,6 @@ a:hover {
         gap: 8px;
     }
 
-    /* Pagination Mobile Polish */
     .pagination-container {
         flex-wrap: wrap;
         gap: 8px;
@@ -823,8 +812,6 @@ a:hover {
         font-size: 0.95rem;
         padding: 0.4rem;
     }
-
-    /* Modals resize to fit screen better */
     .modal-box {
         width: 90%;
         margin: 15% auto;
