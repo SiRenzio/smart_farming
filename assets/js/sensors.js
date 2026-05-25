@@ -310,8 +310,8 @@ document.addEventListener("click", function(event) {
         console.log("clicked");
         const data = button.dataset;
         
-        const modalContent = document.getElementById("modal-content"); // Make sure this matches your HTML
-        const modal = document.getElementById("modal");               // Make sure this matches your HTML
+        const modalContent = document.getElementById("modal-content");
+        const modal = document.getElementById("modal");      
 
         modalContent.innerHTML = `
             <div class="detail-item"><span>Sensor Name</span><span>${data.sensorname || '-'}</span></div>
