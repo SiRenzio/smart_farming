@@ -2,14 +2,21 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <WebServer.h>
+#include <SoftwareSerial.h>
 #include <Preferences.h>
 #include <DNSServer.h>
 
-/* ===================== SERVER URLs ===================== */
-const char* webServerIp = "192.168.1.2";
+/* ===================== SENSOR SETUP ===================== */
+const uint8_t TX_PIN = 18;
+const uint8_t RX_PIN = 5; 
+SoftwareSerial mySerial(TX_PIN, RX_PIN);
 
-String verifyDeviceURL = "http://" + String(webServerIp) + "/smart_farming/webServer.php";
-String sendDataURL     = "http://" + String(webServerIp) + "/smart_farming/api/sensor_api.php";
+/* ===================== SERVER URLs ===================== */
+// Update this to your current server IP if necessary
+const char* web_server = "raspberrypi.local";//raspberrypi local hostname
+
+String verifyDeviceURL = "http://" + String(web_server) + "/webServer.php";
+String sendDataURL     = "http://" + String(web_server) + "/api/sensor_api.php";
 
 /* ===================== GLOBALS ===================== */
 WebServer server(80);
@@ -60,7 +67,7 @@ void handleSave() {
     server.send(200, "text/html", "<h2>Credentials Saved!</h2><p>ESP32 is restarting to connect...</p>");
     delay(2000);
     
-    // RESTART 1: Changing from AP Mode to Station Mode
+    // AP to STA
     ESP.restart(); 
   } else {
     server.send(400, "text/plain", "Missing SSID or Password");
@@ -70,7 +77,8 @@ void handleSave() {
 void startAPMode() {
   Serial.println("\n[WiFi] Starting Access Point Mode...");
   WiFi.mode(WIFI_AP);
-  WiFi.softAP("ESP32-SmartFarming-Setup"); 
+  WiFi.softAP("ESP32-Sensor-Setup"); 
+  // WiFi.softAP("ESP32-Sensor2-Setup"); 
 
   dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
 
@@ -140,6 +148,13 @@ void verifyDeviceWithServer() {
     StaticJsonDocument<300> resDoc;
     deserializeJson(resDoc, response);
 
+    // restart the esp32
+    if (resDoc.containsKey("isRestart") && resDoc["isRestart"] == 1) {
+      Serial.println("[SYSTEM] Restart command received from server. Rebooting...");
+      delay(1500); // Give serial monitor a moment to print
+      ESP.restart(); 
+    }
+
     String status = resDoc["status"];
 
     if (status == "success") {
@@ -148,7 +163,7 @@ void verifyDeviceWithServer() {
       locationID     = resDoc["locationID"];
       deviceVerified = true;
       sendingEnabled = true;
-      Serial.printf("[SYNC] Active! UserID: %d, SensorID: %d, LocID: %d\n", userID, SoilSensorID, locationID);
+      // Serial.printf("[SYNC] Active! UserID: %d, SensorID: %d, LocID: %d\n", userID, SoilSensorID, locationID);
     } 
     else if (status == "disconnected") {
       deviceVerified = true; 
@@ -157,7 +172,7 @@ void verifyDeviceWithServer() {
       String message = resDoc["message"].as<String>();
       Serial.print("[SERVER]: ");
       Serial.println(message);
-      Serial.println("[SYNC] Idle: Administrative Disconnect");
+      Serial.println("[SYNC] Idle: Administrative Disconnect (isConnected = 0)");
     }
     else {
       deviceVerified = false;
@@ -169,16 +184,8 @@ void verifyDeviceWithServer() {
 }
 
 /* ===================== SEND SENSOR DATA ===================== */
-void sendSensorData() {
+void sendSensorData(float soilN, float soilP, float soilK, float soilEC, float soilpH, float soilT, float soilM) {
   if (!deviceVerified || !sendingEnabled) return;
-
-  float soilN  = random(200, 1000) / 10.0;
-  float soilP  = random(200, 1000) / 10.0;
-  float soilK  = random(200, 1000) / 10.0;
-  float soilEC = random(10, 40)   / 10.0;
-  float soilpH = random(10, 140)  / 10.0;
-  float soilT  = random(100, 1000)/ 10.0;
-  float soilM  = random(100, 1000)/ 10.0;
 
   StaticJsonDocument<400> doc;
   doc["userID"]       = userID;
@@ -203,6 +210,8 @@ void sendSensorData() {
   if (httpCode > 0) {
     Serial.print("[ESP32] Data sent. Server says: ");
     Serial.println(http.getString());
+  } else {
+    Serial.printf("[ESP32] Failed to send data, error: %s\n", http.errorToString(httpCode).c_str());
   }
 
   http.end();
@@ -211,6 +220,7 @@ void sendSensorData() {
 /* ===================== MAIN SETUP ===================== */
 void setup() {
   Serial.begin(115200);
+  mySerial.begin(4800);
 
   preferences.begin("wifi_creds", true); 
   String savedSSID = preferences.getString("ssid", "");
@@ -218,11 +228,19 @@ void setup() {
   preferences.end();
 
   if (savedSSID != "") {
-    Serial.println("\n[WiFi] Found saved network. Connecting to: " + savedSSID);
+    Serial.println("\n[WiFi] Found saved credentials. Connecting to: " + savedSSID);
     WiFi.mode(WIFI_STA);
+    uint64_t chipid = ESP.getEfuseMac();
+    // generate hostname from device itself
+    char hostname[32];
+    sprintf(hostname, "ESP32-%04X%08X", 
+            (uint16_t)(chipid >> 32), 
+            (uint32_t)chipid);
+
+    WiFi.setHostname(hostname);
     WiFi.begin(savedSSID.c_str(), savedPass.c_str());
 
-    int timeout = 20; // 10 seconds total wait
+    int timeout = 20;
     while (WiFi.status() != WL_CONNECTED && timeout > 0) {
       delay(500);
       Serial.print(".");
@@ -245,21 +263,18 @@ void setup() {
     Serial.println("\n[WiFi] No credentials saved.");
     startAPMode(); 
   }
-
-  randomSeed(analogRead(0));
 }
 
 /* ===================== MAIN LOOP ===================== */
 void loop() {
   if (inAPMode) {
-    // AP MODE: Handle Captive Portal setup
+    // AP Mode 
     dnsServer.processNextRequest();
     server.handleClient();
   } else {
-    // NORMAL MODE: Running standard sensor operations
     server.handleClient();
 
-    // RESTART 2: Changing from Station Mode back to AP Mode if network is lost
+    // change to AP Mode
     if (WiFi.status() != WL_CONNECTED) {
       Serial.println("\n[WiFi] Network lost! Restarting to switch to AP mode...");
       delay(3000);
@@ -267,11 +282,50 @@ void loop() {
     }
 
     unsigned long currentMillis = millis();
+
+    // Trigger every 5 seconds
     if (currentMillis - lastSendTime >= sendInterval) {
       lastSendTime = currentMillis;
+      
       verifyDeviceWithServer();
+      
+      // Activate sensor it connected 
       if (deviceVerified && sendingEnabled) {
-        sendSensorData();
+        
+        byte queryData[] = {0x01, 0x03, 0x00, 0x00, 0x00, 0x07, 0x04, 0x08};
+        byte receivedData[19];
+        
+        // Request data from sensor
+        mySerial.write(queryData, sizeof(queryData));
+        
+        // Brief delay to allow the sensor to respond over RS485/Modbus
+        delay(100); 
+        
+        if (mySerial.available() >= sizeof(receivedData)) {
+           mySerial.readBytes(receivedData, sizeof(receivedData));
+
+           // Parse raw Modbus data
+           unsigned int soilMoisture    = (receivedData[3] << 8) | receivedData[4];
+           unsigned int soilTemperature = (receivedData[5] << 8) | receivedData[6];
+           unsigned int soilEC          = (receivedData[7] << 8) | receivedData[8];
+           unsigned int soilPH          = (receivedData[9] << 8) | receivedData[10];
+           unsigned int soilNitrogen    = (receivedData[11] << 8) | receivedData[12];
+           unsigned int soilPhosphorous = (receivedData[13] << 8) | receivedData[14];
+           unsigned int soilPotassium   = (receivedData[15] << 8) | receivedData[16];
+
+           // Convert required fields to floats
+           float soilMoisturef = soilMoisture / 10.0;
+           float soilPHf       = soilPH / 10.0;
+           float soilTempf     = soilTemperature / 10.0;
+           
+           Serial.printf("\n[SENSOR] M:%.1f T:%.1f EC:%d pH:%.1f N:%d P:%d K:%d\n", 
+                          soilMoisturef, soilTempf, soilEC, soilPHf, soilNitrogen, soilPhosphorous, soilPotassium);
+
+           // forward data to payload
+           sendSensorData(soilNitrogen, soilPhosphorous, soilPotassium, soilEC, soilPHf, soilTempf, soilMoisturef);
+        } else {
+           Serial.println("[ESP32] Error: Sensor did not reply in time or incomplete data.");
+        }
       }
     }
   }
