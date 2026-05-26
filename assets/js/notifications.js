@@ -110,6 +110,6 @@ function markAsRead() {
 }
 
 // Auto refresh every 3 seconds
-setInterval(loadNotifications, 30000);
+setInterval(loadNotifications, 5000);
 // Initial load
 loadNotifications();
